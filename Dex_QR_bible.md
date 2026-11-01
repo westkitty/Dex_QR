@@ -173,3 +173,5 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Fragile:** `receiver.app.js` early-check flow (`earlyCheck`, `checkToken`, `pendingCheck`): keep the token and session checks; the early check must stay advisory (AES-GCM decides).
 - **Untested:** real cameras (does the version-3 key QR read at the same distance; autofocus with the size change), Safari, Firefox, screen readers.
 - **Next:** cycle 4, PBKDF2 iteration calibration and a better strength estimate (or fuzzing of the parsers).
+
+- **Commit:** `1a31435762b240759719afb6c7ad684f8758fc15` on `main` (pushed f89f51b..1a31435; this line added in a docs follow-up commit).
