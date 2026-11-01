@@ -23,6 +23,7 @@
     "keycheck-bench": "node tests/bench/keycheck.mjs 100",
     "kdf": "node tests/browser/kdf.mjs",
     "look": "node tests/browser/look.mjs",
+    "coach": "node tests/browser/coach.mjs --shots work/coach-shots coach",
     "screens": "node tests/browser/screens.mjs work/screens dexqr",
     "fuzz": "node --expose-gc tests/fuzz/fuzz.mjs --cases 100000 --seed 1 --out results/fuzz_after.json",
     "fuzz-quick": "node --expose-gc tests/fuzz/fuzz.mjs --cases 5000 --seed 7 --long 60",

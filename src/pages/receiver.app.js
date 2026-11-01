@@ -15,6 +15,9 @@
   const UI = window.DexUI;
   const map = new window.DexBlockMap($("blockmap"), UI);
   state.blockMap = map;                           // read-only hook for automated tests
+  const coach = new DQ.coach.ScanCoach();
+  state.coach = coach;                            // read-only hook for automated tests
+  state.coachLog = [];                            // hints shown and announced (bounded), for automated tests
 
   function msg(text, cls) {
     const m = $("msg"); m.textContent = text || ""; m.className = "msg" + (text ? " show " + cls : "");
@@ -63,6 +66,7 @@
     return zxingReady;
   }
   const ZX_OPTS = { formats: ["QRCode"], tryHarder: true, maxNumberOfSymbols: 1 };
+  const ZX_OPTS_LIVE = { ...ZX_OPTS, returnErrors: true };            // camera: also report codes found but not read
 
   async function pickDecoder() {
     const want = $("dec").value;
@@ -93,17 +97,86 @@
 
   const canvas = $("work");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  /* Where the decoder saw codes: count located (read or not), size of the largest as a share of the frame's
+   * shorter side, and whether it touches the frame edge. Used only for scan coaching. */
+  function codeGeometry(quads, w, h) {
+    let box = 0, edge = false;
+    const m = 0.015 * Math.min(w, h);
+    for (const q of quads) {
+      const xs = q.map((p) => p.x), ys = q.map((p) => p.y);
+      const side = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / Math.min(w, h);
+      if (side > box) box = side;
+      if (Math.min(...xs) < m || Math.min(...ys) < m || Math.max(...xs) > w - m || Math.max(...ys) > h - m) edge = true;
+    }
+    return { found: quads.length, box: quads.length ? box : null, edge };
+  }
+  const corners = (p) => [p.topLeft, p.topRight, p.bottomRight, p.bottomLeft].filter(Boolean);
   async function decodeSource(src, w, h) {
+    const live = !!state.stream;                                         // camera frames also feed the coach
+    state.frameInfo = null;
     if (state.engine === "native") {
       const codes = await state.detector.detect(src);
+      if (live) state.frameInfo = { ...codeGeometry(codes.filter((c) => c.cornerPoints && c.cornerPoints.length).map((c) => c.cornerPoints), w, h), img: null };
       return codes.map((c) => c.rawValue);
     }
     const s = Math.min(1, MAX_SIDE / Math.max(w, h));
     const cw = Math.max(1, Math.round(w * s)), ch = Math.max(1, Math.round(h * s));
     if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
     ctx.drawImage(src, 0, 0, cw, ch);
-    return decodeImageData(ctx.getImageData(0, 0, cw, ch), state.engine);
+    const img = ctx.getImageData(0, 0, cw, ch);
+    if (!live) return decodeImageData(img, state.engine);
+    if (state.engine === "jsqr") {
+      const r = DQ.scan.decodeImageData(img.data, cw, ch, window.jsQR);
+      state.frameInfo = { ...codeGeometry(r.location ? [corners({ topLeft: r.location.topLeftCorner, topRight: r.location.topRightCorner, bottomRight: r.location.bottomRightCorner, bottomLeft: r.location.bottomLeftCorner })] : [], cw, ch), img };
+      return r.texts;
+    }
+    // zxing-cpp: also return codes it located but could not read, so the coach can tell "in view, not reading".
+    await loadZXing();
+    const res = await window.ZXingWASM.readBarcodes(img, ZX_OPTS_LIVE);
+    state.frameInfo = { ...codeGeometry(res.filter((r) => r.position).map((r) => corners(r.position)), cw, ch), img };
+    return res.filter((r) => r.isValid).map((r) => r.text);
   }
+
+  /* Live scan coaching (cycle 7): one calm hint under the camera view, from what this frame looked like and what
+   * the decoder and the session made of it. Frame statistics are measured at most every STATS_MS. */
+  const STATS_MS = 120, COACH_LOG_MAX = 200;
+  const sctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  function measureFrame(info, v) {
+    if (info && info.img) return DQ.coach.frameStats(info.img.data, info.img.width, info.img.height);
+    if (!v || !v.videoWidth) return null;                                // BarcodeDetector path: a small copy
+    const s = Math.min(1, 640 / v.videoWidth), cw = Math.round(v.videoWidth * s), ch = Math.round(v.videoHeight * s);
+    if (sctx.canvas.width !== cw || sctx.canvas.height !== ch) { sctx.canvas.width = cw; sctx.canvas.height = ch; }
+    sctx.drawImage(v, 0, 0, cw, ch);
+    return DQ.coach.frameStats(sctx.getImageData(0, 0, cw, ch).data, cw, ch);
+  }
+  function coachFrame(before) {
+    if (!state.stream || !state.running) return;
+    const s = state.session, st = s.stats, info = state.frameInfo || { found: 0, box: null, edge: false };
+    const t = performance.now();
+    let stats = null;
+    if (t - (state.statsAt || 0) >= STATS_MS) { state.statsAt = t; try { stats = measureFrame(info, $("video")); } catch (e) { stats = null; } }
+    const p = s.decoder ? s.decoder.progressCount / s.decoder.K : 0;
+    const texts = st.qrTexts - before.qrTexts;
+    const h = coach.push({ t, stats, found: Math.max(info.found, texts), decoded: texts, ours: (st.accepted - before.accepted) + (st.duplicates - before.duplicates) + (st.keyFrames - before.keyFrames) + (st.otherFile - before.otherFile),
+      fresh: (s.decoder ? s.decoder.received : 0) - before.received, foreign: st.foreign - before.foreign, box: info.box, edge: info.edge, progress: p });
+    showHint(h);
+    const said = coach.announce(t);
+    if (said) { $("coach-live").textContent = said; logCoach("said", h.id, t); }
+  }
+  function logCoach(kind, id, t) { state.coachLog.push({ kind, id, t: Math.round(t) }); if (state.coachLog.length > COACH_LOG_MAX) state.coachLog.shift(); }
+  function showHint(h) {
+    const el = $("coach");
+    if (!h) { el.hidden = true; $("reticle").classList.remove("warn"); el.dataset.id = ""; return; }
+    el.hidden = false;
+    if (el.dataset.id === h.id) return;                                  // only touch the DOM when the hint changes
+    el.dataset.id = h.id; el.className = "coach " + h.tone;
+    $("coach-text").textContent = h.text;
+    el.classList.remove("swap"); void el.offsetWidth; el.classList.add("swap");   // gentle fade-in (off with reduced motion)
+    $("reticle").classList.toggle("warn", h.tone === "warn");
+    logCoach("shown", h.id, performance.now());
+  }
+  function startCoach() { coach.reset(performance.now()); state.statsAt = 0; $("coach-live").textContent = ""; showHint(coach.hint()); }
+  function stopCoach() { showHint(null); }
 
   function updateStats() {
     const s = state.session, p = s.progress(), st = s.stats;
@@ -163,7 +236,31 @@
     if (state.keyState === "ok") return `✓ matches the sender's key check (PBKDF2 × ${fmtIter(state.checkIter)}, ${(state.checkMs / 1000).toFixed(1)} s here; final AES-GCM check at the end)`;
     if (state.keyState === "wrong") return "✗ does not match: wrong passphrase";
     if (state.pendingCheck) return "waiting for the sender's key-check frame";
-    return s.keyCheck ? `key-check frame received (PBKDF2 × ${fmtIter(s.keyCheck.iterations)}); enter the passphrase to check it` : "no key-check frame yet (older senders do not send one; then it is checked at the end)";
+    return s.keyCheck ? `key-check frame received (PBKDF2 × ${fmtIter(s.keyCheck.iterations)}${estText()}); enter the passphrase to check it` : "no key-check frame yet (older senders do not send one; then it is checked at the end)";
+  }
+  /* Slow-device warning (cycle 7): once the sender's iteration count is known (key-check frame), time a short
+   * PBKDF2 probe here and, if deriving the key will take 3 s or more, say so before the passphrase is typed. */
+  const fmtSecs = (ms) => (ms < 10000 ? (Math.round(ms / 500) / 2).toFixed(1).replace(/\.0$/, "") : String(Math.round(ms / 1000)));
+  function estText() { const e = state.kdfEst; return e && state.session.keyCheck && e.iterations === state.session.keyCheck.iterations ? `; about ${fmtSecs(e.ms)} s on this device` : ""; }
+  async function estimateKdf() {
+    const s = state.session, it = s.keyCheck && s.keyCheck.iterations;
+    if (!it || !s.meta || !s.meta.encrypted || state.opened || state.kdfFor === it) return;
+    state.kdfFor = it;
+    try {
+      if (!state.kdfRate) { const e = await DQ.container.estimateDerive(it); if (!e.measured) return; state.kdfRate = e.msPerMillion; }
+    } catch (e) { return; }
+    if (state.session !== s || state.opened) return;
+    const ms = (state.kdfRate * it) / 1e6, slow = ms >= DQ.container.SLOW_DERIVE_MS;
+    state.kdfEst = { iterations: it, ms, slow };
+    const box = $("passslow");
+    if (slow) {
+      box.textContent = `Heads-up: this device needs about ${fmtSecs(ms)} seconds to check the passphrase, because the sender chose strong protection (${fmtIter(it)} rounds of key stretching). Scanning keeps going while it works.`;
+      box.hidden = false;
+      // Say it once through the polite live region (the box is also the passphrase field's description), without
+      // repeating it in the status message above.
+      if (!$("pass").value && !state.checking) $("coach-live").textContent = box.textContent;
+    } else { box.hidden = true; box.textContent = ""; }
+    updatePassUi();
   }
   function updatePassUi() {
     const s = state.session;
@@ -171,6 +268,7 @@
     if (!s.meta || !s.meta.encrypted || state.opened) { $("r-key").textContent = s.meta && !s.meta.encrypted ? "not needed" : "–"; return; }
     $("r-key").textContent = keyText();
     $("decrypt").textContent = s.done ? "Decrypt" : "Check passphrase";
+    if (s.keyCheck && state.kdfFor !== s.keyCheck.iterations) estimateKdf();
     if ($("passbox").hidden) {
       $("passbox").hidden = false;
       if (state.passOffered !== s && !s.done) {
@@ -194,7 +292,7 @@
       return;
     }
     state.checking = true; updatePassUi();
-    msg(`Checking the passphrase (PBKDF2, ${fmtIter(sess.keyCheck ? sess.keyCheck.iterations : 0)} iterations, as the sender chose)…`, "warn");
+    msg(`Checking the passphrase (PBKDF2, ${fmtIter(sess.keyCheck ? sess.keyCheck.iterations : 0)} iterations, as the sender chose${estText()})…`, "warn");
     let r;
     try { r = await sess.checkPassphrase(pass); }
     catch (e) { r = { result: "error", error: e }; }
@@ -282,8 +380,10 @@
     const step = async () => {
       if (gen !== state.scanGen || !state.running || state.session.done) return;
       if (v.readyState >= 2 && v.videoWidth) {
+        const st = state.session.stats, before = { qrTexts: st.qrTexts, accepted: st.accepted, duplicates: st.duplicates, keyFrames: st.keyFrames, otherFile: st.otherFile, foreign: st.foreign, received: state.session.decoder ? state.session.decoder.received : 0 };
         try { await onDecoded(await decodeSource(v, v.videoWidth, v.videoHeight)); }
-        catch (e) { state.session.stats.frames++; }                    // a bad frame: count it, keep going
+        catch (e) { state.session.stats.frames++; state.frameInfo = null; }   // a bad frame: count it, keep going
+        if (gen === state.scanGen && !state.session.done) coachFrame(before);
       }
       if (gen !== state.scanGen || !state.running || state.session.done) return;
       if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(() => step());
@@ -337,6 +437,7 @@
       state.running = true; $("start").disabled = true; $("stop").disabled = false;
       setPhase(state.session.meta ? "receiving" : "scanning");
       updateStats();
+      startCoach();
       wake(true);
       listCameras();
       scanLoop(++state.scanGen);
@@ -352,6 +453,7 @@
     if (wasStream) { state.running = false; state.scanGen++; state.stream.getTracks().forEach((t) => t.stop()); state.stream = null; }
     const v = $("video"); if (v.srcObject) { v.srcObject = null; }
     if (wasStream) { $("empty").hidden = false; wake(false); }
+    stopCoach();
     $("start").disabled = state.busyFiles; $("stop").disabled = true;
     syncOverlay();
   }
@@ -431,6 +533,7 @@
     state.session = new DQ.ReceiverSession(); state.result = null; state.error = null; state.opened = false; state.opening = false; state.saved = false;
     map.reset(); $("burst").hidden = true; $("burst").classList.remove("play");
     state.keyState = ""; state.pendingCheck = false; state.checking = false; state.checkToken++; state.passOffered = null;
+    state.kdfFor = 0; state.kdfEst = null; $("passslow").hidden = true; $("passslow").textContent = "";
     $("result").textContent = ""; $("passbox").hidden = true; $("pass").value = ""; $("decrypt").textContent = "Decrypt"; $("r-key").textContent = "–"; $("decrypt").disabled = false; $("bar").style.width = "0%"; msg("", "");
     ["r-id", "r-enc", "r-prog", "r-pk"].forEach((id) => ($(id).textContent = "–")); setPhase("idle"); updateStats();
     $("start").focus();
@@ -467,6 +570,7 @@
     if (!state.session.pending) return;
     state.session.switchToPending(); $("r-id").textContent = "–";
     state.keyState = ""; state.checking = false; state.checkToken++;
+    state.kdfFor = 0; state.kdfEst = null; $("passslow").hidden = true; $("passslow").textContent = "";
     updateStats(); msg("Switched to the transfer now on screen. Its packets seen so far were kept.", "ok");
     if (state.session.done) { stopCamera(); stopVideoFile(); setPhase("verifying"); tryOpen(); }
   });

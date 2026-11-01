@@ -188,3 +188,33 @@ parseText and parseKeyFrame themselves had **no** findings before the fixes: eve
 **Tests changed on purpose.** Six suites open the new Tuning disclosure before touching its settings (a one-line helper, same assertions). a11y now runs both colour schemes and three new states (sender playing, manual light theme, receiver done).
 
 **Not tested.** Real phone or laptop cameras, Safari, Firefox, screen readers, how the animations feel on a slow phone. The video/GIF clips are headless screenshots in a loop (about 8 fps), not a screen recording.
+
+## Cycle 7 (2026-11-01, about 11:25 AM EST): live scan coaching on the receiver, and a slow-device passphrase warning
+
+**What changed.** No protocol, codec, crypto or QR-drawing change; receiver interface only.
+- **Scan coach** (`src/coach.js`, new): while the camera runs, one calm hint sits under the camera view and says what to do in plain words: too dark, too bright or glare, a plain view, blurry, the code too small or cut off, a code in view that is not reading, a QR code that is not a Dex_QR stream, only repeats arriving (sender paused?), then "Locked on" and "Almost there". It is computed from cheap frame statistics (brightness, contrast, clipping, an edge-sharpness ratio on a sparse grid, measured at most every 120 ms) plus what the decoder located and what the session accepted. A problem must persist 0.9 s before it is shown, so one odd frame never flips it; good news shows at once. The reticle turns amber on a warning. The hint hides when the file is ready.
+- **Announcements:** a separate polite, atomic live region; only when the hint changes, never the first "start/looking" states, and at most once every 4 s.
+- **Slow-device warning:** when the key-check frame arrives, the receiver times a short PBKDF2 probe (up to 800,000 iterations, about 0.1 s here) and, if the sender's count will take 3 s or more on this device, shows "Heads-up: this device needs about N seconds…" above the passphrase box before typing (it is also the field's description and is announced once). The estimate also appears on the key line ("about 1.5 s on this device").
+- **Motion:** the hint fades in over 0.35 s when it changes; the status dot breathes at 0.4 Hz (info) or pings at 0.5 Hz (ok). Nothing flashes; reduced motion (system or toggle) makes all of it static.
+- `scan.js` also returns jsQR's corner points; on the camera path the receiver asks zxing-cpp for located-but-unread codes too (`returnErrors`), used only by the coach. Image and video-file decoding are unchanged.
+
+**Before → after (headless Chrome 156, Chrome's fake camera playing synthetic frames from tests/lib/synthframe.cjs; 1280 / 390 px):**
+
+| Scene | Before (6c29dba) | After |
+|---|---|---|
+| Dark scene | no message in 8 s | "Too dark to read…" at 1.23 / 1.15 s |
+| Plain view | no message in 8 s | "The view is almost plain…" at 1.24 / 1.14 s |
+| Blurred code | no message in 8 s | "The picture is blurry…" at 1.23 / 1.14 s |
+| Foreign QR code | generic status at 0.62 / 0.52 s | same, plus "not a Dex_QR stream" hint at 1.24 / 1.14 s |
+| Receiving | no hint | "Locked on" at 0.51 / 0.41 s, then "Almost there"; hidden when done |
+| Slow device (simulated: +2 µs per PBKDF2 iteration, 8,000,000 iterations) | no warning | warning 0.44 / 0.38 s after the key-check frame, estimate 17.2 s |
+| This machine, same stream | – | no warning (estimate 1.1 s) |
+| Screen-reader announcements per scene | – | 1 (2 while receiving, 7.3 s apart) |
+
+**Hard rules kept.** QR canvas, module size and quiet zone untouched (sender changes are the shared stylesheet only); the hint is outside the camera view (test checks no overlap) and ≥ 44 px tall (48 px); reduced motion makes the hint and icon static (test); offline, single file, 0 network requests; no new dependency. receiver.html 1,750,524 → 1,769,839 bytes; sender.html 174,117 → 176,186.
+
+**Tests (final build):** lint 0; unit 84/84 (14 new: tests/unit/coach.test.mjs 10 on synthetic dark, bright, blank, blurred, small and cut-off frames, tests/unit/slowkdf.test.mjs 4); coach 18/18 (new, tests/browser/coach.mjs); look 16/16; ux 17/17; browser 17/17 (camera path with jsQR and auto still byte-perfect); compression 4/4; keycheck 5/5; kdf 5/5; a11y 0 violations of any impact in 50 states (38 + coach warn, coach ok, slow-passphrase warning in both themes and widths); soak pass (sender 30.02 fps, heap 2.3 → 1.9 MB; receiver with the coach running 10 fps, heap 2.3 → 2.4 MB, before 2.2 → 2.3 MB; one stream after churn); drop trials re-rendered 1,800/1,800 with trial results identical to the committed files; H.264 video end-to-end 27/27; fuzz-quick 0 findings.
+
+**Fixed while finishing (the cycle was resumed after the first run stopped):** the slow-device check expected "about 15–17 seconds", but the simulation adds 16 s on top of the real derive (1.1–1.5 s), so 18 s is a correct reading; it now accepts 16–19 s. The 390 px "receiving" screenshot was skipped by the script; now taken.
+
+**Not tested.** Real phone or laptop cameras: every coach threshold was chosen on synthetic frames only and may be wrong for real glare, focus hunting or low light (docs/TEST_CHECKLIST.md has the device checks). Screen readers with real users, Safari, Firefox. The "too small", "cut off" and "glare" hints are covered by unit tests only, not by the fake-camera runs.

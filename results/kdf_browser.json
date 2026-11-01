@@ -1,18 +1,18 @@
 {
- "when": "2026-11-01T13:08:38.014Z",
- "calibratedIterations": 7900000,
+ "when": "2026-11-01T16:17:08.875Z",
+ "calibratedIterations": 6600000,
  "results": [
   {
    "name": "sender: tuned to this device by default (about 1 s), count shown and carried in the stream",
    "ok": true,
-   "iterations": 7900000,
-   "prepareMs": 1268,
-   "enc": "yes (AES-256-GCM, PBKDF2-SHA-256 × 7,900,000, tuned to this device: about 1.0 s here, 13.2× the standard 600,000); early passphrase check on (1 key-check frame in 32)",
+   "iterations": 6600000,
+   "prepareMs": 1307,
+   "enc": "yes (AES-256-GCM, PBKDF2-SHA-256 × 6,600,000, tuned to this device: about 1.0 s here, 11.0× the standard 600,000); early passphrase check on (1 key-check frame in 32)",
    "calibration": {
-    "iterations": 7900000,
+    "iterations": 6600000,
     "measured": true,
-    "estimatedMs": 995.4000001177192,
-    "msPerMillion": 126.00000001490116,
+    "estimatedMs": 993.2999998033046,
+    "msPerMillion": 150.49999997019768,
     "probeIterations": 900000,
     "capped": false,
     "floored": false
@@ -23,7 +23,7 @@
    "name": "sender: 'Standard' sends 600,000 iterations; changing it marks settings stale",
    "ok": true,
    "std": 600000,
-   "stdMs": 137,
+   "stdMs": 177,
    "stale": "Prepare (apply changes)"
   },
   {
@@ -51,10 +51,10 @@
   {
    "name": "receiver: early check uses the calibrated count from the key frame, shows it, then the file opens with the cached key",
    "ok": true,
-   "iterations": 7900000,
-   "keyBefore": "key-check frame received (PBKDF2 × 7,900,000); enter the passphrase to check it",
-   "key": "✓ matches the sender's key check (PBKDF2 × 7,900,000, 1.0 s here; final AES-GCM check at the end)",
-   "checkMs": 1091,
+   "iterations": 6600000,
+   "keyBefore": "key-check frame received (PBKDF2 × 6,600,000); enter the passphrase to check it",
+   "key": "✓ matches the sender's key check (PBKDF2 × 6,600,000, 1.0 s here; final AES-GCM check at the end)",
+   "checkMs": 1084,
    "phase": "done",
    "errors": []
   },
@@ -68,7 +68,7 @@
    },
    "keyFrames": 0,
    "checking": false,
-   "ms": 346,
+   "ms": 338,
    "errors": []
   }
  ],

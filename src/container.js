@@ -280,5 +280,16 @@
     return { iterations, measured: true, estimatedMs: iterations * perIter, msPerMillion: perIter * 1e6, probeIterations: spent, capped, floored };
   }
 
-  DQ.container = { CALIBRATION, calibrateIterations, measurePbkdf2, DEFAULT_ITERATIONS, MIN_ITERATIONS, MAX_ITERATIONS, KCV_LEN, deriveKeys, sameBytes, encryptedParams, MAX_DECOMPRESSED, MIN_GAIN, ALGORITHMS, DexQRError, buildInner, parseInner, buildPayload, openPayload, isEncryptedPayload, isCompressedPayload, inflateCapped, estimateStrength, sha256 };
+  /* Receiver-side estimate (cycle 7): how long will deriving `iterations` take on this device? Uses the same
+   * probes as calibration (budget 800,000 iterations, about 0.1 s on a laptop) and scales linearly; PBKDF2's
+   * cost is linear in the count. slow = at least SLOW_DERIVE_MS. Returns {measured, ms, msPerMillion, slow}. */
+  const SLOW_DERIVE_MS = 3000;
+  async function estimateDerive(iterations, opts = {}) {
+    const cal = await calibrateIterations({ measure: opts.measure, config: { budget: 800000 } });
+    if (!cal.measured || !(iterations > 0)) return { measured: false, ms: null, msPerMillion: null, slow: false, iterations };
+    const ms = (cal.msPerMillion * iterations) / 1e6;
+    return { measured: true, ms, msPerMillion: cal.msPerMillion, slow: ms >= (opts.slowMs || SLOW_DERIVE_MS), iterations, probeIterations: cal.probeIterations };
+  }
+
+  DQ.container = { CALIBRATION, calibrateIterations, estimateDerive, SLOW_DERIVE_MS, measurePbkdf2, DEFAULT_ITERATIONS, MIN_ITERATIONS, MAX_ITERATIONS, KCV_LEN, deriveKeys, sameBytes, encryptedParams, MAX_DECOMPRESSED, MIN_GAIN, ALGORITHMS, DexQRError, buildInner, parseInner, buildPayload, openPayload, isEncryptedPayload, isCompressedPayload, inflateCapped, estimateStrength, sha256 };
 })(typeof globalThis !== "undefined" ? globalThis : this);

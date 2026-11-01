@@ -5,8 +5,8 @@ ZBAR_LIB ?=
 export PY
 export LD_LIBRARY_PATH := $(ZBAR_LIB):$(LD_LIBRARY_PATH)
 
-.PHONY: all build lint test fuzz fuzz-quick sweep trials video browser ux look a11y soak compress keycheck kdf screens bench compress-bench keycheck-bench report
-all: build lint test fuzz-quick trials video browser ux look a11y soak compress keycheck bench compress-bench keycheck-bench report
+.PHONY: all build lint test fuzz fuzz-quick sweep trials video browser ux look coach a11y soak compress keycheck kdf screens bench compress-bench keycheck-bench report
+all: build lint test fuzz-quick trials video browser ux look coach a11y soak compress keycheck bench compress-bench keycheck-bench report
 build:   ; node tools/build.mjs
 lint:    ; node tools/lint.mjs
 test:    ; node --test tests/unit/*.test.mjs
@@ -25,6 +25,7 @@ compress-bench: ; BENCH_OUT=compression_after.json node tests/bench/compression.
 keycheck: build ; node tests/browser/keycheck.mjs
 kdf:     build ; node tests/browser/kdf.mjs
 look:    build ; node tests/browser/look.mjs
+coach:   build ; node tests/browser/coach.mjs --shots work/coach-shots coach
 screens: build ; node tests/browser/screens.mjs work/screens dexqr
 keycheck-bench: ; node tests/bench/keycheck.mjs 100
 report:  ; node tools/report.mjs

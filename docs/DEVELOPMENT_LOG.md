@@ -74,3 +74,13 @@ Append-only record of each improvement cycle: what was tried, measured and decid
 - Rejected: confetti across the whole page (busy, and near the code on the sender); animating anything over the QR; a library (no dependencies allowed); a sound on completion (startles, needs a toggle); auto-starting the camera on load (permission prompt without context).
 - Verified on the final build: lint 0, unit 70/70, browser 17/17, ux 17/17, look 16/16, compression 4/4, keycheck 5/5, kdf 5/5, a11y 0 in 38 states, soak pass (30.03 fps, flat heap), drop trials 1,800/1,800 with identical trial results.
 - Next: the deferred receiver-side PBKDF2 time estimate and slow-device warning, then live QR quality hints on the receiver (too far, blurry, glare) using decode failures.
+
+## 2026-11-01, cycle 7 (routine run stopped about 10:01 EST; finished as resume)
+
+- Lock: the routine took `.dev-state/cycle.lock` for cycle 7 after cycle 6; its worker stopped about 10:01 EST with about 32 uncommitted files. Resumed 11:06 EST (owner "routine cycle 7 resume"); start 6c29dba, in sync with origin/main. Nothing was discarded: the diff was reviewed and kept.
+- Review: coach logic is pure and unit-tested; hints are held 0.9 s against flicker; DOM only touched on change; announcements in a separate polite region, at most every 4 s; frame statistics capped at one per 120 ms on a ≤ 640 px copy; estimateDerive probes at most 800,000 iterations once per session and fails safe (no measurement, no warning). No QR, protocol or crypto change. Found sound.
+- Fixes: coach.mjs slow-device assertion too tight (15–17 s; the simulation is 16 s plus the real 1.1–1.5 s derive, and the run read 18 s once) → 16–19 s; the 390 px receiving screenshot was skipped → taken; README screenshot of the coach added.
+- Before measurements by running tests/browser/coach.mjs `--root work/base-6c29dba` (git worktree of 6c29dba): no hint in any scene; only the foreign-code status line. After: hints in 1.1–1.3 s, Locked on in 0.4–0.5 s, slow warning 0.4 s after the key frame. Numbers in CHANGELOG.md and results/coach{,_before}.json; screenshots in results/cycle7/ (before_/after_ × dark, blank, blurry, foreign, receiving, kdf-slow × 1280, 390).
+- Verified on the final build: lint 0, unit 84/84, coach 18/18, look 16/16, ux 17/17, browser 17/17, compression 4/4, keycheck 5/5, kdf 5/5, a11y 0 in 50 states, soak pass (30.02 fps, flat heaps), drop trials 1,800/1,800 identical, H.264 27/27, fuzz-quick 0.
+- Untested: real cameras (thresholds tuned on synthetic frames only), screen readers, Safari, Firefox.
+- Next: real-device checklist run; then a sender-side "receiver tips" card and a reverse-channel ACK design.

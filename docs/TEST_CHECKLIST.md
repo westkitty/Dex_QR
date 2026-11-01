@@ -65,3 +65,12 @@
 - [ ] On the sender laptop, prepare with a passphrase and "Tuned to this device": note the iteration count and the "about X s here" figure on the Encrypted line.
 - [ ] On the phone receiver, note how long "Check passphrase" (or the final decrypt) takes with that count. If it is much more than a few seconds, repeat with "Standard: 600,000" and record both.
 - [ ] Type a few passphrases into the sender (e.g. `Summer2024!`, five random words) and confirm the meter text is announced by a screen reader and never repeats the passphrase.
+
+**Scan coaching and slow-passphrase warning (cycle 7, also untested on real devices)**
+- [ ] Cover the lens or point at a dark corner: within about 2 s the hint under the camera view says "Too dark to read".
+- [ ] Point at a plain wall: "The view is almost plain". Point at any other QR code (a menu, a URL): "not a Dex_QR stream".
+- [ ] Hold the phone too close for focus (5 cm): note whether it says "blurry", "cut off" or "not reading". Then too far (2 m): note whether it says "small" or "No code found". The thresholds were set on synthetic frames; write down any hint that is wrong for what you see.
+- [ ] Shine a lamp onto the sender's screen: note whether "Too bright or there is glare" appears.
+- [ ] While receiving normally: "Locked on" and near the end "Almost there"; pause the sender: "Only repeats are arriving" within about 2 s.
+- [ ] With a screen reader (VoiceOver or TalkBack): hint changes are read out, not more than once every few seconds, and do not interrupt.
+- [ ] Encrypted transfer with "Tuned to this device" key stretching from a fast laptop, received on an older phone: a "Heads-up: this device needs about N seconds" note appears above the passphrase box before typing. Time the real check and note it next to N.

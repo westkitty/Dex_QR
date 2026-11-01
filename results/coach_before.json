@@ -1,0 +1,193 @@
+{
+ "when": "2026-11-01T16:11:42.217Z",
+ "root": "/workspace/Dex_QR/work/base-6c29dba",
+ "measurements": {
+  "dark_1280": {
+   "viewport": 1280,
+   "want": "dark",
+   "secondsToHint": null,
+   "hintsShown": null,
+   "announcements": null,
+   "minAnnounceGapMs": null,
+   "finalHint": null,
+   "secondsToAnyMessage": null,
+   "finalMessage": "",
+   "phase": "scanning",
+   "packets": 0,
+   "pageErrors": []
+  },
+  "dark_390": {
+   "viewport": 390,
+   "want": "dark",
+   "secondsToHint": null,
+   "hintsShown": null,
+   "announcements": null,
+   "minAnnounceGapMs": null,
+   "finalHint": null,
+   "secondsToAnyMessage": null,
+   "finalMessage": "",
+   "phase": "scanning",
+   "packets": 0,
+   "pageErrors": []
+  },
+  "blank_1280": {
+   "viewport": 1280,
+   "want": "blank",
+   "secondsToHint": null,
+   "hintsShown": null,
+   "announcements": null,
+   "minAnnounceGapMs": null,
+   "finalHint": null,
+   "secondsToAnyMessage": null,
+   "finalMessage": "",
+   "phase": "scanning",
+   "packets": 0,
+   "pageErrors": []
+  },
+  "blank_390": {
+   "viewport": 390,
+   "want": "blank",
+   "secondsToHint": null,
+   "hintsShown": null,
+   "announcements": null,
+   "minAnnounceGapMs": null,
+   "finalHint": null,
+   "secondsToAnyMessage": null,
+   "finalMessage": "",
+   "phase": "scanning",
+   "packets": 0,
+   "pageErrors": []
+  },
+  "blurry_1280": {
+   "viewport": 1280,
+   "want": "blurry",
+   "secondsToHint": null,
+   "hintsShown": null,
+   "announcements": null,
+   "minAnnounceGapMs": null,
+   "finalHint": null,
+   "secondsToAnyMessage": null,
+   "finalMessage": "",
+   "phase": "scanning",
+   "packets": 0,
+   "pageErrors": []
+  },
+  "blurry_390": {
+   "viewport": 390,
+   "want": "blurry",
+   "secondsToHint": null,
+   "hintsShown": null,
+   "announcements": null,
+   "minAnnounceGapMs": null,
+   "finalHint": null,
+   "secondsToAnyMessage": null,
+   "finalMessage": "",
+   "phase": "scanning",
+   "packets": 0,
+   "pageErrors": []
+  },
+  "foreign_1280": {
+   "viewport": 1280,
+   "want": "foreign",
+   "secondsToHint": null,
+   "hintsShown": null,
+   "announcements": null,
+   "minAnnounceGapMs": null,
+   "finalHint": null,
+   "secondsToAnyMessage": 0.616,
+   "finalMessage": "The camera sees QR codes, but none is a Dex_QR stream.",
+   "phase": "scanning",
+   "packets": 0,
+   "pageErrors": []
+  },
+  "foreign_390": {
+   "viewport": 390,
+   "want": "foreign",
+   "secondsToHint": null,
+   "hintsShown": null,
+   "announcements": null,
+   "minAnnounceGapMs": null,
+   "finalHint": null,
+   "secondsToAnyMessage": 0.527,
+   "finalMessage": "The camera sees QR codes, but none is a Dex_QR stream.",
+   "phase": "scanning",
+   "packets": 0,
+   "pageErrors": []
+  },
+  "receiving_1280": {
+   "viewport": 1280,
+   "want": "steady",
+   "secondsToHint": null,
+   "hintsShown": null,
+   "announcements": null,
+   "minAnnounceGapMs": null,
+   "finalHint": null,
+   "secondsToAnyMessage": null,
+   "finalMessage": "",
+   "phase": "receiving",
+   "packets": 23,
+   "pageErrors": []
+  },
+  "receiving_390": {
+   "viewport": 390,
+   "want": "steady",
+   "secondsToHint": null,
+   "hintsShown": null,
+   "announcements": null,
+   "minAnnounceGapMs": null,
+   "finalHint": null,
+   "secondsToAnyMessage": null,
+   "finalMessage": "",
+   "phase": "receiving",
+   "packets": 23,
+   "pageErrors": []
+  },
+  "kdf_slow_1280": {
+   "label": "simulated slow device (2 µs per iteration)",
+   "viewport": 1280,
+   "warning": null,
+   "estimateMs": null,
+   "secondsToWarning": 0.197,
+   "passphraseTyped": false,
+   "keyLine": "key-check frame received (PBKDF2 × 8,000,000); enter the passphrase to check it",
+   "pageErrors": []
+  },
+  "kdf_slow_390": {
+   "label": "simulated slow device (2 µs per iteration)",
+   "viewport": 390,
+   "warning": null,
+   "estimateMs": null,
+   "secondsToWarning": 0.133,
+   "passphraseTyped": false,
+   "keyLine": "key-check frame received (PBKDF2 × 8,000,000); enter the passphrase to check it",
+   "pageErrors": []
+  },
+  "kdf_fast_1280": {
+   "label": "this machine (headless Chrome, unthrottled)",
+   "viewport": 1280,
+   "warning": null,
+   "estimateMs": null,
+   "secondsToWarning": 0.157,
+   "passphraseTyped": false,
+   "keyLine": "key-check frame received (PBKDF2 × 8,000,000); enter the passphrase to check it",
+   "pageErrors": []
+  },
+  "kdf_fast_390": {
+   "label": "this machine (headless Chrome, unthrottled)",
+   "viewport": 390,
+   "warning": null,
+   "estimateMs": null,
+   "secondsToWarning": 0.136,
+   "passphraseTyped": false,
+   "keyLine": "key-check frame received (PBKDF2 × 8,000,000); enter the passphrase to check it",
+   "pageErrors": []
+  }
+ },
+ "results": [
+  {
+   "name": "no network requests",
+   "ok": true,
+   "net": []
+  }
+ ]
+}

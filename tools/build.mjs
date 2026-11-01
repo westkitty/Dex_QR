@@ -10,7 +10,7 @@ const logo = read("src/pages/logo.svg").trim();
 const core = ["src/base45.js", "src/crc32.js", "src/lt.js", "src/packet.js", "src/strength.js", "src/container.js", "src/session.js", "src/render.js"];
 const pages = {
   "sender.html": { tpl: "src/pages/sender.template.html", scripts: ["vendor/qrcodegen.js", ...core, "src/pages/ui.js"], app: "src/pages/sender.app.js" },
-  "receiver.html": { tpl: "src/pages/receiver.template.html", scripts: ["vendor/qrcodegen.js", "vendor/jsQR.js", "vendor/zxing-wasm-reader.js", "vendor/zxing-reader-wasm.b64.js", ...core, "src/scan.js", "src/pages/ui.js", "src/pages/blockmap.js"], app: "src/pages/receiver.app.js" },
+  "receiver.html": { tpl: "src/pages/receiver.template.html", scripts: ["vendor/qrcodegen.js", "vendor/jsQR.js", "vendor/zxing-wasm-reader.js", "vendor/zxing-reader-wasm.b64.js", ...core, "src/scan.js", "src/coach.js", "src/pages/ui.js", "src/pages/blockmap.js"], app: "src/pages/receiver.app.js" },
   "index.html": { tpl: "src/pages/index.template.html", scripts: [], app: null },
 };
 // Theme and motion preferences are applied before first paint (no flash of the wrong theme). localStorage

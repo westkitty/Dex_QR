@@ -1,6 +1,6 @@
 {
  "axe": "4.14.0",
- "when": "2026-11-01T13:09:13.700Z",
+ "when": "2026-11-01T16:15:34.523Z",
  "report": [
   {
    "page": "index",
@@ -51,6 +51,24 @@
    "violations": []
   },
   {
+   "page": "receiver coach-warn",
+   "width": 390,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "receiver coach-ok",
+   "width": 390,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "receiver slow-passphrase-warning",
+   "width": 390,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
    "page": "receiver done",
    "width": 390,
    "scheme": "dark",
@@ -111,6 +129,24 @@
    "violations": []
   },
   {
+   "page": "receiver coach-warn",
+   "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "receiver coach-ok",
+   "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "receiver slow-passphrase-warning",
+   "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
    "page": "receiver done",
    "width": 1280,
    "scheme": "dark",
@@ -165,6 +201,24 @@
    "violations": []
   },
   {
+   "page": "receiver coach-warn",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver coach-ok",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver slow-passphrase-warning",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
    "page": "receiver done",
    "width": 390,
    "scheme": "light",
@@ -214,6 +268,24 @@
   },
   {
    "page": "sender playing",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver coach-warn",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver coach-ok",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver slow-passphrase-warning",
    "width": 1280,
    "scheme": "light",
    "violations": []

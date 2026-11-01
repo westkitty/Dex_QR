@@ -21,6 +21,8 @@
     <div class="camtag" id="camtag" hidden><span class="dot on" aria-hidden="true"></span><span id="camtag-text">Scanning</span></div>
     <canvas id="work" hidden></canvas>
   </div>
+  <div class="coach info" id="coach" hidden><span class="coach-ico" aria-hidden="true"></span><span id="coach-text"></span></div>
+  <div class="sr-only" id="coach-live" role="status" aria-live="polite" aria-atomic="true"></div>
   <ul class="tips" aria-label="Scanning tips">
     <li>Fill most of the view with the code</li><li>Hold steady; tilt to avoid glare</li><li>Missed frames are fine: any frames will do</li>
   </ul>
@@ -37,7 +39,8 @@
   </div>
   <form id="passbox" hidden>
     <label for="pass">Passphrase</label>
-    <input id="pass" type="password" autocomplete="off" spellcheck="false" aria-describedby="passhelp">
+    <div id="passslow" class="hint slow" hidden></div>
+    <input id="pass" type="password" autocomplete="off" spellcheck="false" aria-describedby="passslow passhelp">
     <div class="note" id="passhelp">You can enter it while scanning: it is checked against the sender's key-check frame within seconds, and scanning continues either way.</div>
     <div class="btns"><button id="decrypt" type="submit">Decrypt</button></div>
   </form>

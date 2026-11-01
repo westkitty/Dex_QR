@@ -26,14 +26,15 @@
     }
     return out;
   }
-  /* Returns {texts, pass} where pass is 0 (nothing), 1 or 2. */
+  /* Returns {texts, pass, location} where pass is 0 (nothing), 1 or 2 and location is jsQR's corner points of
+   * the decoded code (or null); the receiver's scan coaching uses it for the code's size in view. */
   function decodeImageData(rgba, w, h, jsQR) {
     jsQR = jsQR || root.jsQR;
     let r = jsQR(rgba, w, h, { inversionAttempts: "dontInvert" });
-    if (r && r.data) return { texts: [r.data], pass: 1 };
+    if (r && r.data) return { texts: [r.data], pass: 1, location: r.location || null };
     r = jsQR(boxBlurGrayToRGBA(rgba, w, h), w, h, { inversionAttempts: "dontInvert" });
-    if (r && r.data) return { texts: [r.data], pass: 2 };
-    return { texts: [], pass: 0 };
+    if (r && r.data) return { texts: [r.data], pass: 2, location: r.location || null };
+    return { texts: [], pass: 0, location: null };
   }
   DQ.scan = { decodeImageData, boxBlurGrayToRGBA };
 })(typeof globalThis !== "undefined" ? globalThis : this);

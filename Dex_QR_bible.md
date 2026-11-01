@@ -226,3 +226,17 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Next:** cycle 7, receiver-side PBKDF2 time estimate and slow-device warning; then live QR quality hints.
 
 - **Commit:** `fbd7c74688d51f87060291099eb446c8b8cf28df` on `main` (pushed 33025df..fbd7c74; this line added in a docs follow-up commit).
+
+---
+
+## 2026-11-01 — Cycle 7 of 12 (routine, finished as resume of a dead run): live scan coaching, slow-device passphrase warning
+
+- **Lock:** `.dev-state/cycle.lock` held for cycle 7; the routine's worker stopped about 10:01 EST with uncommitted work; resumed 11:06 EST, start 6c29dba (in sync with origin/main). Work reviewed and kept, nothing discarded.
+- **What:** src/coach.js (new): `frameStats` (mean, contrast, clipping, sharpness ratio on a sparse grid) and `ScanCoach` (1.5 s window, 0.9 s hold for problems, hints: start, looking, nocode, blank, dark, bright, blurry, small, large, unread, foreign, repeats, steady, almost; announce at most every 4 s). Receiver: hint card under the camera view, amber reticle on warnings, polite live region `#coach-live`, `state.coach` / `state.coachLog` test hooks. container.estimateDerive + SLOW_DERIVE_MS (3 s): slow-device warning `#passslow` above the passphrase, estimate on the key line. scan.decodeImageData returns `location`.
+- **Numbers (fake camera, synthetic frames, 1280/390):** dark, blank, blurry hints from none to 1.14–1.24 s; foreign hint 1.14–1.24 s (status line unchanged 0.52–0.62 s); Locked on 0.41–0.51 s; slow warning 0.38–0.44 s after the key frame (est. 17.2 s, simulated), none on this machine (1.1 s); 1 announcement per scene, 7.3 s apart while receiving; a11y states 38 → 50 (0 violations); unit 70 → 84.
+- **Invariants kept:** QR drawing, module size, quiet zone untouched; hint outside the camera view, 48 px tall; reduced motion static; no flashing (0.4–0.5 Hz breathing dot only); offline, single file, 0 network requests; no dependency; protocol unchanged.
+- **Tests:** lint 0, unit 84/84, coach 18/18 (new), look 16/16, ux 17/17, browser 17/17, compression 4/4, keycheck 5/5, kdf 5/5, a11y 0 in 50 states, soak pass (sender 30.02 fps flat heap; receiver 10 fps 2.3 → 2.4 MB), drop trials 1,800/1,800 identical, H.264 27/27, fuzz-quick 0.
+- **Files:** src/coach.js (new), src/scan.js, src/container.js, src/pages/{receiver.app.js, receiver.template.html, common.css}, tools/build.mjs, sender.html, receiver.html, index.html, tests/unit/{coach,slowkdf}.test.mjs (new), tests/browser/coach.mjs (new), tests/lib/synthframe.cjs (new), tests/lib/load.cjs, tests/browser/a11y.mjs, Makefile, package.json, README.md, docs/{TEST_CHECKLIST,ROADMAP,DEVELOPMENT_LOG}.md, CHANGELOG.md, results/*.json, results/cycle7/*.png, docs/screenshots/receiver-coach-1280.png.
+- **Fragile:** coach thresholds (`DQ.coach.THRESHOLDS`) are synthetic-frame guesses; IDs `coach`, `coach-text`, `coach-live`, `passslow` are the test contract; coach.mjs's slow-device range assumes the real derive here is about 1–3 s.
+- **Untested:** real cameras on phones and laptops (no claim that real scanning was tested), screen readers, Safari, Firefox.
+- **Next:** run docs/TEST_CHECKLIST.md on real devices and retune thresholds; then a sender-side "receiver tips" card and a reverse-channel ACK design.
