@@ -224,3 +224,5 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Fragile:** element IDs are the test contract (keep them); `details.opts` must stay the receiver's first `<details>` (compression.mjs clicks the first summary); the Tuning disclosure must be opened before tests fill its fields; blockmap's honesty note (rank share in ML mode) must stay true if the decoder changes.
 - **Untested:** real cameras on phones and laptops, Safari, Firefox, screen readers, animation smoothness on slow phones, localStorage on file:// outside Chrome (falls back to page-only).
 - **Next:** cycle 7, receiver-side PBKDF2 time estimate and slow-device warning; then live QR quality hints.
+
+- **Commit:** `fbd7c74688d51f87060291099eb446c8b8cf28df` on `main` (pushed 33025df..fbd7c74; this line added in a docs follow-up commit).
