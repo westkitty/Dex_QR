@@ -139,3 +139,6 @@ Find and rank the most important remaining improvements across mechanics, assets
 
 ### Final commit identifier
 (added below after committing)
+
+- Main commit: `06ca31167fbe5e2725795b06847888a2f602f13d` ("Full improvement and bug-sweep pass…") on `main`.
+- This line was added in a small docs follow-up commit, which also records the pass in `.dev-state/cycles.log` (not tracked).
