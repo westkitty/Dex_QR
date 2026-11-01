@@ -13,7 +13,7 @@
   "frames": 1397,
   "textLength": 643,
   "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
-  "renderMs": 7518
+  "renderMs": 8644
  },
  "crf": "23",
  "fps": "10",
@@ -26,14 +26,14 @@
    "start": 8,
    "videoFrames": 420,
    "framesDecodedByZbar": 420,
-   "videoBytes": 1358714,
-   "framesUsed": 258,
-   "packetsUsed": 258,
-   "overhead": 1.0038910505836576,
+   "videoBytes": 1298008,
+   "framesUsed": 257,
+   "packetsUsed": 257,
+   "overhead": 1,
    "ok": true,
    "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
    "err": null,
-   "seconds": 1.401
+   "seconds": 1.277
   },
   {
    "size": 102400,
@@ -43,14 +43,14 @@
    "start": 13,
    "videoFrames": 422,
    "framesDecodedByZbar": 422,
-   "videoBytes": 1366859,
-   "framesUsed": 259,
-   "packetsUsed": 259,
-   "overhead": 1.0077821011673151,
+   "videoBytes": 1292070,
+   "framesUsed": 257,
+   "packetsUsed": 257,
+   "overhead": 1,
    "ok": true,
    "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
    "err": null,
-   "seconds": 1.401
+   "seconds": 1.207
   },
   {
    "size": 102400,
@@ -60,14 +60,14 @@
    "start": 77,
    "videoFrames": 414,
    "framesDecodedByZbar": 414,
-   "videoBytes": 1259764,
-   "framesUsed": 261,
-   "packetsUsed": 261,
-   "overhead": 1.0155642023346303,
+   "videoBytes": 1338331,
+   "framesUsed": 257,
+   "packetsUsed": 257,
+   "overhead": 1,
    "ok": true,
    "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
    "err": null,
-   "seconds": 1.223
+   "seconds": 1.277
   },
   {
    "size": 102400,
@@ -77,14 +77,14 @@
    "start": 161,
    "videoFrames": 422,
    "framesDecodedByZbar": 422,
-   "videoBytes": 1288236,
-   "framesUsed": 258,
-   "packetsUsed": 258,
-   "overhead": 1.0038910505836576,
+   "videoBytes": 1283233,
+   "framesUsed": 259,
+   "packetsUsed": 259,
+   "overhead": 1.0077821011673151,
    "ok": true,
    "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
    "err": null,
-   "seconds": 1.232
+   "seconds": 1.18
   },
   {
    "size": 102400,
@@ -94,14 +94,14 @@
    "start": 121,
    "videoFrames": 440,
    "framesDecodedByZbar": 440,
-   "videoBytes": 1414335,
-   "framesUsed": 263,
-   "packetsUsed": 263,
-   "overhead": 1.0233463035019454,
+   "videoBytes": 1344129,
+   "framesUsed": 257,
+   "packetsUsed": 257,
+   "overhead": 1,
    "ok": true,
    "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
    "err": null,
-   "seconds": 1.353
+   "seconds": 1.261
   },
   {
    "size": 102400,
@@ -111,14 +111,14 @@
    "start": 28,
    "videoFrames": 436,
    "framesDecodedByZbar": 436,
-   "videoBytes": 1322461,
-   "framesUsed": 263,
-   "packetsUsed": 263,
-   "overhead": 1.0233463035019454,
+   "videoBytes": 1383131,
+   "framesUsed": 257,
+   "packetsUsed": 257,
+   "overhead": 1,
    "ok": true,
    "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
    "err": null,
-   "seconds": 1.21
+   "seconds": 1.329
   },
   {
    "size": 102400,
@@ -128,14 +128,14 @@
    "start": 97,
    "videoFrames": 404,
    "framesDecodedByZbar": 404,
-   "videoBytes": 1236565,
-   "framesUsed": 260,
-   "packetsUsed": 260,
-   "overhead": 1.0116731517509727,
+   "videoBytes": 1234367,
+   "framesUsed": 258,
+   "packetsUsed": 258,
+   "overhead": 1.0038910505836576,
    "ok": true,
    "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
    "err": null,
-   "seconds": 1.15
+   "seconds": 1.161
   },
   {
    "size": 102400,
@@ -145,14 +145,14 @@
    "start": 97,
    "videoFrames": 424,
    "framesDecodedByZbar": 424,
-   "videoBytes": 1343339,
-   "framesUsed": 259,
-   "packetsUsed": 259,
-   "overhead": 1.0077821011673151,
+   "videoBytes": 1299939,
+   "framesUsed": 257,
+   "packetsUsed": 257,
+   "overhead": 1,
    "ok": true,
    "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
    "err": null,
-   "seconds": 1.282
+   "seconds": 1.232
   },
   {
    "size": 102400,
@@ -162,14 +162,14 @@
    "start": 31,
    "videoFrames": 414,
    "framesDecodedByZbar": 414,
-   "videoBytes": 1258146,
-   "framesUsed": 260,
-   "packetsUsed": 260,
-   "overhead": 1.0116731517509727,
+   "videoBytes": 1261667,
+   "framesUsed": 257,
+   "packetsUsed": 257,
+   "overhead": 1,
    "ok": true,
    "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
    "err": null,
-   "seconds": 1.232
+   "seconds": 1.187
   }
  ]
 }

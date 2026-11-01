@@ -145,3 +145,49 @@ test("jsQR blur fallback helper keeps image dimensions", () => {
 
 const GOLDEN_A = [37,80];
 const GOLDEN_B = [1289,2294,2518,3700,4426];
+
+test("protocol v2 golden vector (degree boost) and v1 rule unchanged", () => {
+  assert.equal(DQ.packet.VERSION, 2);
+  assert.equal(DQ.lt.extraDegreeFor(1, 100), 0);
+  assert.equal(DQ.lt.extraDegreeFor(2, 11), 0);
+  assert.equal(DQ.lt.extraDegreeFor(2, 100), 7);
+  assert.equal(DQ.lt.extraDegreeFor(2, 5000), 0);
+  assert.deepEqual(Array.from(DQ.lt.neighbours(100, 7, 0x12345678, 0.1, 0.05, 7)), GOLDEN_V2);
+});
+
+test("backward compatibility: a v1 sender stream still decodes, v1/v2 streams are not mixed", async () => {
+  for (const size of [1, 3000, 50000]) {
+    const data = randomBytes(size);
+    const s1 = await DQ.SenderSession.create({ name: "v1.bin", data, blockSize: 200, version: 1, startSeed: 77 });
+    assert.equal(DQ.packet.parseText(s1.textForSeed(0)).meta.version, 1);
+    const r = new DQ.ReceiverSession();
+    let n = 0;
+    while (!r.done) { r.addText(s1.nextText()); if (++n > s1.K * 20) throw new Error("v1 no convergence"); }
+    assert.deepEqual(Buffer.from((await r.open()).data), data);
+  }
+  const data = randomBytes(5000);
+  const a = await DQ.SenderSession.create({ name: "a", data, blockSize: 200, version: 1 });
+  const b = await DQ.SenderSession.create({ name: "a", data, blockSize: 200 });
+  const r = new DQ.ReceiverSession();
+  r.addText(a.textForSeed(1));
+  assert.equal(r.addText(b.textForSeed(2)), "other-file");
+});
+
+test("v2 lowers small-file overhead versus v1 (K = 26, 300 trials, deterministic)", () => {
+  const mean = (v) => {
+    let tot = 0;
+    for (let t = 0; t < 300; t++) {
+      const K = 26, fk = DQ.lt.mix32(t * 31 + K), ex = DQ.lt.extraDegreeFor(v, K);
+      const enc = new DQ.lt.LTEncoder(new Uint8Array(K * 8), 8, fk, { extra: ex });
+      const dec = new DQ.lt.LTDecoder(K, 8, fk, { extra: ex });
+      let s = DQ.lt.mix32(t), n = 0;
+      while (!dec.done) { dec.addPacket(s, enc.encode(s)); s = (s + 1) >>> 0; n++; }
+      tot += n / K;
+    }
+    return tot / 300;
+  };
+  const m1 = mean(1), m2 = mean(2);
+  assert.ok(m2 < m1 - 0.02, `v2 ${m2} should beat v1 ${m1}`);
+  assert.ok(m2 < 1.08, `v2 mean overhead ${m2}`);
+});
+const GOLDEN_V2 = [16,17,25,34,37,52,73,80,95];

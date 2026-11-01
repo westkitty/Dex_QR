@@ -10,9 +10,11 @@
       const built = await DQ.container.buildPayload(opts);
       s.payload = built.payload; s.encrypted = built.encrypted; s.fileId = built.fileId;
       s.blockSize = opts.blockSize;
-      s.encoder = new DQ.lt.LTEncoder(s.payload, s.blockSize, DQ.packet.fileKey32(s.fileId));
+      s.version = opts.version ?? DQ.packet.VERSION;
+      const K = Math.max(1, Math.ceil(s.payload.length / s.blockSize));
+      s.encoder = new DQ.lt.LTEncoder(s.payload, s.blockSize, DQ.packet.fileKey32(s.fileId), { extra: DQ.lt.extraDegreeFor(s.version, K) });
       s.K = s.encoder.K;
-      s.meta = { encrypted: s.encrypted, fileId: s.fileId, K: s.K, blockSize: s.blockSize, length: s.payload.length };
+      s.meta = { version: s.version, encrypted: s.encrypted, fileId: s.fileId, K: s.K, blockSize: s.blockSize, length: s.payload.length };
       s.nextSeed = (opts.startSeed ?? 0) >>> 0;
       return s;
     }
@@ -33,8 +35,8 @@
       if (!p.ok) { if (p.reason === "foreign") this.stats.foreign++; else this.stats.rejected++; return "rejected:" + p.reason; }
       if (!this.meta) {
         this.meta = p.meta;
-        this.decoder = new DQ.lt.LTDecoder(p.meta.K, p.meta.blockSize, DQ.packet.fileKey32(p.meta.fileId), this.opts);
-      } else if (p.meta.fileIdHex !== this.meta.fileIdHex || p.meta.K !== this.meta.K || p.meta.blockSize !== this.meta.blockSize || p.meta.length !== this.meta.length) {
+        this.decoder = new DQ.lt.LTDecoder(p.meta.K, p.meta.blockSize, DQ.packet.fileKey32(p.meta.fileId), { ...this.opts, extra: DQ.lt.extraDegreeFor(p.meta.version, p.meta.K) });
+      } else if (p.meta.version !== this.meta.version || p.meta.fileIdHex !== this.meta.fileIdHex || p.meta.K !== this.meta.K || p.meta.blockSize !== this.meta.blockSize || p.meta.length !== this.meta.length) {
         this.stats.otherFile++; return "other-file";
       }
       const before = this.decoder.duplicates;

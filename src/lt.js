@@ -29,6 +29,21 @@
   const DEFAULT_DELTA = 0.05;
   function paramsForK(K) { return K <= ML_MAX_K ? { c: 0.1, delta: 0.05 } : { c: 0.03, delta: 0.5 }; }
 
+  /* Protocol v2 ("degree boost"): for K <= ML_MAX_K every packet's robust-soliton degree d is
+   * raised to d + ceil(log2 K) whenever that stays below K. Sparse soliton rows leave the GF(2) system rank-deficient
+   * for a while (a block nobody covers, or small dependent clusters); adding ~log2 K extra random
+   * neighbours makes the rows behave like a dense random code, so the ML decoder finishes at
+   * about K + 1.6 packets. Measured in tests/unit/degree-boost.mjs (results/degree_boost.json).
+   * K < BOOST_MIN_K and K > ML_MAX_K keep v1 behaviour (extra = 0) because the peeling decoder needs degree-1 packets.
+   * Protocol v1 packets always use extra = 0, so v1 streams still decode. */
+  // Below 12 blocks the boost was mixed (worse at K = 5, 6, 10, 11 in a 400-trial scan), so v2
+  // keeps the v1 rule there.
+  const BOOST_MIN_K = 12;
+  function extraDegreeFor(version, K) {
+    if (version >= 2 && K >= BOOST_MIN_K && K <= ML_MAX_K) return Math.ceil(Math.log2(K));
+    return 0;
+  }
+
   /* lowbias32 integer hash (Chris Wellons, public-domain constants). */
   function mix32(x) {
     x = x >>> 0;
@@ -93,11 +108,15 @@
   }
 
   /* Deterministic neighbour set for (fileKey32, seed, K). Returns a sorted Uint32Array. */
-  function neighbours(K, seed, fileKey32, c = DEFAULT_C, delta = DEFAULT_DELTA) {
+  function neighbours(K, seed, fileKey32, c = DEFAULT_C, delta = DEFAULT_DELTA, extra = 0) {
     const rng = packetRng(fileKey32, seed);
     const cdf = robustSolitonCdf(K, c, delta);
     const u = (rng() + 0.5) / 4294967296; // (0,1)
-    const d = sampleDegree(cdf, u);
+    let d = sampleDegree(cdf, u);
+    // Boost only when the boosted degree stays below K. Capping at K instead would pile many
+    // packets onto one fixed degree; with a fixed even degree every row lies in the even-weight
+    // subspace and the system can never reach rank K (found by the K=3 unit test).
+    if (extra > 0 && d + extra < K) d += extra;
     // Partial Fisher-Yates over [0, K) using a sparse swap map: O(d) time and memory.
     const swaps = new Map();
     const out = new Uint32Array(d);
@@ -131,13 +150,14 @@
       this.K = Math.max(1, Math.ceil(payload.length / blockSize));
       this.c = opts.c ?? paramsForK(this.K).c;
       this.delta = opts.delta ?? paramsForK(this.K).delta;
+      this.extra = opts.extra ?? 0;
       const padded = new Uint8Array(this.K * blockSize);
       padded.set(payload);
       this.padded = padded;
     }
     block(i) { return this.padded.subarray(i * this.blockSize, (i + 1) * this.blockSize); }
     encode(seed) {
-      const nb = neighbours(this.K, seed, this.fileKey32, this.c, this.delta);
+      const nb = neighbours(this.K, seed, this.fileKey32, this.c, this.delta, this.extra);
       const out = new Uint8Array(this.blockSize);
       for (let i = 0; i < nb.length; i++) xorInto(out, this.block(nb[i]));
       return out;
@@ -149,6 +169,7 @@
       this.K = K; this.blockSize = blockSize; this.fileKey32 = fileKey32 >>> 0;
       this.c = opts.c ?? paramsForK(K).c;
       this.delta = opts.delta ?? paramsForK(K).delta;
+      this.extra = opts.extra ?? 0;
       this.useGE = opts.useGE !== false;
       this.mode = opts.mode || (K <= (opts.mlMaxK ?? ML_MAX_K) ? "ml" : "peel");
       this.rank = 0;
@@ -181,7 +202,7 @@
       if (this.done) return "done";
       const buf = new Uint8Array(this.blockSize);
       buf.set(data.subarray(0, this.blockSize));
-      const nbArr = neighbours(this.K, seed, this.fileKey32, this.c, this.delta);
+      const nbArr = neighbours(this.K, seed, this.fileKey32, this.c, this.delta, this.extra);
       if (this.mode === "ml") { this._addML(nbArr, buf); return this.done ? "done" : "ok"; }
       const nb = new Set();
       for (const b of nbArr) {
@@ -322,7 +343,7 @@
 
   root.DexQR = root.DexQR || {};
   root.DexQR.lt = {
-    DEFAULT_C, DEFAULT_DELTA, ML_MAX_K, paramsForK, mix32, makeRng, robustSolitonCdf, sampleDegree,
+    DEFAULT_C, DEFAULT_DELTA, ML_MAX_K, paramsForK, extraDegreeFor, packetRng, mix32, makeRng, robustSolitonCdf, sampleDegree,
     neighbours, xorInto, LTEncoder, LTDecoder,
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);

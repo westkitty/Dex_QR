@@ -20,8 +20,8 @@ The test files are **10 KiB, 100 KiB and 500 KiB** (10,240 / 102,400 / 512,000 b
 ## Summary
 
 - **Success rate: 100% in every cell.** That is 900/900 trials with zbar and 900/900 with zxing-cpp at 10%, 30% and 50% frame drop. All 27 truly end-to-end video runs passed, and so did all headless-browser tests. Every success was checked as byte-identical by SHA-256.
-- **Overhead** (packets used ÷ K), mean: about 1.11–1.14 for 10 KiB (K = 26), 1.01–1.02 for 100 KiB (K = 257), and 1.003–1.007 for 500 KiB (K = 1281). It is roughly independent of the drop rate, as expected for a fountain code.
-- **Tail:** p95 ≤ 1.31 everywhere, and the worst single trial was 1.65 (10 KiB, 50% drop). LT codes have a heavy tail because a block covered by no packet blocks decoding until a packet covers it. The codec sweep shows rare 1.15–1.4× outliers even at K = 1000.
+- **Overhead** (packets used ÷ K), mean, protocol v2: about 1.07–1.08 for 10 KiB (K = 26), 1.006–1.007 for 100 KiB (K = 257), and 1.001 for 500 KiB (K = 1281). Protocol v1 measured 1.11–1.14, 1.01–1.02 and 1.003–1.007 on the same setup (see CHANGELOG.md). It is roughly independent of the drop rate, as expected for a fountain code.
+- **Tail:** p95 ≤ 1.24 everywhere, and the worst single trial was 1.31 (10 KiB). Under v1 the worst trials were 1.65 (10 KiB), 1.34 (100 KiB) and 1.23 (500 KiB); v2's degree boost (PROTOCOL.md §3) removes most of that tail, which came from sparse soliton rows leaving the system rank-deficient. Codec-level numbers for both versions are in `results/degree_boost.json`.
 - **Wall-clock cost of drops:** at drop rate p, the receiver needs about overhead ÷ (1 − p) × K displayed frames. For example, about 2.0 × K at 50% drop for large files.
 
 ## Drop-rate trials (100 trials per cell, real decoder output)
@@ -32,33 +32,33 @@ Settings: block size 400 B, EC M, QR version 16 (643 alphanumeric characters), 4
 
 | File | K | Frame drop | Success | Overhead mean | p50 | p95 | max | Frames shown ÷ K, mean (max) |
 |---|---|---|---|---|---|---|---|---|
-| 10 KiB | 26 | 10% | **100/100** | 1.138 | 1.154 | 1.231 | 1.500 | 1.255 (1.692) |
-| 10 KiB | 26 | 30% | **100/100** | 1.117 | 1.115 | 1.308 | 1.423 | 1.567 (2.192) |
-| 10 KiB | 26 | 50% | **100/100** | 1.108 | 1.077 | 1.308 | 1.654 | 2.217 (3.308) |
-| 100 KiB | 257 | 10% | **100/100** | 1.012 | 1.008 | 1.023 | 1.218 | 1.123 (1.346) |
-| 100 KiB | 257 | 30% | **100/100** | 1.011 | 1.008 | 1.039 | 1.097 | 1.451 (1.623) |
-| 100 KiB | 257 | 50% | **100/100** | 1.016 | 1.008 | 1.039 | 1.339 | 2.040 (2.802) |
-| 500 KiB | 1281 | 10% | **100/100** | 1.007 | 1.003 | 1.009 | 1.140 | 1.118 (1.267) |
-| 500 KiB | 1281 | 30% | **100/100** | 1.005 | 1.003 | 1.007 | 1.229 | 1.438 (1.744) |
-| 500 KiB | 1281 | 50% | **100/100** | 1.003 | 1.003 | 1.007 | 1.008 | 2.009 (2.118) |
+| 10 KiB | 26 | 10% | **100/100** | 1.083 | 1.077 | 1.231 | 1.269 | 1.198 (1.462) |
+| 10 KiB | 26 | 30% | **100/100** | 1.071 | 1.038 | 1.231 | 1.308 | 1.503 (2.000) |
+| 10 KiB | 26 | 50% | **100/100** | 1.067 | 1.038 | 1.192 | 1.308 | 2.142 (3.038) |
+| 100 KiB | 257 | 10% | **100/100** | 1.006 | 1.004 | 1.019 | 1.031 | 1.117 (1.171) |
+| 100 KiB | 257 | 30% | **100/100** | 1.007 | 1.004 | 1.019 | 1.035 | 1.444 (1.572) |
+| 100 KiB | 257 | 50% | **100/100** | 1.006 | 1.004 | 1.016 | 1.027 | 2.019 (2.218) |
+| 500 KiB | 1281 | 10% | **100/100** | 1.001 | 1.001 | 1.003 | 1.005 | 1.111 (1.137) |
+| 500 KiB | 1281 | 30% | **100/100** | 1.001 | 1.001 | 1.005 | 1.006 | 1.432 (1.483) |
+| 500 KiB | 1281 | 50% | **100/100** | 1.001 | 1.001 | 1.004 | 1.005 | 2.004 (2.097) |
 
-Per-frame decode with zbar: 10 KiB: 196/196 frames decoded, 3.08 ms/frame; 100 KiB: 1397/1397 frames decoded, 2.8 ms/frame; 500 KiB: 6722/6722 frames decoded, 2.73 ms/frame.
+Per-frame decode with zbar: 10 KiB: 196/196 frames decoded, 8.38 ms/frame; 100 KiB: 1397/1397 frames decoded, 6.98 ms/frame; 500 KiB: 6722/6722 frames decoded, 5.07 ms/frame.
 
 ### Decoder: zxing-cpp (Python bindings)
 
 | File | K | Frame drop | Success | Overhead mean | p50 | p95 | max | Frames shown ÷ K, mean (max) |
 |---|---|---|---|---|---|---|---|---|
-| 10 KiB | 26 | 10% | **100/100** | 1.138 | 1.154 | 1.231 | 1.500 | 1.255 (1.692) |
-| 10 KiB | 26 | 30% | **100/100** | 1.117 | 1.115 | 1.308 | 1.423 | 1.567 (2.192) |
-| 10 KiB | 26 | 50% | **100/100** | 1.108 | 1.077 | 1.308 | 1.654 | 2.217 (3.308) |
-| 100 KiB | 257 | 10% | **100/100** | 1.012 | 1.008 | 1.023 | 1.218 | 1.123 (1.346) |
-| 100 KiB | 257 | 30% | **100/100** | 1.011 | 1.008 | 1.039 | 1.097 | 1.451 (1.623) |
-| 100 KiB | 257 | 50% | **100/100** | 1.016 | 1.008 | 1.039 | 1.339 | 2.040 (2.802) |
-| 500 KiB | 1281 | 10% | **100/100** | 1.007 | 1.003 | 1.009 | 1.140 | 1.118 (1.267) |
-| 500 KiB | 1281 | 30% | **100/100** | 1.005 | 1.003 | 1.007 | 1.229 | 1.438 (1.744) |
-| 500 KiB | 1281 | 50% | **100/100** | 1.003 | 1.003 | 1.007 | 1.008 | 2.009 (2.118) |
+| 10 KiB | 26 | 10% | **100/100** | 1.083 | 1.077 | 1.231 | 1.269 | 1.198 (1.462) |
+| 10 KiB | 26 | 30% | **100/100** | 1.071 | 1.038 | 1.231 | 1.308 | 1.503 (2.000) |
+| 10 KiB | 26 | 50% | **100/100** | 1.067 | 1.038 | 1.192 | 1.308 | 2.142 (3.038) |
+| 100 KiB | 257 | 10% | **100/100** | 1.006 | 1.004 | 1.019 | 1.031 | 1.117 (1.171) |
+| 100 KiB | 257 | 30% | **100/100** | 1.007 | 1.004 | 1.019 | 1.035 | 1.444 (1.572) |
+| 100 KiB | 257 | 50% | **100/100** | 1.006 | 1.004 | 1.016 | 1.027 | 2.019 (2.218) |
+| 500 KiB | 1281 | 10% | **100/100** | 1.001 | 1.001 | 1.003 | 1.005 | 1.111 (1.137) |
+| 500 KiB | 1281 | 30% | **100/100** | 1.001 | 1.001 | 1.005 | 1.006 | 1.432 (1.483) |
+| 500 KiB | 1281 | 50% | **100/100** | 1.001 | 1.001 | 1.004 | 1.005 | 2.004 (2.097) |
 
-Per-frame decode with zxing: 10 KiB: 196/196 frames decoded, 1.26 ms/frame; 100 KiB: 1397/1397 frames decoded, 0.86 ms/frame; 500 KiB: 6722/6722 frames decoded, 0.8 ms/frame.
+Per-frame decode with zxing: 10 KiB: 196/196 frames decoded, 3.48 ms/frame; 100 KiB: 1397/1397 frames decoded, 2.33 ms/frame; 500 KiB: 6722/6722 frames decoded, 1.28 ms/frame.
 
 ## Truly end-to-end runs: H.264 video → ffmpeg → zbar → decoder → SHA-256
 
@@ -66,15 +66,15 @@ Per run: random start frame, i.i.d. frame drops applied to the sender's frames, 
 
 | File | K | Drop | Runs OK | Overhead per run | zbar frames decoded / video frames |
 |---|---|---|---|---|---|
-| 10 KiB | 26 | 10% | **3/3** | 1.154, 1.038, 1.038 | 50/50, 50/50, 52/52 |
-| 10 KiB | 26 | 30% | **3/3** | 1.231, 1.038, 1.077 | 56/56, 48/48, 50/50 |
-| 10 KiB | 26 | 50% | **3/3** | 1.077, 1.077, 1.115 | 58/58, 50/50, 46/46 |
-| 100 KiB | 257 | 10% | **3/3** | 1.004, 1.008, 1.016 | 420/420, 422/422, 414/414 |
-| 100 KiB | 257 | 30% | **3/3** | 1.004, 1.023, 1.023 | 422/422, 440/440, 436/436 |
-| 100 KiB | 257 | 50% | **3/3** | 1.012, 1.008, 1.012 | 404/404, 424/424, 414/414 |
-| 500 KiB | 1281 | 10% | **3/3** | 1.002, 1.008, 1.004 | 2050/2050, 2040/2040, 2056/2056 |
-| 500 KiB | 1281 | 30% | **3/3** | 1.009, 1.003, 1.005 | 2056/2056, 2050/2050, 2046/2046 |
-| 500 KiB | 1281 | 50% | **3/3** | 1.005, 1.003, 1.005 | 2068/2068, 2024/2024, 2066/2066 |
+| 10 KiB | 26 | 10% | **3/3** | 1.154, 1.000, 1.192 | 50/50, 50/50, 52/52 |
+| 10 KiB | 26 | 30% | **3/3** | 1.269, 1.000, 1.192 | 56/56, 48/48, 50/50 |
+| 10 KiB | 26 | 50% | **3/3** | 1.269, 1.077, 1.038 | 58/58, 50/50, 46/46 |
+| 100 KiB | 257 | 10% | **3/3** | 1.000, 1.000, 1.000 | 420/420, 422/422, 414/414 |
+| 100 KiB | 257 | 30% | **3/3** | 1.008, 1.000, 1.000 | 422/422, 440/440, 436/436 |
+| 100 KiB | 257 | 50% | **3/3** | 1.004, 1.000, 1.000 | 404/404, 424/424, 414/414 |
+| 500 KiB | 1281 | 10% | **3/3** | 1.001, 1.001, 1.001 | 2050/2050, 2040/2040, 2056/2056 |
+| 500 KiB | 1281 | 30% | **3/3** | 1.000, 1.002, 1.002 | 2056/2056, 2050/2050, 2046/2046 |
+| 500 KiB | 1281 | 50% | **3/3** | 1.002, 1.001, 1.002 | 2068/2068, 2024/2024, 2066/2066 |
 
 ## Headless browser tests (Chrome 156.0.8078.47, pages loaded from file://)
 
@@ -82,23 +82,23 @@ Network requests outside file:/data:/blob: during all page tests: **0**. Pages r
 
 | Test | Result | Details |
 |---|---|---|
-| sender page 10240 B -> zbar -> decoder | PASS | K 26; 50 frames rendered by the page, 50 read by zbar, decoded after 26 |
-| sender page 102400 B -> zbar -> decoder | PASS | K 257; 420 frames rendered by the page, 420 read by zbar, decoded after 264 |
-| sender page 20000 B encrypted -> zbar -> decoder | PASS | K 51; 90 frames rendered by the page, 90 read by zbar, decoded after 53 |
-| receiver page files 10 KB drop 10% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 26; 49 frames given, 32 scanned; overhead 1.231; final state “done”; downloaded file SHA-256 matches: true; 0.3 s |
-| receiver page files 10 KB drop 30% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 26; 49 frames given, 28 scanned; overhead 1.077; final state “done”; downloaded file SHA-256 matches: true; 0.3 s |
-| receiver page files 10 KB drop 50% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 26; 49 frames given, 31 scanned; overhead 1.192; final state “done”; downloaded file SHA-256 matches: true; 0.3 s |
-| receiver page files 100 KB drop 30% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 257; 396 frames given, 259 scanned; overhead 1.008; final state “done”; downloaded file SHA-256 matches: true; 0.9 s |
-| receiver page files 10 KB drop 10% (jsqr) | PASS | decoder jsQR; K 26; 49 frames given, 28 scanned; overhead 1.077; final state “done”; downloaded file SHA-256 matches: true; 0.5 s |
-| receiver page files 10 KB drop 30% (jsqr) | PASS | decoder jsQR; K 26; 49 frames given, 27 scanned; overhead 1.038; final state “done”; downloaded file SHA-256 matches: true; 0.5 s |
-| receiver page files 10 KB drop 50% (jsqr) | PASS | decoder jsQR; K 26; 49 frames given, 30 scanned; overhead 1.154; final state “done”; downloaded file SHA-256 matches: true; 0.6 s |
-| receiver page files 100 KB drop 30% (jsqr) | PASS | decoder jsQR; K 257; 396 frames given, 258 scanned; overhead 1.004; final state “done”; downloaded file SHA-256 matches: true; 3.5 s |
-| receiver page files 500 KB drop 50% (auto) | PASS | decoder zxing-cpp (WebAssembly); K 1281; 1932 frames given, 1287 scanned; overhead 1.005; final state “done”; downloaded file SHA-256 matches: true; 3.9 s |
-| receiver page encrypted: wrong then right passphrase | PASS | decoder zxing-cpp (WebAssembly); K 38; 67 frames given, 40 scanned; overhead 1.053; final state “done”; after wrong passphrase: “wrong passphrase”; downloaded file SHA-256 matches: true; 0.7 s |
-| receiver page checksum mismatch is reported (forged frames) | PASS | decoder zxing-cpp (WebAssembly); K 21; 60 frames given, 22 scanned; overhead 1.048; final state “checksum mismatch”; 0.1 s |
-| receiver page camera (getUserMedia, fake camera Y4M) 10 KB, auto | PASS | decoder zxing-cpp (WebAssembly); K 26; fake camera 5 fps, 27 camera frames scanned, 27 unique packets, 0 duplicates; overhead 1.038; final state “done”; 5.6 s |
-| receiver page camera (getUserMedia, fake camera Y4M) 10 KB, jsQR | PASS | decoder jsQR; K 26; fake camera 5 fps, 27 camera frames scanned, 27 unique packets, 0 duplicates; overhead 1.038; final state “done”; 5.6 s |
-| receiver page camera (getUserMedia, fake camera Y4M) 100 KB, auto | PASS | decoder zxing-cpp (WebAssembly); K 257; fake camera 10 fps, 258 camera frames scanned, 258 unique packets, 0 duplicates; overhead 1.004; final state “done”; 25.9 s |
+| sender page 10240 B -> zbar -> decoder | PASS | K 26; 50 frames rendered by the page, 50 read by zbar, decoded after 28 |
+| sender page 102400 B -> zbar -> decoder | PASS | K 257; 420 frames rendered by the page, 420 read by zbar, decoded after 262 |
+| sender page 20000 B encrypted -> zbar -> decoder | PASS | K 51; 90 frames rendered by the page, 90 read by zbar, decoded after 52 |
+| receiver page files 10 KB drop 10% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 26; 49 frames given, 27 scanned; overhead 1.038; final state “done”; downloaded file SHA-256 matches: true; 0.2 s |
+| receiver page files 10 KB drop 30% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 26; 49 frames given, 26 scanned; overhead 1.000; final state “done”; downloaded file SHA-256 matches: true; 0.2 s |
+| receiver page files 10 KB drop 50% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 26; 49 frames given, 27 scanned; overhead 1.038; final state “done”; downloaded file SHA-256 matches: true; 0.2 s |
+| receiver page files 100 KB drop 30% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 257; 396 frames given, 260 scanned; overhead 1.012; final state “done”; downloaded file SHA-256 matches: true; 0.8 s |
+| receiver page files 10 KB drop 10% (jsqr) | PASS | decoder jsQR; K 26; 49 frames given, 27 scanned; overhead 1.038; final state “done”; downloaded file SHA-256 matches: true; 0.5 s |
+| receiver page files 10 KB drop 30% (jsqr) | PASS | decoder jsQR; K 26; 49 frames given, 28 scanned; overhead 1.077; final state “done”; downloaded file SHA-256 matches: true; 0.5 s |
+| receiver page files 10 KB drop 50% (jsqr) | PASS | decoder jsQR; K 26; 49 frames given, 29 scanned; overhead 1.115; final state “done”; downloaded file SHA-256 matches: true; 0.5 s |
+| receiver page files 100 KB drop 30% (jsqr) | PASS | decoder jsQR; K 257; 396 frames given, 258 scanned; overhead 1.004; final state “done”; downloaded file SHA-256 matches: true; 3.1 s |
+| receiver page files 500 KB drop 50% (auto) | PASS | decoder zxing-cpp (WebAssembly); K 1281; 1932 frames given, 1285 scanned; overhead 1.003; final state “done”; downloaded file SHA-256 matches: true; 3.6 s |
+| receiver page encrypted: wrong then right passphrase | PASS | decoder zxing-cpp (WebAssembly); K 38; 67 frames given, 39 scanned; overhead 1.026; final state “done”; after wrong passphrase: “wrong passphrase”; downloaded file SHA-256 matches: true; 0.6 s |
+| receiver page checksum mismatch is reported (forged frames) | PASS | decoder zxing-cpp (WebAssembly); K 21; 60 frames given, 23 scanned; overhead 1.095; final state “checksum mismatch”; 0.1 s |
+| receiver page camera (getUserMedia, fake camera Y4M) 10 KB, auto | PASS | decoder zxing-cpp (WebAssembly); K 26; fake camera 5 fps, 26 camera frames scanned, 26 unique packets, 0 duplicates; overhead 1.000; final state “done”; 5.4 s |
+| receiver page camera (getUserMedia, fake camera Y4M) 10 KB, jsQR | PASS | decoder jsQR; K 26; fake camera 5 fps, 26 camera frames scanned, 26 unique packets, 0 duplicates; overhead 1.000; final state “done”; 5.4 s |
+| receiver page camera (getUserMedia, fake camera Y4M) 100 KB, auto | PASS | decoder zxing-cpp (WebAssembly); K 257; fake camera 10 fps, 263 camera frames scanned, 263 unique packets, 0 duplicates; overhead 1.023; final state “done”; 26.5 s |
 
 ## Codec-only overhead (no QR), 200 trials per cell
 

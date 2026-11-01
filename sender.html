@@ -1022,6 +1022,21 @@ var qrcodegen;
   const DEFAULT_DELTA = 0.05;
   function paramsForK(K) { return K <= ML_MAX_K ? { c: 0.1, delta: 0.05 } : { c: 0.03, delta: 0.5 }; }
 
+  /* Protocol v2 ("degree boost"): for K <= ML_MAX_K every packet's robust-soliton degree d is
+   * raised to d + ceil(log2 K) whenever that stays below K. Sparse soliton rows leave the GF(2) system rank-deficient
+   * for a while (a block nobody covers, or small dependent clusters); adding ~log2 K extra random
+   * neighbours makes the rows behave like a dense random code, so the ML decoder finishes at
+   * about K + 1.6 packets. Measured in tests/unit/degree-boost.mjs (results/degree_boost.json).
+   * K < BOOST_MIN_K and K > ML_MAX_K keep v1 behaviour (extra = 0) because the peeling decoder needs degree-1 packets.
+   * Protocol v1 packets always use extra = 0, so v1 streams still decode. */
+  // Below 12 blocks the boost was mixed (worse at K = 5, 6, 10, 11 in a 400-trial scan), so v2
+  // keeps the v1 rule there.
+  const BOOST_MIN_K = 12;
+  function extraDegreeFor(version, K) {
+    if (version >= 2 && K >= BOOST_MIN_K && K <= ML_MAX_K) return Math.ceil(Math.log2(K));
+    return 0;
+  }
+
   /* lowbias32 integer hash (Chris Wellons, public-domain constants). */
   function mix32(x) {
     x = x >>> 0;
@@ -1086,11 +1101,15 @@ var qrcodegen;
   }
 
   /* Deterministic neighbour set for (fileKey32, seed, K). Returns a sorted Uint32Array. */
-  function neighbours(K, seed, fileKey32, c = DEFAULT_C, delta = DEFAULT_DELTA) {
+  function neighbours(K, seed, fileKey32, c = DEFAULT_C, delta = DEFAULT_DELTA, extra = 0) {
     const rng = packetRng(fileKey32, seed);
     const cdf = robustSolitonCdf(K, c, delta);
     const u = (rng() + 0.5) / 4294967296; // (0,1)
-    const d = sampleDegree(cdf, u);
+    let d = sampleDegree(cdf, u);
+    // Boost only when the boosted degree stays below K. Capping at K instead would pile many
+    // packets onto one fixed degree; with a fixed even degree every row lies in the even-weight
+    // subspace and the system can never reach rank K (found by the K=3 unit test).
+    if (extra > 0 && d + extra < K) d += extra;
     // Partial Fisher-Yates over [0, K) using a sparse swap map: O(d) time and memory.
     const swaps = new Map();
     const out = new Uint32Array(d);
@@ -1124,13 +1143,14 @@ var qrcodegen;
       this.K = Math.max(1, Math.ceil(payload.length / blockSize));
       this.c = opts.c ?? paramsForK(this.K).c;
       this.delta = opts.delta ?? paramsForK(this.K).delta;
+      this.extra = opts.extra ?? 0;
       const padded = new Uint8Array(this.K * blockSize);
       padded.set(payload);
       this.padded = padded;
     }
     block(i) { return this.padded.subarray(i * this.blockSize, (i + 1) * this.blockSize); }
     encode(seed) {
-      const nb = neighbours(this.K, seed, this.fileKey32, this.c, this.delta);
+      const nb = neighbours(this.K, seed, this.fileKey32, this.c, this.delta, this.extra);
       const out = new Uint8Array(this.blockSize);
       for (let i = 0; i < nb.length; i++) xorInto(out, this.block(nb[i]));
       return out;
@@ -1142,6 +1162,7 @@ var qrcodegen;
       this.K = K; this.blockSize = blockSize; this.fileKey32 = fileKey32 >>> 0;
       this.c = opts.c ?? paramsForK(K).c;
       this.delta = opts.delta ?? paramsForK(K).delta;
+      this.extra = opts.extra ?? 0;
       this.useGE = opts.useGE !== false;
       this.mode = opts.mode || (K <= (opts.mlMaxK ?? ML_MAX_K) ? "ml" : "peel");
       this.rank = 0;
@@ -1174,7 +1195,7 @@ var qrcodegen;
       if (this.done) return "done";
       const buf = new Uint8Array(this.blockSize);
       buf.set(data.subarray(0, this.blockSize));
-      const nbArr = neighbours(this.K, seed, this.fileKey32, this.c, this.delta);
+      const nbArr = neighbours(this.K, seed, this.fileKey32, this.c, this.delta, this.extra);
       if (this.mode === "ml") { this._addML(nbArr, buf); return this.done ? "done" : "ok"; }
       const nb = new Set();
       for (const b of nbArr) {
@@ -1315,7 +1336,7 @@ var qrcodegen;
 
   root.DexQR = root.DexQR || {};
   root.DexQR.lt = {
-    DEFAULT_C, DEFAULT_DELTA, ML_MAX_K, paramsForK, mix32, makeRng, robustSolitonCdf, sampleDegree,
+    DEFAULT_C, DEFAULT_DELTA, ML_MAX_K, paramsForK, extraDegreeFor, packetRng, mix32, makeRng, robustSolitonCdf, sampleDegree,
     neighbours, xorInto, LTEncoder, LTDecoder,
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);
@@ -1326,7 +1347,8 @@ var qrcodegen;
  *
  * Binary packet (big-endian), then Base45 (RFC 9285) with the text prefix "DQ":
  *   off size field
- *    0   1   version (=1)
+ *    0   1   version (=2 when sending; 1 and 2 are accepted. v2 changes only the LT degree
+ *                rule, see lt.extraDegreeFor; the byte layout is identical)
  *    1   1   flags   (bit0 = payload is encrypted)
  *    2   8   fileId  = first 8 bytes of SHA-256(payload)  (also the whole-file checksum)
  *   10   3   K       = number of source blocks (uint24)
@@ -1339,7 +1361,8 @@ var qrcodegen;
 (function (root) {
   "use strict";
   const DQ = root.DexQR;
-  const VERSION = 1;
+  const VERSION = 2;                 // version written by buildPacket
+  const SUPPORTED = [1, 2];          // versions parseBytes accepts
   const HEADER_LEN = 23;
   const TRAILER_LEN = 4;
   const PREFIX = "DQ";
@@ -1351,7 +1374,7 @@ var qrcodegen;
     const T = meta.blockSize;
     const buf = new Uint8Array(HEADER_LEN + T + TRAILER_LEN);
     const dv = new DataView(buf.buffer);
-    buf[0] = VERSION;
+    buf[0] = meta.version ?? VERSION;
     buf[1] = meta.encrypted ? FLAG_ENCRYPTED : 0;
     buf.set(meta.fileId, 2);
     buf[10] = (meta.K >>> 16) & 0xff; buf[11] = (meta.K >>> 8) & 0xff; buf[12] = meta.K & 0xff;
@@ -1376,7 +1399,8 @@ var qrcodegen;
   function parseBytes(bytes) {
     if (bytes.length < HEADER_LEN + TRAILER_LEN + 1) return { ok: false, reason: "short" };
     const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    if (bytes[0] !== VERSION) return { ok: false, reason: "version" };
+    const version = bytes[0];
+    if (!SUPPORTED.includes(version)) return { ok: false, reason: "version" };
     const T = dv.getUint16(13);
     if (bytes.length !== HEADER_LEN + T + TRAILER_LEN) return { ok: false, reason: "length" };
     const crc = dv.getUint32(HEADER_LEN + T);
@@ -1387,7 +1411,7 @@ var qrcodegen;
     const fileId = bytes.slice(2, 10);
     return {
       ok: true,
-      meta: { version: VERSION, encrypted: (bytes[1] & FLAG_ENCRYPTED) !== 0, fileId, fileIdHex: hex(fileId), K, blockSize: T, length },
+      meta: { version, encrypted: (bytes[1] & FLAG_ENCRYPTED) !== 0, fileId, fileIdHex: hex(fileId), K, blockSize: T, length },
       seed: dv.getUint32(19),
       block: bytes.subarray(HEADER_LEN, HEADER_LEN + T),
     };
@@ -1402,7 +1426,7 @@ var qrcodegen;
     return PREFIX.length + Math.floor(n / 2) * 3 + (n % 2 ? 2 : 0);
   }
 
-  DQ.packet = { VERSION, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
+  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
 })(typeof globalThis !== "undefined" ? globalThis : this);
 
 </script>
@@ -1542,9 +1566,11 @@ var qrcodegen;
       const built = await DQ.container.buildPayload(opts);
       s.payload = built.payload; s.encrypted = built.encrypted; s.fileId = built.fileId;
       s.blockSize = opts.blockSize;
-      s.encoder = new DQ.lt.LTEncoder(s.payload, s.blockSize, DQ.packet.fileKey32(s.fileId));
+      s.version = opts.version ?? DQ.packet.VERSION;
+      const K = Math.max(1, Math.ceil(s.payload.length / s.blockSize));
+      s.encoder = new DQ.lt.LTEncoder(s.payload, s.blockSize, DQ.packet.fileKey32(s.fileId), { extra: DQ.lt.extraDegreeFor(s.version, K) });
       s.K = s.encoder.K;
-      s.meta = { encrypted: s.encrypted, fileId: s.fileId, K: s.K, blockSize: s.blockSize, length: s.payload.length };
+      s.meta = { version: s.version, encrypted: s.encrypted, fileId: s.fileId, K: s.K, blockSize: s.blockSize, length: s.payload.length };
       s.nextSeed = (opts.startSeed ?? 0) >>> 0;
       return s;
     }
@@ -1565,8 +1591,8 @@ var qrcodegen;
       if (!p.ok) { if (p.reason === "foreign") this.stats.foreign++; else this.stats.rejected++; return "rejected:" + p.reason; }
       if (!this.meta) {
         this.meta = p.meta;
-        this.decoder = new DQ.lt.LTDecoder(p.meta.K, p.meta.blockSize, DQ.packet.fileKey32(p.meta.fileId), this.opts);
-      } else if (p.meta.fileIdHex !== this.meta.fileIdHex || p.meta.K !== this.meta.K || p.meta.blockSize !== this.meta.blockSize || p.meta.length !== this.meta.length) {
+        this.decoder = new DQ.lt.LTDecoder(p.meta.K, p.meta.blockSize, DQ.packet.fileKey32(p.meta.fileId), { ...this.opts, extra: DQ.lt.extraDegreeFor(p.meta.version, p.meta.K) });
+      } else if (p.meta.version !== this.meta.version || p.meta.fileIdHex !== this.meta.fileIdHex || p.meta.K !== this.meta.K || p.meta.blockSize !== this.meta.blockSize || p.meta.length !== this.meta.length) {
         this.stats.otherFile++; return "other-file";
       }
       const before = this.decoder.duplicates;

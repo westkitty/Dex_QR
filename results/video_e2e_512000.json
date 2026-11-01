@@ -13,7 +13,7 @@
   "frames": 6722,
   "textLength": 643,
   "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
-  "renderMs": 34975
+  "renderMs": 36564
  },
  "crf": "23",
  "fps": "10",
@@ -26,14 +26,14 @@
    "start": 201,
    "videoFrames": 2050,
    "framesDecodedByZbar": 2050,
-   "videoBytes": 6540437,
-   "framesUsed": 1283,
-   "packetsUsed": 1283,
-   "overhead": 1.0015612802498048,
+   "videoBytes": 6480708,
+   "framesUsed": 1282,
+   "packetsUsed": 1282,
+   "overhead": 1.0007806401249024,
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.332
+   "seconds": 5.433
   },
   {
    "size": 512000,
@@ -43,14 +43,14 @@
    "start": 980,
    "videoFrames": 2040,
    "framesDecodedByZbar": 2040,
-   "videoBytes": 6358708,
-   "framesUsed": 1291,
-   "packetsUsed": 1291,
-   "overhead": 1.0078064012490242,
+   "videoBytes": 6517257,
+   "framesUsed": 1282,
+   "packetsUsed": 1282,
+   "overhead": 1.0007806401249024,
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.026
+   "seconds": 5.371
   },
   {
    "size": 512000,
@@ -60,14 +60,14 @@
    "start": 352,
    "videoFrames": 2056,
    "framesDecodedByZbar": 2056,
-   "videoBytes": 6487333,
-   "framesUsed": 1286,
-   "packetsUsed": 1286,
-   "overhead": 1.003903200624512,
+   "videoBytes": 6402969,
+   "framesUsed": 1282,
+   "packetsUsed": 1282,
+   "overhead": 1.0007806401249024,
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.241
+   "seconds": 5.683
   },
   {
    "size": 512000,
@@ -77,14 +77,14 @@
    "start": 474,
    "videoFrames": 2056,
    "framesDecodedByZbar": 2056,
-   "videoBytes": 6495368,
-   "framesUsed": 1293,
-   "packetsUsed": 1293,
-   "overhead": 1.009367681498829,
+   "videoBytes": 6343068,
+   "framesUsed": 1281,
+   "packetsUsed": 1281,
+   "overhead": 1,
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.173
+   "seconds": 5.664
   },
   {
    "size": 512000,
@@ -94,14 +94,14 @@
    "start": 149,
    "videoFrames": 2050,
    "framesDecodedByZbar": 2050,
-   "videoBytes": 6555550,
-   "framesUsed": 1285,
-   "packetsUsed": 1285,
-   "overhead": 1.0031225604996097,
+   "videoBytes": 6471762,
+   "framesUsed": 1284,
+   "packetsUsed": 1284,
+   "overhead": 1.0023419203747073,
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.426
+   "seconds": 5.898
   },
   {
    "size": 512000,
@@ -111,14 +111,14 @@
    "start": 421,
    "videoFrames": 2046,
    "framesDecodedByZbar": 2046,
-   "videoBytes": 6385569,
-   "framesUsed": 1287,
-   "packetsUsed": 1287,
-   "overhead": 1.0046838407494145,
+   "videoBytes": 6296119,
+   "framesUsed": 1283,
+   "packetsUsed": 1283,
+   "overhead": 1.0015612802498048,
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.248
+   "seconds": 5.858
   },
   {
    "size": 512000,
@@ -128,14 +128,14 @@
    "start": 469,
    "videoFrames": 2068,
    "framesDecodedByZbar": 2068,
-   "videoBytes": 6461523,
-   "framesUsed": 1287,
-   "packetsUsed": 1287,
-   "overhead": 1.0046838407494145,
+   "videoBytes": 6464622,
+   "framesUsed": 1284,
+   "packetsUsed": 1284,
+   "overhead": 1.0023419203747073,
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.094
+   "seconds": 5.882
   },
   {
    "size": 512000,
@@ -145,14 +145,14 @@
    "start": 1046,
    "videoFrames": 2024,
    "framesDecodedByZbar": 2024,
-   "videoBytes": 6234161,
-   "framesUsed": 1285,
-   "packetsUsed": 1285,
-   "overhead": 1.0031225604996097,
+   "videoBytes": 6543028,
+   "framesUsed": 1282,
+   "packetsUsed": 1282,
+   "overhead": 1.0007806401249024,
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 4.865
+   "seconds": 5.696
   },
   {
    "size": 512000,
@@ -162,14 +162,14 @@
    "start": 927,
    "videoFrames": 2066,
    "framesDecodedByZbar": 2066,
-   "videoBytes": 6633405,
-   "framesUsed": 1287,
-   "packetsUsed": 1287,
-   "overhead": 1.0046838407494145,
+   "videoBytes": 6538010,
+   "framesUsed": 1283,
+   "packetsUsed": 1283,
+   "overhead": 1.0015612802498048,
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.347
+   "seconds": 5.616
   }
  ]
 }

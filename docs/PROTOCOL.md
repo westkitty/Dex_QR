@@ -1,4 +1,6 @@
-# Dex_QR protocol, version 1
+# Dex_QR protocol, version 2
+
+**Versioning.** Byte 0 of every packet is the protocol version. Senders write 2. Receivers accept 1 and 2 and lock onto the version of the first valid packet, so a v1 sender still works with a current receiver. v2 differs from v1 only in the LT degree rule (§3, "Degree boost"); the payload container, packet layout, Base45 text and QR framing are unchanged. A v1-only receiver rejects v2 packets with reason "version".
 
 This note is detailed enough for an independent re-implementation. The reference code is `src/*.js`.
 
@@ -67,6 +69,7 @@ The key is `PBKDF2(HMAC-SHA-256, UTF-8(passphrase), salt, i)` → 256-bit AES-GC
   - `state = mix32(seed XOR mix32(fileKey))`, where `mix32` is the "lowbias32" integer hash: `x ^= x>>>16; x *= 0x7feb352d; x ^= x>>>15; x *= 0x846ca68b; x ^= x>>>16` (32-bit arithmetic)
   - The generator is mulberry32 from `state`. Each call does `a += 0x6D2B79F5; t = imul(a ^ a>>>15, 1|a); t = (t + imul(t ^ t>>>7, 61|t)) ^ t; return (t ^ t>>>14) >>> 0`.
 - **Degree:** `u = (rng() + 0.5) / 2^32`. d is the smallest d with CDF(d) ≥ u.
+- **Degree boost (v2 only):** let `extra = ceil(log2 K)` when 12 ≤ K ≤ 3000, otherwise 0 (and always 0 for v1). If `d + extra < K`, use `d + extra`; otherwise keep d. The neighbours are then drawn exactly as below with the new d. Reason: sparse soliton rows leave the GF(2) system rank-deficient for a while, which caused the v1 overhead tail. With about log2 K extra neighbours the rows behave like a dense random code and the Gaussian-elimination decoder finishes at about K + 1.6 packets. The rule never caps at K, because piling packets onto one fixed even degree keeps every row in the even-weight subspace, so rank K can never be reached (found at K = 3). Below K = 12 the boost was mixed in a 400-trial scan, so it is off there. Above 3000 the peeling decoder is used, which needs degree-1 packets, so it is off there too. Measured in `tests/unit/degree-boost.mjs` → `results/degree_boost.json`.
 - **Neighbours:** a partial Fisher–Yates shuffle over [0, K). For i in 0..d−1, pick `j = i + rng() mod (K−i)`, swap positions i and j in a virtual identity array, and output the value now at position i. Sorting the output does not change the XOR.
 - **Encoded block** = XOR of the chosen source blocks.
 
@@ -76,7 +79,7 @@ All integers are big-endian.
 
 | offset | size | field |
 |---|---|---|
-| 0 | 1 | version = 1 |
+| 0 | 1 | version (2; receivers also accept 1) |
 | 1 | 1 | flags (bit 0 = encrypted payload) |
 | 2 | 8 | file ID (SHA-256(payload)[0..8]) |
 | 10 | 3 | K, the number of blocks |
@@ -88,7 +91,7 @@ All integers are big-endian.
 
 - **QR text** = `"DQ"` + Base45(packet), where Base45 is RFC 9285. The text is encoded as **one alphanumeric segment**, with the EC level chosen by the sender (default M) and the smallest version that fits.
 - **Length:** a packet of T data bytes is `2 + 1.5·(27+T)` characters. Header and CRC cost 27 bytes per frame: 6.3% of a 400-byte block, 2.7% at 1000 bytes.
-- **Receiver checks:** prefix, Base45 validity (strict, rejects overflow triplets), version, length = 27+T, CRC-32, and ceil(F/T) = K. The first valid packet locks the receiver to its file ID, K, T and F. Packets from any other transfer are counted and ignored. Duplicate seeds are ignored.
+- **Receiver checks:** prefix, Base45 validity (strict, rejects overflow triplets), version, length = 27+T, CRC-32, and ceil(F/T) = K. The first valid packet locks the receiver to its protocol version, file ID, K, T and F. Packets from any other transfer are counted and ignored. Duplicate seeds are ignored.
 
 **Evaluation: Base45/alphanumeric vs raw byte mode.**
 - *Raw byte mode* would save about 3%, but readers decode byte mode as text with charset guessing (RFC 9285 §1). The browser BarcodeDetector exposes only `rawValue` strings, and zbar applies charset conversion. Binary data would be corrupted or would need decoder-specific workarounds.

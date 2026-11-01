@@ -13,7 +13,7 @@
   "frames": 196,
   "textLength": 643,
   "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
-  "renderMs": 1064
+  "renderMs": 1124
  },
  "crf": "23",
  "fps": "10",
@@ -26,14 +26,14 @@
    "start": 22,
    "videoFrames": 50,
    "framesDecodedByZbar": 50,
-   "videoBytes": 153852,
+   "videoBytes": 153625,
    "framesUsed": 30,
    "packetsUsed": 30,
    "overhead": 1.1538461538461537,
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.411
+   "seconds": 0.519
   },
   {
    "size": 10240,
@@ -43,14 +43,14 @@
    "start": 0,
    "videoFrames": 50,
    "framesDecodedByZbar": 50,
-   "videoBytes": 153196,
-   "framesUsed": 27,
-   "packetsUsed": 27,
-   "overhead": 1.0384615384615385,
+   "videoBytes": 153878,
+   "framesUsed": 26,
+   "packetsUsed": 26,
+   "overhead": 1,
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.352
+   "seconds": 0.379
   },
   {
    "size": 10240,
@@ -60,14 +60,14 @@
    "start": 10,
    "videoFrames": 52,
    "framesDecodedByZbar": 52,
-   "videoBytes": 159063,
-   "framesUsed": 27,
-   "packetsUsed": 27,
-   "overhead": 1.0384615384615385,
+   "videoBytes": 159535,
+   "framesUsed": 31,
+   "packetsUsed": 31,
+   "overhead": 1.1923076923076923,
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.359
+   "seconds": 0.415
   },
   {
    "size": 10240,
@@ -77,14 +77,14 @@
    "start": 22,
    "videoFrames": 56,
    "framesDecodedByZbar": 56,
-   "videoBytes": 172078,
-   "framesUsed": 32,
-   "packetsUsed": 32,
-   "overhead": 1.2307692307692308,
+   "videoBytes": 171192,
+   "framesUsed": 33,
+   "packetsUsed": 33,
+   "overhead": 1.2692307692307692,
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.403
+   "seconds": 0.424
   },
   {
    "size": 10240,
@@ -94,14 +94,14 @@
    "start": 16,
    "videoFrames": 48,
    "framesDecodedByZbar": 48,
-   "videoBytes": 146218,
-   "framesUsed": 27,
-   "packetsUsed": 27,
-   "overhead": 1.0384615384615385,
+   "videoBytes": 146977,
+   "framesUsed": 26,
+   "packetsUsed": 26,
+   "overhead": 1,
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.378
+   "seconds": 0.404
   },
   {
    "size": 10240,
@@ -111,14 +111,14 @@
    "start": 3,
    "videoFrames": 50,
    "framesDecodedByZbar": 50,
-   "videoBytes": 152820,
-   "framesUsed": 28,
-   "packetsUsed": 28,
-   "overhead": 1.0769230769230769,
+   "videoBytes": 154035,
+   "framesUsed": 31,
+   "packetsUsed": 31,
+   "overhead": 1.1923076923076923,
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.372
+   "seconds": 0.367
   },
   {
    "size": 10240,
@@ -128,14 +128,14 @@
    "start": 15,
    "videoFrames": 58,
    "framesDecodedByZbar": 58,
-   "videoBytes": 176168,
-   "framesUsed": 28,
-   "packetsUsed": 28,
-   "overhead": 1.0769230769230769,
+   "videoBytes": 177727,
+   "framesUsed": 33,
+   "packetsUsed": 33,
+   "overhead": 1.2692307692307692,
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.389
+   "seconds": 0.457
   },
   {
    "size": 10240,
@@ -145,14 +145,14 @@
    "start": 9,
    "videoFrames": 50,
    "framesDecodedByZbar": 50,
-   "videoBytes": 153660,
+   "videoBytes": 153567,
    "framesUsed": 28,
    "packetsUsed": 28,
    "overhead": 1.0769230769230769,
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.353
+   "seconds": 0.376
   },
   {
    "size": 10240,
@@ -162,14 +162,14 @@
    "start": 3,
    "videoFrames": 46,
    "framesDecodedByZbar": 46,
-   "videoBytes": 141180,
-   "framesUsed": 29,
-   "packetsUsed": 29,
-   "overhead": 1.1153846153846154,
+   "videoBytes": 141670,
+   "framesUsed": 27,
+   "packetsUsed": 27,
+   "overhead": 1.0384615384615385,
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.337
+   "seconds": 0.35
   }
  ]
 }
