@@ -1,0 +1,21 @@
+{
+  "name": "dex-qr",
+  "version": "1.0.0",
+  "description": "Offline, serverless file transfer over an animated QR fountain-code stream (LT code, robust soliton), with optional AES-GCM encryption. Single-file sender and receiver pages.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "node --test tests/unit/*.test.mjs",
+    "sweep": "node tests/unit/lt-sweep.mjs 200",
+    "trials": "bash tests/e2e/run-drop-trials.sh",
+    "all": "make all",
+    "video-e2e": "bash tests/e2e/run-video-e2e.sh",
+    "bench": "node tests/bench/bench.mjs",
+    "browser": "node tests/browser/run.mjs",
+    "report": "node tools/report.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.49.1"
+  }
+}
