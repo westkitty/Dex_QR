@@ -240,3 +240,5 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Fragile:** coach thresholds (`DQ.coach.THRESHOLDS`) are synthetic-frame guesses; IDs `coach`, `coach-text`, `coach-live`, `passslow` are the test contract; coach.mjs's slow-device range assumes the real derive here is about 1–3 s.
 - **Untested:** real cameras on phones and laptops (no claim that real scanning was tested), screen readers, Safari, Firefox.
 - **Next:** run docs/TEST_CHECKLIST.md on real devices and retune thresholds; then a sender-side "receiver tips" card and a reverse-channel ACK design.
+
+- **Commit:** `f1238ac22eb5ca92c69500d911900dae49cd7398` on `main` (pushed 6c29dba..f1238ac; this line added in a docs follow-up commit).
