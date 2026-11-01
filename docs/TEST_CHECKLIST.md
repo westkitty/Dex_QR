@@ -5,7 +5,7 @@
 **Setup:**
 1. Open `sender.html` on the screen device and `receiver.html` on the camera device.
    - Desktop browsers can open them as local files.
-   - On a phone, copy the file over and open it in Chrome or Safari. Some mobile browsers block the camera on `file://`. If yours does, use the GitHub Pages copy or `python3 -m http.server` on localhost.
+   - On a phone, copy the file over and open it in Chrome or Safari. Some mobile browsers block the camera on `file://`. If yours does, serve the folder with `python3 -m http.server` on localhost.
 2. Use a test file of about 100 KB and note its SHA-256 from the sender page. Success means the receiver shows the same SHA-256 and saves the file.
 3. For each check, note the browser, the device, the decoder shown on the receiver ("BarcodeDetector" or "zxing-cpp"), the time to complete, and the "Packets" line (unique, duplicate, rejected).
 
@@ -42,6 +42,15 @@
 - [ ] Look away for 5–10 seconds, then come back. It should continue where it left off.
 - [ ] Encryption: transfer with a passphrase, type a wrong one first (expect "Wrong passphrase"), then the right one.
 - [ ] Two senders visible at once, or switching files mid-stream: the receiver should stick to the first transfer and count the others as "from other transfers".
+
+**Added in the 2026-11-01 pass (also untested on real devices)**
+- [ ] Sender at 8 fps: the "Frames sent" line shows about 8.0 fps actual. On a 60 Hz phone it may read a little lower if the device is slow; note the value.
+- [ ] Screen stays on: start a long transfer, put the sender phone down and do not touch it for 2 minutes. The screen should not dim or lock (Wake Lock API; Chrome and recent Safari have it). Do the same on the receiver while the camera runs.
+- [ ] Full screen on iPhone Safari: press Full screen. The code should fill the page (in-page mode, since Safari has no element Fullscreen API on iPhone), with Pause and Exit buttons under it.
+- [ ] Deny the camera permission once: the receiver should explain how to allow it, and Start camera should work after you allow it in site settings.
+- [ ] Re-prepare the sender with a different passphrase mid-transfer: within a few seconds the receiver should offer "Switch to the new transfer", and switching should complete without starting over.
+- [ ] Switch cameras from the menu while scanning (laptop with two cameras, or front/back on a phone): exactly one camera light, scanning continues.
+- [ ] Reload the receiver mid-transfer: the browser should ask before leaving.
 
 **Decoder comparison (receiver "QR decoder" menu)**
 - [ ] Auto (BarcodeDetector if the browser has it, which Android Chrome and macOS browsers usually do), compared with zxing-cpp and with jsQR. Note which is fastest and most reliable for you. jsQR was much weaker on noisy frames in the synthetic tests.

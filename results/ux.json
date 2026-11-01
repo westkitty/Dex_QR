@@ -1,0 +1,163 @@
+{
+ "when": "2026-11-01T10:05:04.068Z",
+ "results": [
+  {
+   "name": "sender frame clock matches the set rate (8 and 25 fps, within 3%)",
+   "ok": true,
+   "measured": {
+    "8": 7.99,
+    "25": 24.99
+   },
+   "before": "8 fps measured 7.50 with the old scheduler"
+  },
+  {
+   "name": "sender clamps speed and module size inputs",
+   "ok": true,
+   "fps": "30",
+   "px": "0"
+  },
+  {
+   "name": "sender flags stale settings, applies EC level live, Prepare clears the flag",
+   "ok": true,
+   "stale": {
+    "msg": "Settings changed. The stream on screen still uses the previous file, passphrase and density; press Prepare to apply.",
+    "btn": "Prepare (apply changes)"
+   },
+   "qrInfo": "version 19 (93×93 modules), EC Q, 7 px/module",
+   "after": {
+    "msg": "✓ Ready. Press Play and point the receiver's camera at the code.",
+    "btn": "Prepare",
+    "k": "34 × 600 bytes"
+   }
+  },
+  {
+   "name": "sender keyboard: Space/K toggle play, typing in a field does not",
+   "ok": true,
+   "k1": true,
+   "k2": false,
+   "k3": false,
+   "pressed": "false"
+  },
+  {
+   "name": "sender page errors",
+   "ok": true,
+   "errors": []
+  },
+  {
+   "name": "sender full-screen fallback (focus mode) fits the code on a phone and Esc leaves it",
+   "ok": true,
+   "inFocus": {
+    "focus": true,
+    "fits": true,
+    "w": 356,
+    "h": 356,
+    "bar": true,
+    "active": "stage-exit"
+   },
+   "out": {
+    "focus": false,
+    "active": "fs"
+   },
+   "errors": []
+  },
+  {
+   "name": "sender has no horizontal overflow at 390 px",
+   "ok": true
+  },
+  {
+   "name": "receiver: camera permission denied gives a plain explanation and stays usable",
+   "ok": true,
+   "msg": "Camera permission was denied. Allow the camera for this page in the browser's site settings and press Start camera again, or decode image or video files instead (under “Camera, decoder and file input”).",
+   "errors": []
+  },
+  {
+   "name": "receiver: no camera API explains file:// and file input fallback",
+   "ok": true,
+   "msg": "This browser does not offer camera access to this page. Chrome, Edge and Firefox allow it on file:// pages; some mobile browsers need the page served from http://localhost or https. You can still decode image or video files.",
+   "phase": "no camera",
+   "errors": []
+  },
+  {
+   "name": "receiver: unsupported decoder in file mode is an error message, not an unhandled rejection",
+   "ok": true,
+   "msg": "✗ This browser has no BarcodeDetector with QR support. Choose “auto” or “zxing-cpp” under “Camera, decoder and file input”.",
+   "errors": []
+  },
+  {
+   "name": "receiver: non-Dex_QR codes and a forged huge-K frame are ignored quickly; the same files can be picked again",
+   "ok": true,
+   "foreign": 2,
+   "reasons": {
+    "limits": 1
+   },
+   "msg": "Those files contain QR codes, but none from a Dex_QR stream.",
+   "seconds": 0.129,
+   "framesThenAgain": [
+    3,
+    5
+   ],
+   "errors": []
+  },
+  {
+   "name": "receiver: locked onto a stale transfer, offers a switch, and the switch completes from buffered packets",
+   "ok": true,
+   "before": {
+    "fileId": "b86620f90628ae04",
+    "phase": "incomplete",
+    "switchVisible": true
+   },
+   "after": {
+    "fileId": "a4da3400db7d84fb",
+    "phase": "done",
+    "received": 48
+   },
+   "errors": []
+  },
+  {
+   "name": "receiver: Reset with partial progress asks first; Esc cancels; second press discards",
+   "ok": true,
+   "armed": "Discard 8 received packets? Press again",
+   "disarmed": "Reset",
+   "clearedPhase": "idle",
+   "errors": []
+  },
+  {
+   "name": "receiver: repeated Decrypt presses run one derivation and give one result; focus moves to Save",
+   "ok": true,
+   "phase": "done",
+   "downloads": 1,
+   "focus": "download",
+   "errors": []
+  },
+  {
+   "name": "receiver: H.264 video file decodes; the poll timer, object URL and video source are released",
+   "ok": true,
+   "phase": "done",
+   "videoPoll": null,
+   "videoSrc": null,
+   "running": false,
+   "errors": []
+  },
+  {
+   "name": "receiver at 390 px: camera view first, no horizontal overflow, buttons ≥ 44 px tall",
+   "ok": true,
+   "videoTop": 110.78125,
+   "startTop": 344.78125,
+   "overflow": false,
+   "minTarget": 44
+  },
+  {
+   "name": "receiver: camera ending mid-scan keeps progress and explains; Start resumes; Stop releases",
+   "ok": true,
+   "afterEnd": {
+    "msg": "The camera stopped (unplugged, or permission was revoked). Progress is kept; press Start camera to continue.",
+    "phase": "paused",
+    "received": 3
+   },
+   "resumed": true,
+   "stoppedMsg": "Paused. Progress is kept; press Start camera to continue.",
+   "errors": []
+  }
+ ],
+ "networkRequestsOutsideFileDataBlob": []
+}

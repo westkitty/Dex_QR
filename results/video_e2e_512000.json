@@ -13,7 +13,7 @@
   "frames": 6722,
   "textLength": 643,
   "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
-  "renderMs": 36564
+  "renderMs": 34399
  },
  "crf": "23",
  "fps": "10",
@@ -33,7 +33,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.433
+   "seconds": 5.664
   },
   {
    "size": 512000,
@@ -50,7 +50,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.371
+   "seconds": 5.531
   },
   {
    "size": 512000,
@@ -67,7 +67,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.683
+   "seconds": 5.563
   },
   {
    "size": 512000,
@@ -84,7 +84,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.664
+   "seconds": 5.886
   },
   {
    "size": 512000,
@@ -101,7 +101,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.898
+   "seconds": 5.697
   },
   {
    "size": 512000,
@@ -118,7 +118,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.858
+   "seconds": 5.577
   },
   {
    "size": 512000,
@@ -135,7 +135,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.882
+   "seconds": 5.728
   },
   {
    "size": 512000,
@@ -152,7 +152,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.696
+   "seconds": 5.626
   },
   {
    "size": 512000,
@@ -169,7 +169,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.616
+   "seconds": 5.439
   }
  ]
 }

@@ -39,6 +39,8 @@ async function waitFor(page, fn, arg, { timeout = 60000 } = {}) {
     await new Promise((r) => setTimeout(r, 100));
   }
 }
+// The decoder and file inputs live in a <details> disclosure since the 2026-11-01 pass; open it like a user would.
+async function openOptions(page) { await page.click("details.opts summary"); }
 function fileUrl(p) { return "file://" + path.join(ROOT, p); }
 
 async function senderTest(browser, { size, pass, bs = 400, ecl = "M" }) {
@@ -88,6 +90,7 @@ async function receiverFilesTest(browser, dir, p, label, opts = {}) {
   const page = await ctx.newPage(); watchNet(page, "receiver");
   const errors = []; page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(fileUrl("receiver.html"));
+  await openOptions(page);
   await page.selectOption("#dec", opts.engine || "auto");
   const { man, start, sel } = opts.frames ? { man: JSON.parse(fs.readFileSync(path.join(dir, "manifest.json"))), start: 0, sel: opts.frames } : pickFrames(dir, p);
   const t0 = Date.now();
@@ -130,6 +133,7 @@ async function cameraTest(dir, label, fps = 5, maxFrames = 0, engine = "auto") {
   const page = await ctx.newPage(); watchNet(page, "receiver-camera");
   const errors = []; page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(fileUrl("receiver.html"));
+  await openOptions(page);
   await page.selectOption("#dec", engine);
   const t0 = Date.now();
   await page.click("#start");

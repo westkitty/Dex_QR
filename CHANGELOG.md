@@ -27,3 +27,21 @@ Codec level (`node tests/unit/degree-boost.mjs`, results/degree_boost.json): K =
 **Compatibility.** A v1 sender stream still decodes (new unit test). Mixed v1/v2 packets for the same file are rejected as another transfer. Older v1-only receivers will reject v2 packets with reason "version".
 
 **Not tested.** Real phone or laptop cameras.
+
+## Manual full pass (2026-11-01, about 5:10 AM EST): receiver hardening, interaction states, accessibility and lifecycle fixes
+
+Not one of the hourly routine's 12 counted cycles. No wire-format change: protocol v2, v1 streams still decode.
+
+**Defects fixed (each reproduced first, then covered by a test):**
+- *One forged frame could freeze or crash the receiver.* A CRC-valid packet claiming K ≈ 16.7 million made the decoder allocate per-block state for every block: 5.9 s and 2.8 GB of heap in Node from a single frame. Packets with K > 262,144 or F > 32 MiB + 4 KiB are now rejected as "limits" (under 1 ms); the sender refuses such streams too.
+- *8 fps actually ran at 7.50 fps* (and 25 fps at 20) on a 60 Hz display, because each frame was rounded up to whole refreshes. The frame clock is now an absolute schedule: measured 8.00 and 24.99 fps.
+- *A stale lock was a dead end.* If the receiver locked onto an old transfer (the sender re-prepared with a new passphrase, or another code was in view first), it ignored the new one forever. It now buffers the other transfer's packets (bounded) and offers "Switch to the new transfer", which completes without rescanning.
+- *Two quick camera changes left no camera running* and a disabled Stop button: two overlapping starts stopped each other's streams. Only the newest start now wins.
+- *File-input errors were unhandled promise rejections* (e.g. "BarcodeDetector only" in a browser without it); picking the same files twice did nothing; picking files while the camera ran left the camera on; a failing video file left a 200 ms poll timer running forever; each completed transfer leaked its object URL; repeated Decrypt presses ran several PBKDF2 derivations at once.
+- *Reset discarded partial progress without asking.* It now asks with a second press (5 s, Esc cancels). Leaving the page with partial progress asks too.
+
+**Interaction and accessibility:** camera errors explained by kind (permission denied, no camera, camera busy, camera stopped mid-scan) with the file fallback named; hints when the camera sees non-Dex_QR codes or an unsupported protocol version; live regions for status and errors, progress bars with values, visible focus rings, 44 px targets, focus moved to Save on success and back to the passphrase on a wrong one, ✓/✗ marks so states do not rely on colour; on phones the receiver's camera view comes first; camera/decoder/file options in a disclosure. Sender: Space/K play-pause, F full screen with an in-page fallback where the Fullscreen API is missing (iPhone Safari), live EC level and module size, a "settings changed" flag until Prepare, clamped inputs, actual fps shown, Wake Lock while playing (receiver too, while the camera runs), redraw on resize, and a flashing-content note.
+
+**Tests:** unit tests 17 → 24; new `tests/browser/ux.mjs` (17 checks), `tests/browser/a11y.mjs` (axe-core, 12 page states, 0 violations), `tests/browser/soak.mjs` (60 s per page, no heap growth, one camera stream after churn), `tools/lint.mjs` (syntax, debug leftovers, innerHTML, stale build, CSP). Existing browser suite 17/17 (now opens the options disclosure like a user). Drop-rate trials re-rendered and re-decoded: 1,800/1,800, identical to cycle 1 in all 18 cells. H.264 end-to-end 27/27.
+
+**Not tested:** real phone and laptop cameras, Safari, Firefox, screen readers used by a person, and Wake Lock on a real device.

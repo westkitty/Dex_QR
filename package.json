@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "build": "node tools/build.mjs",
+    "lint": "node tools/lint.mjs",
     "test": "node --test tests/unit/*.test.mjs",
     "sweep": "node tests/unit/lt-sweep.mjs 200",
     "trials": "bash tests/e2e/run-drop-trials.sh",
@@ -13,9 +14,13 @@
     "video-e2e": "bash tests/e2e/run-video-e2e.sh",
     "bench": "node tests/bench/bench.mjs",
     "browser": "node tests/browser/run.mjs",
+    "ux": "node tests/browser/ux.mjs",
+    "a11y": "node tests/browser/a11y.mjs",
+    "soak": "node tests/browser/soak.mjs",
     "report": "node tools/report.mjs"
   },
   "devDependencies": {
+    "axe-core": "4.14.0",
     "playwright-core": "1.49.1"
   }
 }

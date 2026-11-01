@@ -22,6 +22,12 @@
   const TRAILER_LEN = 4;
   const PREFIX = "DQ";
   const FLAG_ENCRYPTED = 1;
+  // Receiver-side resource guards (not a wire-format change). A CRC-valid packet can still claim any
+  // K up to 2^24 and any F up to 2^32; without a cap one such frame (garbage or hostile) makes the
+  // decoder allocate per-block state for millions of blocks and freezes the tab. The sender UI accepts
+  // files up to 32 MiB with presets T >= 200 B (K <= 167,773), so these caps reject nothing it can send.
+  const MAX_LENGTH = 32 * 1024 * 1024 + 4096;   // 32 MiB file + container/encryption overhead
+  const MAX_K = 262144;                         // 2^18 blocks
 
   function hex(bytes) { return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(""); }
 
@@ -63,6 +69,7 @@
     const K = (bytes[10] << 16) | (bytes[11] << 8) | bytes[12];
     const length = dv.getUint32(15);
     if (K < 1 || T < 1 || Math.ceil(length / T) !== Math.max(1, K)) return { ok: false, reason: "inconsistent" };
+    if (K > MAX_K || length > MAX_LENGTH) return { ok: false, reason: "limits" };
     const fileId = bytes.slice(2, 10);
     return {
       ok: true,
@@ -81,5 +88,5 @@
     return PREFIX.length + Math.floor(n / 2) * 3 + (n % 2 ? 2 : 0);
   }
 
-  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
+  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, MAX_LENGTH, MAX_K, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
 })(typeof globalThis !== "undefined" ? globalThis : this);

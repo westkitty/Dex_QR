@@ -1,0 +1,66 @@
+{
+ "axe": "4.14.0",
+ "when": "2026-11-01T10:05:13.325Z",
+ "report": [
+  {
+   "page": "index",
+   "width": 390,
+   "violations": []
+  },
+  {
+   "page": "sender",
+   "width": 390,
+   "violations": []
+  },
+  {
+   "page": "sender prepared",
+   "width": 390,
+   "violations": []
+  },
+  {
+   "page": "receiver",
+   "width": 390,
+   "violations": []
+  },
+  {
+   "page": "receiver options",
+   "width": 390,
+   "violations": []
+  },
+  {
+   "page": "sender focus-mode",
+   "width": 390,
+   "violations": []
+  },
+  {
+   "page": "index",
+   "width": 1280,
+   "violations": []
+  },
+  {
+   "page": "sender",
+   "width": 1280,
+   "violations": []
+  },
+  {
+   "page": "sender prepared",
+   "width": 1280,
+   "violations": []
+  },
+  {
+   "page": "receiver",
+   "width": 1280,
+   "violations": []
+  },
+  {
+   "page": "receiver options",
+   "width": 1280,
+   "violations": []
+  },
+  {
+   "page": "sender focus-mode",
+   "width": 1280,
+   "violations": []
+  }
+ ]
+}

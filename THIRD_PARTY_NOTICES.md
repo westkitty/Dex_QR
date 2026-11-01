@@ -11,6 +11,7 @@ Dex_QR's own code (`src/`, `tools/`, `tests/`) is MIT-licensed (see LICENSE). Th
 
 Test and benchmark tools: these are **not** part of the pages and are not redistributed in this repository.
 - playwright-core 1.49.1 (Apache-2.0, npm devDependency)
+- axe-core 4.14.0 (MPL-2.0, npm devDependency; accessibility test only, injected into the pages by tests/browser/a11y.mjs at test time, never built into them)
 - zbar 0.23.x (LGPL-2.1, conda-forge), with pyzbar 0.1.9 (MIT)
 - zxing-cpp Python bindings 3.x (Apache-2.0)
 - Pillow (MIT-CMU)

@@ -23,6 +23,7 @@ The test files are **10 KiB, 100 KiB and 500 KiB** (10,240 / 102,400 / 512,000 b
 - **Overhead** (packets used ÷ K), mean, protocol v2: about 1.07–1.08 for 10 KiB (K = 26), 1.006–1.007 for 100 KiB (K = 257), and 1.001 for 500 KiB (K = 1281). Protocol v1 measured 1.11–1.14, 1.01–1.02 and 1.003–1.007 on the same setup (see CHANGELOG.md). It is roughly independent of the drop rate, as expected for a fountain code.
 - **Tail:** p95 ≤ 1.24 everywhere, and the worst single trial was 1.31 (10 KiB). Under v1 the worst trials were 1.65 (10 KiB), 1.34 (100 KiB) and 1.23 (500 KiB); v2's degree boost (PROTOCOL.md §3) removes most of that tail, which came from sparse soliton rows leaving the system rank-deficient. Codec-level numbers for both versions are in `results/degree_boost.json`.
 - **Wall-clock cost of drops:** at drop rate p, the receiver needs about overhead ÷ (1 − p) × K displayed frames. For example, about 2.0 × K at 50% drop for large files.
+- **Regression check, 2026-11-01 full pass:** the frames were re-rendered from the current code with the same seeds, decoded again by zbar and zxing-cpp, and replayed. All 18 cells (1,800 trials) were identical to the cycle-1 numbers above, every file SHA-256-identical (`results/regression_2026-11-01.json`). The 27 H.264 end-to-end runs were also repeated: 27/27.
 
 ## Drop-rate trials (100 trials per cell, real decoder output)
 
@@ -82,23 +83,58 @@ Network requests outside file:/data:/blob: during all page tests: **0**. Pages r
 
 | Test | Result | Details |
 |---|---|---|
-| sender page 10240 B -> zbar -> decoder | PASS | K 26; 50 frames rendered by the page, 50 read by zbar, decoded after 28 |
-| sender page 102400 B -> zbar -> decoder | PASS | K 257; 420 frames rendered by the page, 420 read by zbar, decoded after 262 |
-| sender page 20000 B encrypted -> zbar -> decoder | PASS | K 51; 90 frames rendered by the page, 90 read by zbar, decoded after 52 |
+| sender page 10240 B -> zbar -> decoder | PASS | K 26; 50 frames rendered by the page, 50 read by zbar, decoded after 27 |
+| sender page 102400 B -> zbar -> decoder | PASS | K 257; 420 frames rendered by the page, 420 read by zbar, decoded after 257 |
+| sender page 20000 B encrypted -> zbar -> decoder | PASS | K 51; 90 frames rendered by the page, 90 read by zbar, decoded after 51 |
 | receiver page files 10 KB drop 10% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 26; 49 frames given, 27 scanned; overhead 1.038; final state “done”; downloaded file SHA-256 matches: true; 0.2 s |
 | receiver page files 10 KB drop 30% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 26; 49 frames given, 26 scanned; overhead 1.000; final state “done”; downloaded file SHA-256 matches: true; 0.2 s |
 | receiver page files 10 KB drop 50% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 26; 49 frames given, 27 scanned; overhead 1.038; final state “done”; downloaded file SHA-256 matches: true; 0.2 s |
 | receiver page files 100 KB drop 30% (zxing) | PASS | decoder zxing-cpp (WebAssembly); K 257; 396 frames given, 260 scanned; overhead 1.012; final state “done”; downloaded file SHA-256 matches: true; 0.8 s |
-| receiver page files 10 KB drop 10% (jsqr) | PASS | decoder jsQR; K 26; 49 frames given, 27 scanned; overhead 1.038; final state “done”; downloaded file SHA-256 matches: true; 0.5 s |
+| receiver page files 10 KB drop 10% (jsqr) | PASS | decoder jsQR; K 26; 49 frames given, 27 scanned; overhead 1.038; final state “done”; downloaded file SHA-256 matches: true; 0.4 s |
 | receiver page files 10 KB drop 30% (jsqr) | PASS | decoder jsQR; K 26; 49 frames given, 28 scanned; overhead 1.077; final state “done”; downloaded file SHA-256 matches: true; 0.5 s |
 | receiver page files 10 KB drop 50% (jsqr) | PASS | decoder jsQR; K 26; 49 frames given, 29 scanned; overhead 1.115; final state “done”; downloaded file SHA-256 matches: true; 0.5 s |
 | receiver page files 100 KB drop 30% (jsqr) | PASS | decoder jsQR; K 257; 396 frames given, 258 scanned; overhead 1.004; final state “done”; downloaded file SHA-256 matches: true; 3.1 s |
-| receiver page files 500 KB drop 50% (auto) | PASS | decoder zxing-cpp (WebAssembly); K 1281; 1932 frames given, 1285 scanned; overhead 1.003; final state “done”; downloaded file SHA-256 matches: true; 3.6 s |
-| receiver page encrypted: wrong then right passphrase | PASS | decoder zxing-cpp (WebAssembly); K 38; 67 frames given, 39 scanned; overhead 1.026; final state “done”; after wrong passphrase: “wrong passphrase”; downloaded file SHA-256 matches: true; 0.6 s |
+| receiver page files 500 KB drop 50% (auto) | PASS | decoder zxing-cpp (WebAssembly); K 1281; 1932 frames given, 1285 scanned; overhead 1.003; final state “done”; downloaded file SHA-256 matches: true; 3.8 s |
+| receiver page encrypted: wrong then right passphrase | PASS | decoder zxing-cpp (WebAssembly); K 38; 67 frames given, 38 scanned; overhead 1.000; final state “done”; after wrong passphrase: “wrong passphrase”; downloaded file SHA-256 matches: true; 0.6 s |
 | receiver page checksum mismatch is reported (forged frames) | PASS | decoder zxing-cpp (WebAssembly); K 21; 60 frames given, 23 scanned; overhead 1.095; final state “checksum mismatch”; 0.1 s |
 | receiver page camera (getUserMedia, fake camera Y4M) 10 KB, auto | PASS | decoder zxing-cpp (WebAssembly); K 26; fake camera 5 fps, 26 camera frames scanned, 26 unique packets, 0 duplicates; overhead 1.000; final state “done”; 5.4 s |
-| receiver page camera (getUserMedia, fake camera Y4M) 10 KB, jsQR | PASS | decoder jsQR; K 26; fake camera 5 fps, 26 camera frames scanned, 26 unique packets, 0 duplicates; overhead 1.000; final state “done”; 5.4 s |
-| receiver page camera (getUserMedia, fake camera Y4M) 100 KB, auto | PASS | decoder zxing-cpp (WebAssembly); K 257; fake camera 10 fps, 263 camera frames scanned, 263 unique packets, 0 duplicates; overhead 1.023; final state “done”; 26.5 s |
+| receiver page camera (getUserMedia, fake camera Y4M) 10 KB, jsQR | PASS | decoder jsQR; K 26; fake camera 5 fps, 26 camera frames scanned, 26 unique packets, 0 duplicates; overhead 1.000; final state “done”; 5.3 s |
+| receiver page camera (getUserMedia, fake camera Y4M) 100 KB, auto | PASS | decoder zxing-cpp (WebAssembly); K 257; fake camera 10 fps, 263 camera frames scanned, 263 unique packets, 0 duplicates; overhead 1.023; final state “done”; 26.4 s |
+
+## Interaction and error-path tests (tests/browser/ux.mjs, headless Chrome, file://)
+
+Network requests outside file:/data:/blob:: **0**.
+
+| Test | Result |
+|---|---|
+| sender frame clock matches the set rate (8 and 25 fps, within 3%) | PASS |
+| sender clamps speed and module size inputs | PASS |
+| sender flags stale settings, applies EC level live, Prepare clears the flag | PASS |
+| sender keyboard: Space/K toggle play, typing in a field does not | PASS |
+| sender page errors | PASS |
+| sender full-screen fallback (focus mode) fits the code on a phone and Esc leaves it | PASS |
+| sender has no horizontal overflow at 390 px | PASS |
+| receiver: camera permission denied gives a plain explanation and stays usable | PASS |
+| receiver: no camera API explains file:// and file input fallback | PASS |
+| receiver: unsupported decoder in file mode is an error message, not an unhandled rejection | PASS |
+| receiver: non-Dex_QR codes and a forged huge-K frame are ignored quickly; the same files can be picked again | PASS |
+| receiver: locked onto a stale transfer, offers a switch, and the switch completes from buffered packets | PASS |
+| receiver: Reset with partial progress asks first; Esc cancels; second press discards | PASS |
+| receiver: repeated Decrypt presses run one derivation and give one result; focus moves to Save | PASS |
+| receiver: H.264 video file decodes; the poll timer, object URL and video source are released | PASS |
+| receiver at 390 px: camera view first, no horizontal overflow, buttons ≥ 44 px tall | PASS |
+| receiver: camera ending mid-scan keeps progress and explains; Start resumes; Stop releases | PASS |
+
+## Long-session checks (tests/browser/soak.mjs, 60 s each)
+
+| Test | Result | Details |
+|---|---|---|
+| sender plays 60 s at 30 fps without heap growth | PASS | heap 2.2 → 1.8 MB after GC; 30 fps |
+| receiver scans 60 s without heap growth; Start/Stop churn leaves one stream, Stop releases it | PASS | heap 2.1 → 2.2 MB after GC; 10 camera frames scanned per second; 1 live camera track after Start/Stop churn |
+
+## Automated accessibility check (axe-core 4.14.0, tests/browser/a11y.mjs)
+
+12 page states at 390 px and 1280 px: **0 violations**. axe finds only machine-checkable problems; screen-reader use has not been tested by a person.
 
 ## Codec-only overhead (no QR), 200 trials per cell
 

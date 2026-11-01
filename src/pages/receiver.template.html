@@ -11,34 +11,41 @@
 <body>
 <header><h1>Dex_QR receiver</h1><span class="sub">Scans an animated QR fountain stream with the camera. Everything stays on this device; no network is used.</span></header>
 <main>
-<section class="card">
-  <button id="start">Start camera</button><button id="stop" class="secondary" disabled>Stop</button>
-  <label for="cam">Camera</label><select id="cam"><option value="">default (back camera if any)</option></select>
-  <label for="dec">QR decoder</label>
-  <select id="dec"><option value="auto">auto (browser BarcodeDetector if available, else zxing-cpp)</option><option value="zxing">zxing-cpp WebAssembly (built in)</option><option value="jsqr">jsQR (built in, pure JS, weaker)</option><option value="native">BarcodeDetector only</option></select>
-  <label for="files">…or decode image files / a video file instead of the camera</label>
-  <input id="files" type="file" accept="image/*,video/*" multiple>
-  <div id="msg" class="msg"></div>
-  <div class="bar"><div id="bar"></div></div>
+<section class="card" aria-label="Receiver controls">
+  <div class="btns"><button id="start" type="button">Start camera</button><button id="stop" type="button" class="secondary" disabled>Stop</button></div>
+  <div id="msg" class="msg" role="status" aria-live="polite"></div>
+  <div class="bar" id="barwrap" role="progressbar" aria-label="File decoded" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="nothing received yet"><div id="bar"></div></div>
+  <div id="switchbox" class="hint" hidden>
+    <span id="switchtext"></span>
+    <button id="switch" type="button" class="secondary">Switch to the new transfer</button>
+  </div>
   <dl class="stats">
     <dt>Status</dt><dd id="r-status">idle</dd>
-    <dt>Transfer ID</dt><dd id="r-id">–</dd>
+    <dt>Transfer ID</dt><dd id="r-id" class="mono">–</dd>
     <dt>Encrypted</dt><dd id="r-enc">–</dd>
     <dt>Decoded</dt><dd id="r-prog">–</dd>
     <dt>Packets</dt><dd id="r-pk">–</dd>
     <dt>Frames</dt><dd id="r-frames">0</dd>
     <dt>Decoder</dt><dd id="r-dec">–</dd>
   </dl>
-  <div id="passbox" style="display:none">
+  <form id="passbox" hidden>
     <label for="pass">Passphrase</label>
-    <input id="pass" type="password" autocomplete="off">
-    <button id="decrypt">Decrypt</button>
-  </div>
+    <input id="pass" type="password" autocomplete="off" spellcheck="false">
+    <button id="decrypt" type="submit">Decrypt</button>
+  </form>
   <div id="result"></div>
-  <button id="reset" class="secondary">Reset</button>
-  <div class="note">“Decoded” counts independent packets (rank) out of the K needed; the file appears once it reaches K. Duplicate frames and frames from another transfer are ignored. Camera scanning on real phones and laptops has not been tested by the author — see docs/TEST_CHECKLIST.md.</div>
+  <div class="btns"><button id="reset" type="button" class="secondary">Reset</button></div>
+  <details class="opts">
+    <summary>Camera, decoder and file input</summary>
+    <label for="cam">Camera</label><select id="cam"><option value="">default (back camera if any)</option></select>
+    <label for="dec">QR decoder</label>
+    <select id="dec"><option value="auto">auto (browser BarcodeDetector if available, else zxing-cpp)</option><option value="zxing">zxing-cpp WebAssembly (built in)</option><option value="jsqr">jsQR (built in, pure JS, weaker)</option><option value="native">BarcodeDetector only</option></select>
+    <label for="files">Decode image files or a video file instead of the camera</label>
+    <input id="files" type="file" accept="image/*,video/*" multiple>
+  </details>
+  <div class="note">“Decoded” counts independent packets (rank) out of the K needed; the file appears once it reaches K. Duplicate frames and frames from another transfer are ignored. Stopping the camera keeps what you have; Reset discards it (it asks first). Camera scanning on real phones and laptops has not been tested by the author — see docs/TEST_CHECKLIST.md.</div>
 </section>
-<section><video id="video" playsinline muted></video><canvas id="work" style="display:none"></canvas></section>
+<section class="preview" aria-label="Camera preview"><video id="video" playsinline muted aria-label="Camera preview"></video><div id="empty" class="empty">Camera preview appears here after you press Start camera.</div><canvas id="work" hidden></canvas></section>
 </main>
 <!--INLINE_SCRIPTS-->
 <script>/*INLINE_APP*/</script>

@@ -5,13 +5,17 @@ ZBAR_LIB ?=
 export PY
 export LD_LIBRARY_PATH := $(ZBAR_LIB):$(LD_LIBRARY_PATH)
 
-.PHONY: all build test sweep trials video browser bench report
-all: build test trials video browser bench report
+.PHONY: all build lint test sweep trials video browser ux a11y soak bench report
+all: build lint test trials video browser ux a11y soak bench report
 build:   ; node tools/build.mjs
+lint:    ; node tools/lint.mjs
 test:    ; node --test tests/unit/*.test.mjs
 sweep:   ; node tests/unit/lt-sweep.mjs 200
 trials:  ; bash tests/e2e/run-drop-trials.sh
 video:   ; bash tests/e2e/run-video-e2e.sh
 browser: build ; node tests/browser/run.mjs
+ux:      build ; node tests/browser/ux.mjs
+a11y:    build ; node tests/browser/a11y.mjs
+soak:    build ; node tests/browser/soak.mjs
 bench:   build ; for E in L M Q; do BENCH_ECL=$$E BENCH_OUT=bench_$$E.json node tests/bench/bench.mjs || exit 1; done
 report:  ; node tools/report.mjs

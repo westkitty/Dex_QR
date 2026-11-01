@@ -92,6 +92,8 @@ All integers are big-endian.
 - **QR text** = `"DQ"` + Base45(packet), where Base45 is RFC 9285. The text is encoded as **one alphanumeric segment**, with the EC level chosen by the sender (default M) and the smallest version that fits.
 - **Length:** a packet of T data bytes is `2 + 1.5·(27+T)` characters. Header and CRC cost 27 bytes per frame: 6.3% of a 400-byte block, 2.7% at 1000 bytes.
 - **Receiver checks:** prefix, Base45 validity (strict, rejects overflow triplets), version, length = 27+T, CRC-32, and ceil(F/T) = K. The first valid packet locks the receiver to its protocol version, file ID, K, T and F. Packets from any other transfer are counted and ignored. Duplicate seeds are ignored.
+- **Receiver resource limits** (added 2026-11-01; not a wire-format change): packets claiming K > 262,144 (2^18) or F > 32 MiB + 4 KiB are rejected with reason "limits" before any decoder state is allocated. Without this, one CRC-valid frame claiming K ≈ 16.7 million made the reference receiver allocate per-block state for 16.7 million blocks (measured: 5.9 s and 2.8 GB of heap in Node). The sender UI cannot produce such a stream (32 MiB maximum, T ≥ 200 → K ≤ 167,773), and `SenderSession.create` now refuses anything over the limits.
+- **Switching transfers:** after the lock, packets from one other transfer are kept in a bounded buffer (4,096 distinct packets). When 8 or more of them arrive in a row with none from the locked transfer, the receiver page offers to switch; switching discards the locked transfer and replays the buffered packets. Nothing switches automatically, so a second code in view cannot hijack a transfer in progress.
 
 **Evaluation: Base45/alphanumeric vs raw byte mode.**
 - *Raw byte mode* would save about 3%, but readers decode byte mode as text with charset guessing (RFC 9285 §1). The browser BarcodeDetector exposes only `rawValue` strings, and zbar applies charset conversion. Binary data would be corrupted or would need decoder-specific workarounds.
@@ -112,7 +114,7 @@ All integers are big-endian.
 ## 6. Rendering
 
 - The QR code is drawn on a `<canvas>` with a 4-module quiet zone (ISO/IEC 18004), black on white, with integer pixels per module. "0" means fit to the screen.
-- Frame rate is user-set (default 8 fps). Frames are switched on `requestAnimationFrame`, so each code stays up for at least one display refresh.
+- Frame rate is user-set (1–30 fps, default 8). Frames are switched on `requestAnimationFrame`, so each code stays up for at least one display refresh. Frames are due on an absolute schedule (every 1000/fps ms), so the average rate matches the setting even when that interval is not a whole number of display refreshes; at 8 fps on a 60 Hz display, codes alternate between 7 and 8 refreshes. (Before 2026-11-01 each frame was rounded up to whole refreshes, so 8 fps actually ran at 7.5 fps and 25 fps at 20 fps.) After a stall such as a hidden tab, the schedule restarts rather than bursting to catch up.
 - **Density presets** (block size T → QR version at EC M, from `DQ.render.versionFor`): 200 B → v11, 300 B → v14, **400 B → v16 (default)**, 600 B → v20, 800 B → v23, 1000 B → v27, 1400 B → about v31.
 
 ## 7. Limits

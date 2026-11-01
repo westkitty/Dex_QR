@@ -1,0 +1,187 @@
+{
+ "when": "2026-11-01T10:03:02.888Z",
+ "note": "2026-11-01 full pass regression check: frames re-rendered from the current code (tests/e2e/render-frames.mjs, same seeds), decoded by zbar and zxing-cpp, 100 replay trials per cell (tests/e2e/trials.mjs). Compared cell by cell with the committed results/trials_*.json from cycle 1.",
+ "cells": [
+  {
+   "size": 10240,
+   "decoder": "zbar",
+   "drop": 0.1,
+   "success": "100/100",
+   "overheadMean": 1.0831,
+   "overheadMax": 1.2692,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 10240,
+   "decoder": "zbar",
+   "drop": 0.3,
+   "success": "100/100",
+   "overheadMean": 1.0712,
+   "overheadMax": 1.3077,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 10240,
+   "decoder": "zbar",
+   "drop": 0.5,
+   "success": "100/100",
+   "overheadMean": 1.0665,
+   "overheadMax": 1.3077,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 10240,
+   "decoder": "zxing",
+   "drop": 0.1,
+   "success": "100/100",
+   "overheadMean": 1.0831,
+   "overheadMax": 1.2692,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 10240,
+   "decoder": "zxing",
+   "drop": 0.3,
+   "success": "100/100",
+   "overheadMean": 1.0712,
+   "overheadMax": 1.3077,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 10240,
+   "decoder": "zxing",
+   "drop": 0.5,
+   "success": "100/100",
+   "overheadMean": 1.0665,
+   "overheadMax": 1.3077,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 102400,
+   "decoder": "zbar",
+   "drop": 0.1,
+   "success": "100/100",
+   "overheadMean": 1.0062,
+   "overheadMax": 1.0311,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 102400,
+   "decoder": "zbar",
+   "drop": 0.3,
+   "success": "100/100",
+   "overheadMean": 1.0065,
+   "overheadMax": 1.035,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 102400,
+   "decoder": "zbar",
+   "drop": 0.5,
+   "success": "100/100",
+   "overheadMean": 1.0058,
+   "overheadMax": 1.0272,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 102400,
+   "decoder": "zxing",
+   "drop": 0.1,
+   "success": "100/100",
+   "overheadMean": 1.0062,
+   "overheadMax": 1.0311,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 102400,
+   "decoder": "zxing",
+   "drop": 0.3,
+   "success": "100/100",
+   "overheadMean": 1.0065,
+   "overheadMax": 1.035,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 102400,
+   "decoder": "zxing",
+   "drop": 0.5,
+   "success": "100/100",
+   "overheadMean": 1.0058,
+   "overheadMax": 1.0272,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 512000,
+   "decoder": "zbar",
+   "drop": 0.1,
+   "success": "100/100",
+   "overheadMean": 1.0011,
+   "overheadMax": 1.0055,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 512000,
+   "decoder": "zbar",
+   "drop": 0.3,
+   "success": "100/100",
+   "overheadMean": 1.0014,
+   "overheadMax": 1.0062,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 512000,
+   "decoder": "zbar",
+   "drop": 0.5,
+   "success": "100/100",
+   "overheadMean": 1.0013,
+   "overheadMax": 1.0055,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 512000,
+   "decoder": "zxing",
+   "drop": 0.1,
+   "success": "100/100",
+   "overheadMean": 1.0011,
+   "overheadMax": 1.0055,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 512000,
+   "decoder": "zxing",
+   "drop": 0.3,
+   "success": "100/100",
+   "overheadMean": 1.0014,
+   "overheadMax": 1.0062,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  },
+  {
+   "size": 512000,
+   "decoder": "zxing",
+   "drop": 0.5,
+   "success": "100/100",
+   "overheadMean": 1.0013,
+   "overheadMax": 1.0055,
+   "identicalToCycle1": true,
+   "hashChecked": true
+  }
+ ],
+ "totalSuccess": "1800/1800"
+}

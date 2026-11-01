@@ -1,36 +1,66 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'">
-<title>Dex_QR</title><style>:root { color-scheme: light dark; --bg:#101418; --fg:#e8eef2; --mut:#9fb0bd; --acc:#5cc8ff; --bad:#ff6b6b; --ok:#4cd98a; --warn:#ffc35c; --card:#1a2128; }
+<title>Dex_QR</title><style>:root { color-scheme: dark; --bg:#101418; --fg:#e8eef2; --mut:#a9b8c4; --acc:#5cc8ff; --bad:#ff7b7b; --ok:#4cd98a; --warn:#ffc35c; --card:#1a2128; --line:#36424d; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin:0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--fg); }
+body.noscroll { overflow: hidden; }
 header { padding: 12px 16px; border-bottom: 1px solid #2a333c; display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
 header h1 { font-size: 18px; margin: 0; }
 header .sub { color: var(--mut); font-size: 13px; }
-main { display:grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 16px; padding: 16px; }
-@media (max-width: 800px) { main { grid-template-columns: 1fr; } }
-.card { background: var(--card); border-radius: 10px; padding: 14px; }
+main { display:grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 16px; padding: 16px; align-items: start; }
+@media (max-width: 800px) { main { grid-template-columns: 1fr; padding: 10px; gap: 10px; } }
+.card { background: var(--card); border-radius: 10px; padding: 14px; min-width: 0; }
 label { display:block; margin: 10px 0 4px; color: var(--mut); font-size: 13px; }
 input, select, button { font: inherit; }
-input[type=text], input[type=password], input[type=number], select { width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid #36424d; background: #0c1014; color: var(--fg); }
-button { padding: 8px 14px; border-radius: 7px; border: 0; background: var(--acc); color: #00131f; font-weight: 600; cursor: pointer; margin: 8px 6px 0 0; }
+input[type=text], input[type=password], input[type=number], select { width: 100%; min-height: 40px; padding: 7px 8px; border-radius: 6px; border: 1px solid var(--line); background: #0c1014; color: var(--fg); }
+input[type=file] { max-width: 100%; color: var(--mut); }
+.btns { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+button { min-height: 44px; padding: 8px 16px; border-radius: 7px; border: 0; background: var(--acc); color: #00131f; font-weight: 600; cursor: pointer; }
+button:hover:not(:disabled) { filter: brightness(1.12); }
+button:active:not(:disabled) { transform: translateY(1px); }
 button.secondary { background: #2c3a46; color: var(--fg); }
-button:disabled { opacity: .45; cursor: default; }
-.row { display:flex; gap: 8px; } .row > * { flex: 1; }
+button.danger { background: var(--bad); color: #2a0000; }
+button.attn { box-shadow: 0 0 0 3px var(--warn); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+:focus-visible { outline: 3px solid var(--warn); outline-offset: 2px; }
+a.dl:focus-visible { outline-color: var(--fg); }
+.row { display:flex; gap: 8px; } .row > * { flex: 1; min-width: 0; }
 .stats { display:grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 13px; margin-top: 10px; }
-.stats dt { color: var(--mut); } .stats dd { margin: 0; font-variant-numeric: tabular-nums; word-break: break-all; }
-.bar { height: 14px; background: #0c1014; border-radius: 7px; overflow: hidden; margin-top: 8px; }
+.stats dt { color: var(--mut); } .stats dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.mono, .mono-wrap { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
+.bar { height: 14px; background: #0c1014; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; margin-top: 8px; }
 .bar > div { height: 100%; width: 0%; background: var(--acc); transition: width .15s; }
-.msg { margin-top: 10px; padding: 8px 10px; border-radius: 7px; font-size: 14px; display:none; }
+.msg { margin-top: 10px; padding: 8px 10px; border-radius: 7px; font-size: 14px; display:none; border-left: 4px solid currentColor; }
 .msg.show { display:block; } .msg.err { background:#3a1717; color: var(--bad); } .msg.ok { background:#123222; color: var(--ok); } .msg.warn { background:#3a2e12; color: var(--warn); }
+.hint { margin-top: 10px; padding: 8px 10px; border-radius: 7px; background:#3a2e12; color: var(--warn); font-size: 13.5px; border-left: 4px solid currentColor; }
+.hint button { display:block; margin-top: 8px; }
 .note { color: var(--mut); font-size: 12.5px; margin-top: 8px; }
-.stage { display:flex; align-items:center; justify-content:center; background:#fff; border-radius: 10px; min-height: 320px; padding: 8px; }
-canvas.qr { image-rendering: pixelated; max-width: 100%; height: auto; }
-video { width: 100%; max-height: 70vh; background: #000; border-radius: 10px; }
+kbd { font: 11.5px ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; background: #0c1014; }
+details.opts { margin-top: 12px; border-top: 1px solid #2a333c; padding-top: 6px; }
+details.opts summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px; color: var(--fg); list-style: none; }
+details.opts summary::-webkit-details-marker { display: none; }
+details.opts summary::before { content: "▸"; color: var(--acc); width: 1em; }
+details.opts[open] summary::before { content: "▾"; }
+.stage { position: relative; display:flex; flex-direction: column; align-items:center; justify-content:center; background:#fff; border-radius: 10px; min-height: 320px; padding: 8px; }
+.stage:fullscreen, .stage.focus { border-radius: 0; padding: 8px; }
+.stage.focus { position: fixed; inset: 0; z-index: 10; min-height: 0; }
+.stage-bar { display:flex; gap: 8px; align-items:center; margin-top: 8px; color: #333; font-size: 13px; }
+.stage-bar button.secondary { background: #e3e8ec; color: #111; }
+canvas.qr { image-rendering: pixelated; max-width: 100%; max-height: 100%; height: auto; }
+.preview { position: relative; min-width: 0; }
+video { display:block; width: 100%; max-height: 70vh; background: #000; border-radius: 10px; min-height: 200px; }
+.empty { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; text-align:center; padding: 16px; color: var(--mut); font-size: 14px; pointer-events: none; }
+@media (max-width: 800px) {
+  .preview { order: -1; }                       /* receiver: the camera view comes first on phones */
+  video { max-height: 45vh; }
+}
 .strength { font-size: 12.5px; margin-top: 4px; }
 .strength.weak { color: var(--bad); } .strength.fair { color: var(--warn); } .strength.good, .strength.strong { color: var(--ok); }
-a.dl { display:inline-block; margin-top:10px; padding: 9px 14px; background: var(--ok); color:#00210f; border-radius: 7px; font-weight:700; text-decoration:none; }
+a.dl { display:inline-block; margin-top:10px; padding: 11px 16px; background: var(--ok); color:#00210f; border-radius: 7px; font-weight:700; text-decoration:none; }
 code { font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } button:active:not(:disabled) { transform: none; } }
  main{display:block;max-width:760px}</style></head>
 <body><header><h1>Dex_QR</h1><span class="sub">Offline file transfer over an animated QR fountain stream</span></header>
 <main><div class="card">

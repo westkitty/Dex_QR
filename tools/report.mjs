@@ -57,6 +57,23 @@ for (const r of b.results) {
   md += `| ${r.name} | ${r.ok ? "PASS" : "**FAIL**"} | ${d.join("; ")} |\n`;
 }
 md += "\n";
+// ---- interaction, accessibility and long-session tests (added 2026-11-01)
+const opt = (f) => (fs.existsSync(path.join(ROOT, "results", f)) ? R(f) : null);
+const ux = opt("ux.json"), ax = opt("a11y.json"), soak = opt("soak.json");
+if (ux) {
+  md += `## Interaction and error-path tests (tests/browser/ux.mjs, headless Chrome, file://)\n\nNetwork requests outside file:/data:/blob:: **${ux.networkRequestsOutsideFileDataBlob.length}**.\n\n| Test | Result |\n|---|---|\n`;
+  for (const r of ux.results) md += `| ${r.name} | ${r.ok ? "PASS" : "**FAIL**"} |\n`;
+  md += "\n";
+}
+if (soak) {
+  md += `## Long-session checks (tests/browser/soak.mjs, ${soak.seconds} s each)\n\n| Test | Result | Details |\n|---|---|---|\n`;
+  for (const r of soak.results) md += `| ${r.name} | ${r.ok ? "PASS" : "**FAIL**"} | heap ${r.heapMB.join(" → ")} MB after GC${r.fps ? `; ${r.fps} fps` : ""}${r.scanFps ? `; ${r.scanFps} camera frames scanned per second` : ""}${r.liveTracksAfterChurn != null ? `; ${r.liveTracksAfterChurn} live camera track after Start/Stop churn` : ""} |\n`;
+  md += "\n";
+}
+if (ax) {
+  const n = ax.report.reduce((a, r) => a + r.violations.length, 0);
+  md += `## Automated accessibility check (axe-core ${ax.axe}, tests/browser/a11y.mjs)\n\n${ax.report.length} page states at 390 px and 1280 px: **${n} violations**. axe finds only machine-checkable problems; screen-reader use has not been tested by a person.\n\n`;
+}
 // ---- codec sweep
 const sw = R("lt_sweep.json");
 md += `## Codec-only overhead (no QR), ${sw.trials} trials per cell\n\nPackets needed ÷ K for the chosen protocol parameters, and for peeling-only decoding for comparison (from results/lt_sweep.json).\n\n| K | c | δ | Decoder | mean | p95 | p99 | max |\n|---|---|---|---|---|---|---|---|\n`;
