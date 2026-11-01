@@ -46,7 +46,7 @@ Not one of the hourly routine's 12 counted cycles. No wire-format change: protoc
 
 **Not tested:** real phone and laptop cameras, Safari, Firefox, screen readers used by a person, and Wake Lock on a real device.
 
-## Cycle 2 (2026-11-01, about 5:40 AM EST): transparent compression before fountain coding
+## Cycle 2 (2026-11-01, about 5:27 AM EST): transparent compression before fountain coding
 
 **What changed.** The sender wraps the file container in a new compressed container `DQZ1` (magic, algorithm byte, uncompressed length, deflate data) made with the browser's built-in `CompressionStream("deflate-raw")` (gzip where deflate-raw is missing), and uses it only when it saves at least 2%; otherwise the payload is byte-identical to the old `DQF1` format. With a passphrase it compresses first, then encrypts. Unencrypted compressed streams set flag bit 1 in the packet header (never on encrypted streams, so the ciphertext does not reveal it). Protocol version byte stays 2. A "Compress when it helps" checkbox (on by default) and a Compression line on the sender; a Compressed line, result note and two new errors on the receiver. No new dependency, no network, works from `file://`. See docs/PROTOCOL.md §2 and §4 and the new length-leak paragraph in docs/THREAT_NOTE.md.
 
