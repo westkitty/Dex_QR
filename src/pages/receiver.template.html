@@ -17,6 +17,10 @@
   <div class="viewport" id="viewport">
     <video id="video" playsinline muted aria-label="Camera preview"></video>
     <div id="empty" class="empty"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9h2v2H9zM13 13h2v2h-2zM13 9h2M9 13v2"/></svg><span>Press <b>Start scanning</b>, then point this camera at the sender's screen.<br>You can also drop QR images or a screen recording here.</span></div>
+    <div class="ackpanel" id="ack" hidden>
+      <div class="ack-code" id="ack-code"><canvas id="ackqr" width="10" height="10" role="img" aria-label="Done code: an optional confirmation for the sender's camera. It holds only this transfer's ID."></canvas></div>
+      <div class="ack-text"><b class="ack-h"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11"/><path d="M7 12.5l3.2 3.2L17 8.8"/></svg>Done</b><span>Optional: on the sender, press <b>Confirm with camera</b> and hold this screen up to its camera.</span><span class="ack-id" id="ack-id"></span></div>
+    </div>
     <div class="reticle" id="reticle" aria-hidden="true" hidden><svg viewBox="0 0 100 100"><g class="corners" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M2 20V8a6 6 0 0 1 6-6h12M80 2h12a6 6 0 0 1 6 6v12M98 80v12a6 6 0 0 1-6 6H80M20 98H8a6 6 0 0 1-6-6V80"/></g><rect class="sweep" x="8" y="0" width="84" height="1.4" rx=".7" fill="currentColor"/></svg></div>
     <div class="camtag" id="camtag" hidden><span class="dot on" aria-hidden="true"></span><span id="camtag-text">Scanning</span></div>
     <canvas id="work" hidden></canvas>

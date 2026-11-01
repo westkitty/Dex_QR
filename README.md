@@ -30,6 +30,7 @@ Start at `index.html`: one screen that explains the idea, with a **Send a file**
    - For an encrypted transfer the passphrase box appears at the first frame. Type it and press **Check passphrase** while scanning: the sender shows a small key-check frame every 32 frames, so a wrong passphrase is reported within seconds (at 8 fps, about 2 s on average with no missed frames) instead of after the whole file, and scanning carries on. With the right one the file opens by itself at the end. Older senders do not send key-check frames; the passphrase is then checked at the end as before. When the key-check frame arrives, the receiver times a short PBKDF2 probe (about 0.1 s on a laptop) and, if the sender's key stretching will take 3 seconds or more on this device, says so above the passphrase box before you type (for example "about 17 seconds"); the estimate also appears under Transfer details.
    - When it reaches K, the file is checked (SHA-256 against the sender's ID, plus the AES-GCM tag if encrypted). If the transfer is encrypted, you are asked for the passphrase.
    - Press **Save**, then compare the SHA-256 with the sender page.
+   - **Done code** (cycle 9): once the file is verified, the camera area shows a small static "Done" QR code (it holds only this transfer's ID and a check value, nothing secret). On the sender, **Confirm with camera** reads it with the sender's own camera (laptop webcam, front camera) and turns "The receiver should have it by now" into a green **Done: the receiver confirmed it**, stopping the stream. It is optional: without a camera, or if the camera is refused, the sender's **Receiver done: stop** works as before. Done codes for other transfers and other QR codes are ignored with a hint; a code from a newer Dex_QR version is reported in plain words.
 3. The receiver can also decode **image files or a video file** instead of the camera: drop them on the page or pick them under **Camera, decoder and file input**. Handy for testing or for a screen recording.
 4. **Looks:** dark by default, light when the system asks for it. The **Auto / Light / Dark** button in the header overrides it, and **Motion** turns off the page's animations (the system's reduced-motion setting does the same). Both choices are remembered in the browser's local storage where it allows that for `file://` pages, otherwise for the page only. Neither changes the QR stream.
 
@@ -62,6 +63,12 @@ Taken in headless Chrome by `node tests/browser/screens.mjs` (no camera; the rec
 
 Scan coaching (cycle 7), from `npm run coach`: Chrome's fake camera playing synthetic blurred frames, not a real camera.
 
+| Receiver finished: Done code | Sender confirmed |
+|---|---|
+| ![Receiver at 1280 px after a transfer: a Done QR code with a green ring in the camera area, Save button on the right](docs/screenshots/cycle9-after-receiver-done-1280.png) | ![Sender at 1280 px: green "Done: the receiver confirmed it" card and a Confirmed check mark in place of the code](docs/screenshots/cycle9-after-sender-confirmed-1280.png) |
+
+Done confirmation (cycle 9), from `npm run ack`: the sender's camera is Chrome's fake camera playing synthetic frames made from the receiver's Done code, not a real camera.
+
 ## How it works (short)
 
 file → container (name, type, data) → optional AES-256-GCM → K blocks of T bytes → LT packets (each the XOR of d blocks; d from the robust soliton distribution, blocks chosen by a PRNG seeded from the packet seed and the file ID) → 23-byte header + block + CRC-32 → Base45 → QR code in alphanumeric mode.
@@ -86,7 +93,7 @@ The receiver decodes by incremental Gaussian elimination over GF(2) when K ≤ 3
 - **Overhead on small files:** about 7–8% extra packets with protocol v2 (worst trial 1.31×); about 0.1–0.7% from 100 KiB up.
 - **Encryption** protects the contents and the file name, but not the fact of the transfer, its size or its timing. Anyone who records the screen can brute-force a weak passphrase offline. See [docs/THREAT_NOTE.md](docs/THREAT_NOTE.md).
 - **Memory and size:** the whole file is held in memory, and the UI accepts up to 32 MiB.
-- **One-way:** the sender never learns when the receiver is done, so stop it yourself.
+- **Mostly one-way:** the sender learns that the receiver is done only if you show the receiver's Done code to the sender's camera (cycle 9, optional); otherwise stop it yourself. A Done code is a convenience, not proof (see the threat note); compare the SHA-256.
 
 ## Reproducing the tests
 
@@ -104,6 +111,7 @@ make fuzz-quick        # seeded fuzzing of the parsers and the receiver session 
 make trials video      # drop-rate trials and end-to-end video runs  (PY=..., ZBAR_LIB=...)
 make browser ux a11y   # headless browser tests: flows, interaction states, accessibility
 make look coach        # interface checks; scan coaching and the slow-device passphrase warning (fake camera)
+make ack               # Done confirmation: receiver's Done code and the sender's camera confirm (fake camera)
 make soak bench        # 60 s lifecycle soak, throughput benchmark
 make report            # regenerate docs/RESULTS.md and docs/BENCHMARK.md
 ```

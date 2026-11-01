@@ -1,6 +1,6 @@
 {
  "chrome": "156.0.8078.47",
- "when": "2026-11-01T17:19:25.018Z",
+ "when": "2026-11-01T19:11:12.485Z",
  "results": [
   {
    "name": "sender page 10240 B -> zbar -> decoder",
@@ -8,7 +8,7 @@
    "K": 26,
    "framesRendered": 50,
    "framesDecodedByZbar": 50,
-   "framesUsed": 26,
+   "framesUsed": 30,
    "qr": "version 16 (81×81 modules), EC M, 4 px/module",
    "err": null,
    "pageErrors": []
@@ -19,7 +19,7 @@
    "K": 257,
    "framesRendered": 420,
    "framesDecodedByZbar": 420,
-   "framesUsed": 257,
+   "framesUsed": 258,
    "qr": "version 16 (81×81 modules), EC M, 4 px/module",
    "err": null,
    "pageErrors": []
@@ -30,7 +30,7 @@
    "K": 51,
    "framesRendered": 90,
    "framesDecodedByZbar": 90,
-   "framesUsed": 55,
+   "framesUsed": 53,
    "qr": "version 16 (81×81 modules), EC M, 4 px/module",
    "err": null,
    "pageErrors": []
@@ -48,8 +48,8 @@
    "phase": "done",
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.677,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
+   "seconds": 0.648,
    "pageErrors": []
   },
   {
@@ -65,8 +65,8 @@
    "phase": "done",
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 1.098,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
+   "seconds": 0.633,
    "pageErrors": []
   },
   {
@@ -82,8 +82,8 @@
    "phase": "done",
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.627,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
+   "seconds": 0.629,
    "pageErrors": []
   },
   {
@@ -99,8 +99,8 @@
    "phase": "done",
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 1.432,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
+   "seconds": 1.516,
    "pageErrors": []
   },
   {
@@ -116,8 +116,8 @@
    "phase": "done",
    "decoder": "jsQR",
    "downloadSha256Matches": true,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.896,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
+   "seconds": 1.394,
    "pageErrors": []
   },
   {
@@ -133,8 +133,8 @@
    "phase": "done",
    "decoder": "jsQR",
    "downloadSha256Matches": true,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.928,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
+   "seconds": 1.433,
    "pageErrors": []
   },
   {
@@ -150,8 +150,8 @@
    "phase": "done",
    "decoder": "jsQR",
    "downloadSha256Matches": true,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 1.431,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
+   "seconds": 1.426,
    "pageErrors": []
   },
   {
@@ -167,8 +167,8 @@
    "phase": "done",
    "decoder": "jsQR",
    "downloadSha256Matches": true,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 3.984,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
+   "seconds": 4.112,
    "pageErrors": []
   },
   {
@@ -184,8 +184,8 @@
    "phase": "done",
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 4.968,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
+   "seconds": 5.582,
    "pageErrors": []
   },
   {
@@ -201,8 +201,8 @@
    "phase": "done",
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 1.48,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
+   "seconds": 1.495,
    "afterWrong": "wrong passphrase",
    "wrongMsg": "✗ Wrong passphrase (AES-GCM authentication failed). Try again; no need to rescan.",
    "afterRight": "done",
@@ -222,7 +222,7 @@
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": null,
    "message": "✗ Checksum mismatch: the reconstructed data does not match the sender's SHA-256. Nothing was saved. Press Reset and scan again; if it repeats, the stream on screen is corrupted or forged.",
-   "seconds": 0.145,
+   "seconds": 0.25,
    "pageErrors": []
   },
   {
@@ -238,8 +238,8 @@
    "duplicates": 0,
    "overhead": 1,
    "phase": "done",
-   "seconds": 5.385,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
+   "seconds": 5.384,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
    "pageErrors": []
   },
   {
@@ -255,8 +255,8 @@
    "duplicates": 0,
    "overhead": 1,
    "phase": "done",
-   "seconds": 5.336,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
+   "seconds": 5.35,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
    "pageErrors": []
   },
   {
@@ -272,8 +272,8 @@
    "duplicates": 0,
    "overhead": 1.023,
    "phase": "done",
-   "seconds": 26.455,
-   "message": "✓ Transfer complete. The file is verified and ready to save.",
+   "seconds": 26.482,
+   "message": "✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.",
    "pageErrors": []
   }
  ],

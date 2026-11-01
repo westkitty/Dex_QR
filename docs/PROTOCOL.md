@@ -162,3 +162,22 @@ Only for encrypted transfers, and only if the sender leaves "Let the receiver ch
 ## Addendum 2026-11-01 (cycle 4): iteration count
 
 No format change. Since cycle 4 the sender chooses the DQE1 iteration count *i* by measuring the device (about 1 s, rounded down to 100,000, at least 600,000, at most 8,000,000), or 600,000 with "Standard". Senders refuse counts outside 100,000–10,000,000. Receivers (all versions) accept 100,000 ≤ *i* ≤ 10,000,000 in both DQE1 and key-check frames and reject anything else before running PBKDF2 (`BAD_FORMAT` for DQE1, reason `key-limits` for key frames). The upper bound limits a forged stream to about 10 M HMAC-SHA-256 iterations of work per derive.
+
+## Addendum 2026-11-01 (cycle 9): reverse-channel Done frame ("DA")
+
+The only frame that travels from the receiver back to the sender. Optional: a sender without a camera never sees it, and the stream format (§4, §4a) is unchanged.
+
+When the receiver has rebuilt the payload and its SHA-256 matches the file ID (and, if encrypted, AES-GCM authentication passed), it shows one static QR code: the text prefix `DA` followed by Base45 (RFC 9285) of
+
+| off | size | field |
+|---|---|---|
+| 0 | 1 | ACK version (= 1) |
+| 1 | 1 | kind (1 = done: the whole transfer was rebuilt and verified) |
+| 2 | 8 | file ID of the transfer (§4; the same 8 bytes every stream packet carries) |
+| 10 | 4 | CRC-32 (IEEE) of bytes [0, 10) |
+
+14 bytes, 23 characters, QR version 2 at EC M. It holds nothing secret and no file content (the file ID is already in every stream frame). Receivers draw it like the stream: black on white, a 4-module white quiet zone, a whole number of pixels per module (4–10).
+
+**Envelope rule for every ACK version:** the last 4 bytes are the CRC-32 of all bytes before them, and byte 0 is the version. Parsing order: prefix `DA` (else "foreign"); at most 512 characters ("toolong"); Base45 ("base45"); at least 6 bytes ("short"); CRC ("crc"); version 1 ("version"); exactly 14 bytes ("length"); kind 1 ("kind"). So a damaged or unrelated `DA…` code is "crc", and only a well-formed code from a newer release is "version" or "kind", which the sender reports in plain language ("comes from a newer Dex_QR version … use the same version on both devices, or press Receiver done: stop"); it is never taken as Done.
+
+**Sender:** "Confirm with camera" scans for `DA` frames; only a v1, kind-1 frame whose file ID equals the transfer on screen confirms it. Done codes for other transfers, stream (`DQ`) and key-check (`DK`) frames and other QR codes are ignored with a hint. Stream receivers ignore `DA` (it does not start with `DQ` or `DK`); senders and receivers from before cycle 9 neither show nor read it.

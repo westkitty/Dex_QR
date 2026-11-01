@@ -1,0 +1,130 @@
+{
+ "when": "2026-11-01T19:11:37.565Z",
+ "root": "/workspace/Dex_QR-before",
+ "frames": 40,
+ "degradation": "tests/bench/degrade.py moderate/harsh (synthetic, not a camera)",
+ "rows": [
+  {
+   "width": 1280,
+   "geometry": {
+    "modulePx": 8,
+    "modules": 81,
+    "version": 16,
+    "codeCssPx": 712,
+    "quietZonePx": 32
+   },
+   "errors": [],
+   "decode": {
+    "crop clean zbar": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "crop clean zxing": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "full viewport clean zbar": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "full viewport clean zxing": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "crop moderate zbar": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "crop moderate zxing": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "crop harsh zbar": {
+     "ok": 0,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "crop harsh zxing": {
+     "ok": 35,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    }
+   }
+  },
+  {
+   "width": 390,
+   "geometry": {
+    "modulePx": 3,
+    "modules": 81,
+    "version": 16,
+    "codeCssPx": 267,
+    "quietZonePx": 12
+   },
+   "errors": [],
+   "decode": {
+    "crop clean zbar": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "crop clean zxing": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "full viewport clean zbar": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "full viewport clean zxing": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "crop moderate zbar": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "crop moderate zxing": {
+     "ok": 40,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "crop harsh zbar": {
+     "ok": 2,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    },
+    "crop harsh zxing": {
+     "ok": 18,
+     "of": 40,
+     "wrong": 0,
+     "multi": 0
+    }
+   }
+  }
+ ]
+}

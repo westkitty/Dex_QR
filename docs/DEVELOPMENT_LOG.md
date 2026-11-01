@@ -97,3 +97,12 @@ Append-only record of each improvement cycle: what was tried, measured and decid
 - Not rerun: coach, H.264, compression, keycheck, kdf, fuzz (no change to the receiver, codec, container or session code).
 - Untested: real cameras, screen readers, Safari, Firefox.
 - Next: cycle 9, a reverse-channel ACK design (receiver shows a small "done" QR the sender can scan with its own camera) so "likely done" can become "done".
+
+## Cycle 9 — 2026-11-01 ~3:20 PM EST — reverse-channel Done confirmation
+- Started by the 1:09 PM routine run, which built and tested the feature but died before committing; finished by the 3:12 PM run after reviewing the uncommitted work and rerunning build, lint, unit (90/90), ack (36/36) and soak.
+- New src/ack.js: `DA` + Base45 of [version=1, kind=1 done, fileId(8), CRC-32]. Envelope rule for all future versions: last 4 bytes are the CRC of everything before, so damage is "crc" and only a well-formed newer frame is "version". Stream (`DQ`) and key-check (`DK`) frames unchanged; older pages ignore `DA`.
+- Receiver draws the Done code on its own canvas with whole-pixel modules (10 px / 6 px), a white 4-module quiet zone and no decoration inside; ring and animation outside.
+- Sender's Confirm with camera classifies each scanned text as done / other / newer / stream / bad / foreign; streaming keeps its rate (>= 27 of 30 fps in ack, 30.02 in the 60 s soak).
+- Soak flake: 18.6 / 24.2 fps measured at 2:10 PM under parallel suite load; 30.00 / 30.02 on rerun at 3:14 PM. Possible follow-up: run the soak alone in `make all`.
+- Untested: real cameras, Safari, Firefox, screen readers.
+- Next: real-device run of docs/TEST_CHECKLIST.md (both directions now), then retune coach thresholds.

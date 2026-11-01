@@ -320,6 +320,43 @@ body.dragging .viewport { outline: 3px dashed var(--acc); outline-offset: 3px; }
 :root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after { animation: none !important; transition: none !important; }
 :root[data-motion="reduce"] button:active:not(:disabled) { transform: none; }
 @media (max-width: 520px) { header.top { padding: 8px 10px; gap: 6px; } header.top nav a.home, .brand span, .tool .lbl { display: none; } header.top nav a { padding: 0 10px; } }
+/* Cycle 9: the reverse-channel Done code (receiver) and "Confirm with camera" (sender). The Done code is drawn on
+ * its own white canvas with a 4-module quiet zone; the ring and glow belong to the wrapper's padding around it,
+ * never to the code. Animations play once (the glow three times, 2.4 s apart: far below any flashing threshold);
+ * the resting pose is the finished picture, so reduced motion shows it static. */
+.ackpanel { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: var(--s5); padding: 16px; color: #d7e2ec; text-align: left; background: radial-gradient(closest-side, color-mix(in srgb, #4cd98a 16%, #0c1a14), #05080b); animation: rise .5s var(--ease) both; }
+.ack-code { position: relative; padding: 9px; border-radius: 16px; background: conic-gradient(from 210deg, #4cd98a, #5cc8ff, #4cd98a); box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 10px 30px rgba(0,0,0,.45); animation: ackpop .7s var(--ease) both, ackglow 2.4s .8s ease-in-out 3; flex: none; line-height: 0; }
+.ack-code canvas { display: block; background: #fff; border-radius: 6px; image-rendering: pixelated; }
+.ack-text { display: flex; flex-direction: column; gap: 6px; max-width: 17em; font-size: 14px; line-height: 1.45; }
+.ack-h { display: flex; align-items: center; gap: 8px; font-size: 26px; letter-spacing: -.4px; color: #fff; }
+.ack-h svg { width: 28px; height: 28px; flex: none; }
+.ack-h circle { fill: #4cd98a; } .ack-h path { fill: none; stroke: #00210f; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 16; stroke-dashoffset: 0; animation: draw16 .45s .55s var(--ease) both; }
+.ack-text b { color: #fff; }
+.ack-id { font-family: var(--mono, ui-monospace, monospace); font-size: 12px; color: #9fb0bf; overflow-wrap: anywhere; }
+@media (max-width: 559px) { .ackpanel { gap: 12px; padding: 10px; } .ack-h { font-size: 20px; } .ack-h svg { width: 22px; height: 22px; } .ack-text { font-size: 12.5px; line-height: 1.35; gap: 3px; } .ack-code { padding: 7px; } .ack-id { font-size: 11px; } }
+@media (max-width: 355px) { .ackpanel { flex-direction: column; gap: 8px; text-align: center; } .ack-h { justify-content: center; } }
+@keyframes ackpop { 0% { transform: scale(.86); opacity: 0; } 70% { transform: scale(1.02); opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes ackglow { 0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 10px 30px rgba(0,0,0,.45); } 50% { box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 0 34px 6px color-mix(in srgb, #4cd98a 55%, transparent); } }
+@keyframes draw16 { from { stroke-dashoffset: 16; } to { stroke-dashoffset: 0; } }
+button.camconfirm { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+button.camconfirm svg { width: 20px; height: 20px; flex: none; }
+.ackcam { display: flex; gap: var(--s3); align-items: center; margin-top: var(--s3); padding: var(--s2); border-radius: var(--r-sm); background: var(--card2); border: 1px solid var(--line); animation: rise .35s var(--ease) both; }
+.ackcam-view { position: relative; width: 136px; aspect-ratio: 4 / 3; flex: none; border-radius: 8px; overflow: hidden; background: #000; }
+.ackcam-view video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+.ackcam-corners { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); fill: none; stroke: var(--ok); stroke-width: 4; stroke-linecap: round; vector-effect: non-scaling-stroke; animation: seek 2.4s ease-in-out infinite; }
+.ackcam-side { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 13px; }
+.ackcam-p, .ackcam-hint { margin: 0; }
+.ackcam-hint { color: var(--mut); min-height: 1.4em; }
+.ackcam-hint.warn { color: var(--warn); }
+.ackcam.off .ackcam-view, .ackcam.off #ackcam-cancel, .ackcam.off .ackcam-p { display: none; }
+.ackcam.off { background: var(--warn-bg); border-color: transparent; }
+@media (max-width: 420px) { .ackcam-view { width: 104px; } }
+.finish.confirmed { border-color: var(--ok); background: linear-gradient(180deg, color-mix(in srgb, var(--ok) 22%, var(--card2)), var(--card)); }
+.finish.confirmed .finish-mark { animation: pop .6s var(--ease) both; }
+.sd-rays { display: none; fill: none; stroke: var(--ok); stroke-width: 6; stroke-linecap: round; }
+.stage-done.confirmed .sd-rays { display: inline; transform-box: view-box; transform-origin: 48px 48px; animation: rays .9s .75s var(--ease) both; }
+.stage-done.confirmed b { color: var(--ok); }
+@keyframes rays { 0% { transform: scale(.7); opacity: 0; } 55% { opacity: 1; } 100% { transform: none; opacity: .85; } }
 </style>
 <script>try{var d=document.documentElement,t=localStorage.getItem("dexqr-theme"),m=localStorage.getItem("dexqr-motion");if(t==="light"||t==="dark")d.setAttribute("data-theme",t);if(m==="reduce")d.setAttribute("data-motion","reduce")}catch(e){}</script>
 </head>
@@ -331,6 +368,10 @@ body.dragging .viewport { outline: 3px dashed var(--acc); outline-offset: 3px; }
   <div class="viewport" id="viewport">
     <video id="video" playsinline muted aria-label="Camera preview"></video>
     <div id="empty" class="empty"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9h2v2H9zM13 13h2v2h-2zM13 9h2M9 13v2"/></svg><span>Press <b>Start scanning</b>, then point this camera at the sender's screen.<br>You can also drop QR images or a screen recording here.</span></div>
+    <div class="ackpanel" id="ack" hidden>
+      <div class="ack-code" id="ack-code"><canvas id="ackqr" width="10" height="10" role="img" aria-label="Done code: an optional confirmation for the sender's camera. It holds only this transfer's ID."></canvas></div>
+      <div class="ack-text"><b class="ack-h"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11"/><path d="M7 12.5l3.2 3.2L17 8.8"/></svg>Done</b><span>Optional: on the sender, press <b>Confirm with camera</b> and hold this screen up to its camera.</span><span class="ack-id" id="ack-id"></span></div>
+    </div>
     <div class="reticle" id="reticle" aria-hidden="true" hidden><svg viewBox="0 0 100 100"><g class="corners" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M2 20V8a6 6 0 0 1 6-6h12M80 2h12a6 6 0 0 1 6 6v12M98 80v12a6 6 0 0 1-6 6H80M20 98H8a6 6 0 0 1-6-6V80"/></g><rect class="sweep" x="8" y="0" width="84" height="1.4" rx=".7" fill="currentColor"/></svg></div>
     <div class="camtag" id="camtag" hidden><span class="dot on" aria-hidden="true"></span><span id="camtag-text">Scanning</span></div>
     <canvas id="work" hidden></canvas>
@@ -12682,6 +12723,74 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
 })(typeof globalThis !== "undefined" ? globalThis : this);
 
 </script>
+<script>/* ---- src/ack.js ---- */
+/* Dex_QR — reverse-channel "Done" confirmation frame (cycle 9). Original code, MIT License.
+ *
+ * When the receiver has rebuilt and verified a file it shows one small static QR code; the sender can scan it
+ * with its own camera to turn "should have it by now" into a confirmed Done. Base45 with the text prefix "DA":
+ *   off size field
+ *    0   1   ACK version (=1)
+ *    1   1   kind (1 = done: the whole transfer was rebuilt and its SHA-256 checksum verified)
+ *    2   8   fileId of the transfer (the same 8 bytes every stream packet carries; nothing secret, no file content)
+ *   10   4   CRC-32 of bytes [0, 10)
+ * Envelope rule for every ACK version, present and future: the last 4 bytes are the CRC-32 of all bytes before
+ * them. So a damaged or unrelated "DA..." code is rejected as "crc", and only a well-formed code from a newer
+ * release is reported as "version" (with a plain-language message on the sender), never mistaken for Done.
+ * Older senders never scan anything; older receivers never show it. Stream packets ("DQ") and key-check frames
+ * ("DK") are unchanged.
+ */
+(function (root) {
+  "use strict";
+  const DQ = root.DexQR;
+  const PREFIX = "DA";
+  const VERSION = 1;
+  const KIND_DONE = 1;
+  const LEN = 14;
+  const MIN_LEN = 6;                 // version + kind + CRC-32: the shortest frame any version can have
+  const MAX_TEXT = 512;              // ACK codes are tiny; refuse to Base45-decode anything long
+  const REASONS = ["foreign", "toolong", "base45", "short", "crc", "version", "length", "kind"];
+
+  function build(fileId, kind = KIND_DONE) {
+    if (!fileId || fileId.length < 8) throw new Error("fileId must be 8 bytes");
+    const b = new Uint8Array(LEN), dv = new DataView(b.buffer);
+    b[0] = VERSION; b[1] = kind;
+    b.set(fileId.subarray ? fileId.subarray(0, 8) : fileId.slice(0, 8), 2);
+    dv.setUint32(10, DQ.crc32(b, 0, 10));
+    return PREFIX + DQ.base45.encode(b);
+  }
+
+  /* Returns {ok:true, version, kind, fileId, fileIdHex} or {ok:false, reason, version?}. Never throws. */
+  function parse(text) {
+    if (typeof text !== "string" || !text.startsWith(PREFIX)) return { ok: false, reason: "foreign" };
+    if (text.length > MAX_TEXT) return { ok: false, reason: "toolong" };
+    let b;
+    try { b = DQ.base45.decode(text.slice(PREFIX.length)); } catch (e) { return { ok: false, reason: "base45" }; }
+    if (b.length < MIN_LEN) return { ok: false, reason: "short" };
+    const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    if (DQ.crc32(b, 0, b.length - 4) !== dv.getUint32(b.length - 4)) return { ok: false, reason: "crc" };
+    if (b[0] !== VERSION) return { ok: false, reason: "version", version: b[0] };
+    if (b.length !== LEN) return { ok: false, reason: "length" };
+    if (b[1] !== KIND_DONE) return { ok: false, reason: "kind", kind: b[1] };
+    const fileId = b.slice(2, 10);
+    return { ok: true, version: VERSION, kind: KIND_DONE, fileId, fileIdHex: DQ.packet.hex(fileId) };
+  }
+
+  /* What a sender expecting transfer `fileIdHex` should do with one scanned text:
+   * "done" (this transfer is confirmed), "other" (a Done code for a different transfer), "newer" (an ACK version
+   * or kind this page does not know), "stream" (a Dex_QR stream or key-check frame, e.g. its own screen in a
+   * mirror), "bad" (a damaged "DA" code) or "foreign" (some other QR code). */
+  function classify(text, fileIdHex) {
+    const r = parse(text);
+    if (r.ok) return { verdict: r.fileIdHex === fileIdHex ? "done" : "other", ack: r };
+    if (r.reason === "version" || r.reason === "kind") return { verdict: "newer", ack: r };
+    if (r.reason === "foreign") return { verdict: typeof text === "string" && (text.startsWith("DQ") || text.startsWith("DK")) ? "stream" : "foreign", ack: r };
+    return { verdict: "bad", ack: r };
+  }
+
+  DQ.ack = { PREFIX, VERSION, KIND_DONE, LEN, REASONS, build, parse, classify };
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+</script>
 <script>/* ---- src/scan.js ---- */
 /* Dex_QR — receiver-side QR scanning helper around jsQR. Original code, MIT License.
  * Pass 1: jsQR on the frame as given. Pass 2 (only if pass 1 found nothing): jsQR on a 3x3 box-blurred
@@ -13391,8 +13500,9 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
       state.error = null; state.opened = true; updatePassUi();
       a.addEventListener("click", () => { state.saved = true; setPhase("done"); });
       setPhase("done");
+      showAck(sess.meta.fileId);
       celebrate();
-      msg("✓ Transfer complete. The file is verified and ready to save.", "ok");
+      msg("✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.", "ok");
       a.focus();
     } catch (e) {
       if (state.session !== sess) return;
@@ -13407,6 +13517,36 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
       if (state.session === sess) { state.opening = false; $("decrypt").disabled = false; }
     }
   }
+
+  /* Cycle 9: the reverse-channel Done code. One small static QR ("DA" frame: ACK version, kind, transfer ID, CRC-32;
+   * nothing secret and no file content) in the camera area, which is empty once the scan is complete. Drawn like the
+   * sender's stream: black modules on white, a 4-module white quiet zone, a whole number of pixels per module (4-10,
+   * from the space available); the glow and ring are on the wrapper around the canvas, never on the code. */
+  const ACK_QUIET = 4;
+  function drawAck() {
+    if (!state.ackText) return;
+    const qr = DQ.render.makeQr(state.ackText, "M"), n = qr.size + 2 * ACK_QUIET;
+    // Code beside the text (the panel is a row down to 330 px wide, see common.css), else above it.
+    const vp = $("viewport"), row = vp.clientWidth >= 330, availH = vp.clientHeight - (row ? 36 : 112), availW = vp.clientWidth * (row ? (vp.clientWidth >= 520 ? 0.5 : 0.56) : 0.62);
+    const px = Math.max(4, Math.min(10, Math.floor(Math.min(availH, availW) / n)));
+    const c = $("ackqr");
+    if (c.width !== n * px) { c.width = n * px; c.height = n * px; }
+    c.style.width = c.style.height = n * px + "px";
+    const g = c.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = "#000";
+    for (let y = 0; y < qr.size; y++) for (let x = 0; x < qr.size; x++) if (qr.getModule(x, y)) g.fillRect((x + ACK_QUIET) * px, (y + ACK_QUIET) * px, px, px);
+    state.ackInfo = { version: qr.version, size: qr.size, modulePx: px, quiet: ACK_QUIET };
+  }
+  function showAck(fileId) {
+    state.ackText = DQ.ack.build(fileId);
+    $("ack-id").textContent = "Transfer " + DQ.packet.hex(fileId);
+    $("empty").hidden = true; $("ack").hidden = false;
+    drawAck();
+  }
+  function hideAck() { state.ackText = ""; state.ackInfo = null; $("ack").hidden = true; }
+  let ackRz = 0;
+  window.addEventListener("resize", () => { if (!state.ackText) return; cancelAnimationFrame(ackRz); ackRz = requestAnimationFrame(drawAck); });
 
   function celebrate() {
     map.celebrate();
@@ -13584,7 +13724,7 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
   function resetAll() {
     stopCamera(); stopVideoFile(); revokeResult();
     state.session = new DQ.ReceiverSession(); state.result = null; state.error = null; state.opened = false; state.opening = false; state.saved = false;
-    map.reset(); $("burst").hidden = true; $("burst").classList.remove("play");
+    map.reset(); $("burst").hidden = true; $("burst").classList.remove("play"); hideAck(); $("empty").hidden = false;
     state.keyState = ""; state.pendingCheck = false; state.checking = false; state.checkToken++; state.passOffered = null;
     state.kdfFor = 0; state.kdfEst = null; $("passslow").hidden = true; $("passslow").textContent = "";
     $("result").textContent = ""; $("passbox").hidden = true; $("pass").value = ""; $("decrypt").textContent = "Decrypt"; $("r-key").textContent = "–"; $("decrypt").disabled = false; $("bar").style.width = "0%"; msg("", "");

@@ -87,13 +87,13 @@
     <div class="note">The sender cannot see what the receiver got. The bar shows frames sent against an estimate of what a receiver needs (about K × 1.05 frames if none are missed). Keep playing until the receiver says it is done; the stream never repeats a packet.</div>
     </div>
   </details>
-  <div class="note">Keys: <kbd>Space</kbd> or <kbd>K</kbd> play/pause, <kbd>F</kbd> full screen, <kbd>Esc</kbd> leave it. The code flashes black and white at the chosen speed (8 per second by default); if flashing light bothers you, look away while it plays or lower the speed. The page's own animations are slow fades and a 6-second how-to loop beside the code (nothing flashes); turn them off with the motion button at the top.</div>
+  <div class="note">Keys: <kbd>Space</kbd> or <kbd>K</kbd> play/pause, <kbd>F</kbd> full screen, <kbd>Esc</kbd> leave it. The code flashes black and white at the chosen speed (8 per second by default); if flashing light bothers you, look away while it plays or lower the speed. The page's own animations are slow fades, a 6-second how-to loop beside the code and a one-time check mark when the receiver's Done code is confirmed (nothing flashes); turn them off with the motion button at the top.</div>
 </section>
 <section class="stagewrap" aria-label="QR stream">
   <div class="ring idle" id="ring">
     <div class="stage idle" id="stage">
       <div class="stage-empty" id="stage-empty"><svg viewBox="0 0 120 120" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".55"><path d="M10 34V18a8 8 0 0 1 8-8h16M86 10h16a8 8 0 0 1 8 8v16M110 86v16a8 8 0 0 1-8 8H86M34 110H18a8 8 0 0 1-8-8V86"/></g><g fill="currentColor" opacity=".35"><rect x="30" y="30" width="22" height="22" rx="3"/><rect x="68" y="30" width="22" height="22" rx="3"/><rect x="30" y="68" width="22" height="22" rx="3"/><rect x="70" y="70" width="8" height="8" rx="2"/><rect x="82" y="78" width="8" height="8" rx="2"/><rect x="70" y="84" width="6" height="6" rx="2"/></g></svg><span>Your animated code appears here.<br>Choose a file, then press <b>Start sending</b>.</span></div>
-      <div class="stage-done" id="stage-done" hidden><svg viewBox="0 0 96 96" aria-hidden="true" focusable="false"><circle class="sd-ring" cx="48" cy="48" r="42"/><path class="sd-check" d="M29 50l13 13 26-29"/></svg><b>Sent</b><span id="stage-done-name"></span></div>
+      <div class="stage-done" id="stage-done" hidden><svg viewBox="-24 -24 144 144" aria-hidden="true" focusable="false"><g class="sd-rays"><path d="M48-6v-12M48 102v12M-6 48h-12M102 48h12M10 10l-8-8M86 86l8 8M86 10l8-8M10 86l-8 8"/></g><circle class="sd-ring" cx="48" cy="48" r="42"/><path class="sd-check" d="M29 50l13 13 26-29"/></svg><b id="stage-done-h">Sent</b><span id="stage-done-name"></span></div>
       <canvas id="qr" class="qr" width="10" height="10" role="img" aria-label="Animated QR code stream (choose a file first)" hidden></canvas>
       <div class="stage-bar" id="stagebar" hidden><span id="stage-info" aria-hidden="true"></span><button id="stage-play" type="button" class="secondary">Pause</button><button id="stage-exit" type="button" class="secondary">Exit full screen</button></div>
     </div>
@@ -105,7 +105,16 @@
       <div><h2 id="finish-h">The receiver should have it by now</h2><p class="lead" id="finish-p"></p></div>
     </div>
     <dl class="stats finish-stats" id="finish-stats" hidden></dl>
+    <div class="ackcam" id="ackcam" hidden>
+      <div class="ackcam-view"><video id="ackvideo" playsinline muted aria-label="This device's camera, looking for the receiver's Done code"></video><svg class="ackcam-corners" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M3 22V9a6 6 0 0 1 6-6h13M78 3h13a6 6 0 0 1 6 6v13M97 78v13a6 6 0 0 1-6 6H78M22 97H9a6 6 0 0 1-6-6V78"/></svg></div>
+      <div class="ackcam-side">
+        <p class="ackcam-p">Hold the receiver's screen, showing its <b>Done</b> code, up to this camera.</p>
+        <p class="ackcam-hint" id="ackcam-hint" role="status" aria-live="polite"></p>
+        <button id="ackcam-cancel" type="button" class="secondary">Stop the camera</button>
+      </div>
+    </div>
     <div class="btns">
+      <button id="finish-confirm" type="button" class="secondary camconfirm" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4zM12 16.6a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z"/></svg><span>Confirm with camera</span></button>
       <button id="finish-stop" type="button" class="okbtn">Receiver done: stop</button>
       <button id="finish-again" type="button" class="secondary">Send another file</button>
       <button id="finish-resume" type="button" class="secondary" hidden>Show the code again</button>

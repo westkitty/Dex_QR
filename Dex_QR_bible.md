@@ -257,3 +257,11 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Next:** reverse-channel ACK design (item 6).
 
 - **Commit:** `19d358130500ea80e7206ae877eab6837dcb21ac` on `main` (pushed 044bb59..19d3581; this line added in a docs follow-up commit).
+
+### Cycle 9 (2026-11-01, ~3:20 PM EST): reverse-channel Done confirmation
+- **What:** receiver shows a static `DA` Done code after a verified rebuild; sender's optional Confirm with camera turns the estimate into a confirmed Done, stops the stream, releases the camera and celebrates (reduced-motion still).
+- **Format:** `DA` + Base45([ver 1, kind 1, fileId 8 B, CRC-32]); last-4-bytes-CRC envelope for every version; unknown version or kind is "newer", never Done.
+- **Numbers:** ack 36/36; Done code 10 px @1280 / 6 px @390 modules, 4-module quiet zone; stream module size unchanged; pagescan clean/moderate 40/40 before = after; harsh zxing 35→37 / 18→17 (noise); soak 30.00 / 30.02 fps flat heap (an earlier loaded-box run read 18.6 / 24.2); a11y 0 in 66 states; look 25/25; unit 90/90; lint 0.
+- **Invariants kept:** stream QR drawing, quiet zone and module size untouched; decoration outside codes; offline, single file, 0 network requests; no dependency; protocol stream frames unchanged and backward compatible.
+- **Untested:** real cameras, Safari, Firefox, screen readers. A Done code is a convenience, not proof; compare the SHA-256.
+- **Next:** real-device checklist run, then coach threshold retune.

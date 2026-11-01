@@ -1,11 +1,11 @@
 {
- "when": "2026-11-01T16:13:30.036Z",
+ "when": "2026-11-01T18:27:17.820Z",
  "root": "/workspace/Dex_QR",
  "measurements": {
   "dark_1280": {
    "viewport": 1280,
    "want": "dark",
-   "secondsToHint": 1.234,
+   "secondsToHint": 1.237,
    "hintsShown": [
     "start",
     "dark"
@@ -22,7 +22,7 @@
   "dark_390": {
    "viewport": 390,
    "want": "dark",
-   "secondsToHint": 1.147,
+   "secondsToHint": 1.146,
    "hintsShown": [
     "start",
     "dark"
@@ -39,7 +39,7 @@
   "blank_1280": {
    "viewport": 1280,
    "want": "blank",
-   "secondsToHint": 1.24,
+   "secondsToHint": 1.239,
    "hintsShown": [
     "start",
     "blank"
@@ -56,7 +56,7 @@
   "blank_390": {
    "viewport": 390,
    "want": "blank",
-   "secondsToHint": 1.135,
+   "secondsToHint": 1.123,
    "hintsShown": [
     "start",
     "blank"
@@ -73,7 +73,7 @@
   "blurry_1280": {
    "viewport": 1280,
    "want": "blurry",
-   "secondsToHint": 1.23,
+   "secondsToHint": 1.222,
    "hintsShown": [
     "start",
     "blurry"
@@ -90,7 +90,7 @@
   "blurry_390": {
    "viewport": 390,
    "want": "blurry",
-   "secondsToHint": 1.139,
+   "secondsToHint": 1.149,
    "hintsShown": [
     "start",
     "blurry"
@@ -107,7 +107,7 @@
   "foreign_1280": {
    "viewport": 1280,
    "want": "foreign",
-   "secondsToHint": 1.238,
+   "secondsToHint": 1.233,
    "hintsShown": [
     "start",
     "foreign"
@@ -115,7 +115,7 @@
    "announcements": 1,
    "minAnnounceGapMs": null,
    "finalHint": "That is a QR code, but not a Dex_QR stream. Point the camera at the Dex_QR sender.",
-   "secondsToAnyMessage": 0.621,
+   "secondsToAnyMessage": 0.618,
    "finalMessage": "The camera sees QR codes, but none is a Dex_QR stream.",
    "phase": "scanning",
    "packets": 0,
@@ -124,7 +124,7 @@
   "foreign_390": {
    "viewport": 390,
    "want": "foreign",
-   "secondsToHint": 1.144,
+   "secondsToHint": 1.148,
    "hintsShown": [
     "start",
     "foreign"
@@ -132,7 +132,7 @@
    "announcements": 1,
    "minAnnounceGapMs": null,
    "finalHint": "That is a QR code, but not a Dex_QR stream. Point the camera at the Dex_QR sender.",
-   "secondsToAnyMessage": 0.524,
+   "secondsToAnyMessage": 0.528,
    "finalMessage": "The camera sees QR codes, but none is a Dex_QR stream.",
    "phase": "scanning",
    "packets": 0,
@@ -141,14 +141,14 @@
   "receiving_1280": {
    "viewport": 1280,
    "want": "steady",
-   "secondsToHint": 0.507,
+   "secondsToHint": 0.497,
    "hintsShown": [
     "start",
     "steady",
     "almost"
    ],
    "announcements": 2,
-   "minAnnounceGapMs": 7294,
+   "minAnnounceGapMs": 7310,
    "finalHint": "Almost there. Keep holding steady.",
    "secondsToAnyMessage": null,
    "finalMessage": "",
@@ -159,14 +159,14 @@
   "receiving_390": {
    "viewport": 390,
    "want": "steady",
-   "secondsToHint": 0.414,
+   "secondsToHint": 0.412,
    "hintsShown": [
     "start",
     "steady",
     "almost"
    ],
    "announcements": 2,
-   "minAnnounceGapMs": 7305,
+   "minAnnounceGapMs": 7298,
    "finalHint": "Almost there. Keep holding steady.",
    "secondsToAnyMessage": null,
    "finalMessage": "",
@@ -178,8 +178,8 @@
    "label": "simulated slow device (2 µs per iteration)",
    "viewport": 1280,
    "warning": "Heads-up: this device needs about 17 seconds to check the passphrase, because the sender chose strong protection (8,000,000 rounds of key stretching). Scanning keeps going while it works.",
-   "estimateMs": 17240,
-   "secondsToWarning": 0.438,
+   "estimateMs": 17200,
+   "secondsToWarning": 0.324,
    "passphraseTyped": false,
    "keyLine": "key-check frame received (PBKDF2 × 8,000,000; about 17 s on this device); enter the passphrase to check it",
    "pageErrors": []
@@ -188,8 +188,8 @@
    "label": "simulated slow device (2 µs per iteration)",
    "viewport": 390,
    "warning": "Heads-up: this device needs about 17 seconds to check the passphrase, because the sender chose strong protection (8,000,000 rounds of key stretching). Scanning keeps going while it works.",
-   "estimateMs": 17176,
-   "secondsToWarning": 0.375,
+   "estimateMs": 17496,
+   "secondsToWarning": 0.372,
    "passphraseTyped": false,
    "keyLine": "key-check frame received (PBKDF2 × 8,000,000; about 17 s on this device); enter the passphrase to check it",
    "pageErrors": []
@@ -198,8 +198,8 @@
    "label": "this machine (headless Chrome, unthrottled)",
    "viewport": 1280,
    "warning": "",
-   "estimateMs": 1126,
-   "secondsToWarning": 0.169,
+   "estimateMs": 1074,
+   "secondsToWarning": 0.186,
    "passphraseTyped": false,
    "keyLine": "key-check frame received (PBKDF2 × 8,000,000; about 1 s on this device); enter the passphrase to check it",
    "pageErrors": []
@@ -208,8 +208,8 @@
    "label": "this machine (headless Chrome, unthrottled)",
    "viewport": 390,
    "warning": "",
-   "estimateMs": 1124,
-   "secondsToWarning": 0.167,
+   "estimateMs": 1126,
+   "secondsToWarning": 0.171,
    "passphraseTyped": false,
    "keyLine": "key-check frame received (PBKDF2 × 8,000,000; about 1 s on this device); enter the passphrase to check it",
    "pageErrors": []
@@ -221,7 +221,7 @@
    "ok": true,
    "viewport": 1280,
    "want": "dark",
-   "secondsToHint": 1.234,
+   "secondsToHint": 1.237,
    "hintsShown": [
     "start",
     "dark"
@@ -240,7 +240,7 @@
    "ok": true,
    "viewport": 390,
    "want": "dark",
-   "secondsToHint": 1.147,
+   "secondsToHint": 1.146,
    "hintsShown": [
     "start",
     "dark"
@@ -259,7 +259,7 @@
    "ok": true,
    "viewport": 1280,
    "want": "blank",
-   "secondsToHint": 1.24,
+   "secondsToHint": 1.239,
    "hintsShown": [
     "start",
     "blank"
@@ -278,7 +278,7 @@
    "ok": true,
    "viewport": 390,
    "want": "blank",
-   "secondsToHint": 1.135,
+   "secondsToHint": 1.123,
    "hintsShown": [
     "start",
     "blank"
@@ -297,7 +297,7 @@
    "ok": true,
    "viewport": 1280,
    "want": "blurry",
-   "secondsToHint": 1.23,
+   "secondsToHint": 1.222,
    "hintsShown": [
     "start",
     "blurry"
@@ -316,7 +316,7 @@
    "ok": true,
    "viewport": 390,
    "want": "blurry",
-   "secondsToHint": 1.139,
+   "secondsToHint": 1.149,
    "hintsShown": [
     "start",
     "blurry"
@@ -335,7 +335,7 @@
    "ok": true,
    "viewport": 1280,
    "want": "foreign",
-   "secondsToHint": 1.238,
+   "secondsToHint": 1.233,
    "hintsShown": [
     "start",
     "foreign"
@@ -343,7 +343,7 @@
    "announcements": 1,
    "minAnnounceGapMs": null,
    "finalHint": "That is a QR code, but not a Dex_QR stream. Point the camera at the Dex_QR sender.",
-   "secondsToAnyMessage": 0.621,
+   "secondsToAnyMessage": 0.618,
    "finalMessage": "The camera sees QR codes, but none is a Dex_QR stream.",
    "phase": "scanning",
    "packets": 0,
@@ -354,7 +354,7 @@
    "ok": true,
    "viewport": 390,
    "want": "foreign",
-   "secondsToHint": 1.144,
+   "secondsToHint": 1.148,
    "hintsShown": [
     "start",
     "foreign"
@@ -362,7 +362,7 @@
    "announcements": 1,
    "minAnnounceGapMs": null,
    "finalHint": "That is a QR code, but not a Dex_QR stream. Point the camera at the Dex_QR sender.",
-   "secondsToAnyMessage": 0.524,
+   "secondsToAnyMessage": 0.528,
    "finalMessage": "The camera sees QR codes, but none is a Dex_QR stream.",
    "phase": "scanning",
    "packets": 0,
@@ -373,14 +373,14 @@
    "ok": true,
    "viewport": 1280,
    "want": "steady",
-   "secondsToHint": 0.507,
+   "secondsToHint": 0.497,
    "hintsShown": [
     "start",
     "steady",
     "almost"
    ],
    "announcements": 2,
-   "minAnnounceGapMs": 7294,
+   "minAnnounceGapMs": 7310,
    "finalHint": "Almost there. Keep holding steady.",
    "secondsToAnyMessage": null,
    "finalMessage": "",
@@ -393,14 +393,14 @@
    "ok": true,
    "viewport": 390,
    "want": "steady",
-   "secondsToHint": 0.414,
+   "secondsToHint": 0.412,
    "hintsShown": [
     "start",
     "steady",
     "almost"
    ],
    "announcements": 2,
-   "minAnnounceGapMs": 7305,
+   "minAnnounceGapMs": 7298,
    "finalHint": "Almost there. Keep holding steady.",
    "secondsToAnyMessage": null,
    "finalMessage": "",
@@ -442,8 +442,8 @@
    "label": "simulated slow device (2 µs per iteration)",
    "viewport": 1280,
    "warning": "Heads-up: this device needs about 17 seconds to check the passphrase, because the sender chose strong protection (8,000,000 rounds of key stretching). Scanning keeps going while it works.",
-   "estimateMs": 17240,
-   "secondsToWarning": 0.438,
+   "estimateMs": 17200,
+   "secondsToWarning": 0.324,
    "passphraseTyped": false,
    "keyLine": "key-check frame received (PBKDF2 × 8,000,000; about 17 s on this device); enter the passphrase to check it",
    "pageErrors": []
@@ -454,8 +454,8 @@
    "label": "simulated slow device (2 µs per iteration)",
    "viewport": 390,
    "warning": "Heads-up: this device needs about 17 seconds to check the passphrase, because the sender chose strong protection (8,000,000 rounds of key stretching). Scanning keeps going while it works.",
-   "estimateMs": 17176,
-   "secondsToWarning": 0.375,
+   "estimateMs": 17496,
+   "secondsToWarning": 0.372,
    "passphraseTyped": false,
    "keyLine": "key-check frame received (PBKDF2 × 8,000,000; about 17 s on this device); enter the passphrase to check it",
    "pageErrors": []
@@ -466,8 +466,8 @@
    "label": "this machine (headless Chrome, unthrottled)",
    "viewport": 1280,
    "warning": "",
-   "estimateMs": 1126,
-   "secondsToWarning": 0.169,
+   "estimateMs": 1074,
+   "secondsToWarning": 0.186,
    "passphraseTyped": false,
    "keyLine": "key-check frame received (PBKDF2 × 8,000,000; about 1 s on this device); enter the passphrase to check it",
    "pageErrors": []
@@ -478,8 +478,8 @@
    "label": "this machine (headless Chrome, unthrottled)",
    "viewport": 390,
    "warning": "",
-   "estimateMs": 1124,
-   "secondsToWarning": 0.167,
+   "estimateMs": 1126,
+   "secondsToWarning": 0.171,
    "passphraseTyped": false,
    "keyLine": "key-check frame received (PBKDF2 × 8,000,000; about 1 s on this device); enter the passphrase to check it",
    "pageErrors": []

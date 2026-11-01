@@ -338,8 +338,9 @@
       state.error = null; state.opened = true; updatePassUi();
       a.addEventListener("click", () => { state.saved = true; setPhase("done"); });
       setPhase("done");
+      showAck(sess.meta.fileId);
       celebrate();
-      msg("✓ Transfer complete. The file is verified and ready to save.", "ok");
+      msg("✓ Transfer complete. The file is verified and ready to save. Optional: show the Done code to the sender's camera.", "ok");
       a.focus();
     } catch (e) {
       if (state.session !== sess) return;
@@ -354,6 +355,36 @@
       if (state.session === sess) { state.opening = false; $("decrypt").disabled = false; }
     }
   }
+
+  /* Cycle 9: the reverse-channel Done code. One small static QR ("DA" frame: ACK version, kind, transfer ID, CRC-32;
+   * nothing secret and no file content) in the camera area, which is empty once the scan is complete. Drawn like the
+   * sender's stream: black modules on white, a 4-module white quiet zone, a whole number of pixels per module (4-10,
+   * from the space available); the glow and ring are on the wrapper around the canvas, never on the code. */
+  const ACK_QUIET = 4;
+  function drawAck() {
+    if (!state.ackText) return;
+    const qr = DQ.render.makeQr(state.ackText, "M"), n = qr.size + 2 * ACK_QUIET;
+    // Code beside the text (the panel is a row down to 330 px wide, see common.css), else above it.
+    const vp = $("viewport"), row = vp.clientWidth >= 330, availH = vp.clientHeight - (row ? 36 : 112), availW = vp.clientWidth * (row ? (vp.clientWidth >= 520 ? 0.5 : 0.56) : 0.62);
+    const px = Math.max(4, Math.min(10, Math.floor(Math.min(availH, availW) / n)));
+    const c = $("ackqr");
+    if (c.width !== n * px) { c.width = n * px; c.height = n * px; }
+    c.style.width = c.style.height = n * px + "px";
+    const g = c.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = "#000";
+    for (let y = 0; y < qr.size; y++) for (let x = 0; x < qr.size; x++) if (qr.getModule(x, y)) g.fillRect((x + ACK_QUIET) * px, (y + ACK_QUIET) * px, px, px);
+    state.ackInfo = { version: qr.version, size: qr.size, modulePx: px, quiet: ACK_QUIET };
+  }
+  function showAck(fileId) {
+    state.ackText = DQ.ack.build(fileId);
+    $("ack-id").textContent = "Transfer " + DQ.packet.hex(fileId);
+    $("empty").hidden = true; $("ack").hidden = false;
+    drawAck();
+  }
+  function hideAck() { state.ackText = ""; state.ackInfo = null; $("ack").hidden = true; }
+  let ackRz = 0;
+  window.addEventListener("resize", () => { if (!state.ackText) return; cancelAnimationFrame(ackRz); ackRz = requestAnimationFrame(drawAck); });
 
   function celebrate() {
     map.celebrate();
@@ -531,7 +562,7 @@
   function resetAll() {
     stopCamera(); stopVideoFile(); revokeResult();
     state.session = new DQ.ReceiverSession(); state.result = null; state.error = null; state.opened = false; state.opening = false; state.saved = false;
-    map.reset(); $("burst").hidden = true; $("burst").classList.remove("play");
+    map.reset(); $("burst").hidden = true; $("burst").classList.remove("play"); hideAck(); $("empty").hidden = false;
     state.keyState = ""; state.pendingCheck = false; state.checking = false; state.checkToken++; state.passOffered = null;
     state.kdfFor = 0; state.kdfEst = null; $("passslow").hidden = true; $("passslow").textContent = "";
     $("result").textContent = ""; $("passbox").hidden = true; $("pass").value = ""; $("decrypt").textContent = "Decrypt"; $("r-key").textContent = "–"; $("decrypt").disabled = false; $("bar").style.width = "0%"; msg("", "");

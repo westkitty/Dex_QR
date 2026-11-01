@@ -1,11 +1,11 @@
 {
- "when": "2026-11-01T17:18:47.160Z",
+ "when": "2026-11-01T18:59:23.995Z",
  "results": [
   {
    "name": "sender frame clock matches the set rate (8 and 25 fps, within 3%)",
    "ok": true,
    "measured": {
-    "8": 8.15,
+    "8": 7.99,
     "25": 24.99
    },
    "before": "8 fps measured 7.50 with the old scheduler"
@@ -91,7 +91,7 @@
     "limits": 1
    },
    "msg": "Those files contain QR codes, but none from a Dex_QR stream.",
-   "seconds": 0.135,
+   "seconds": 0.185,
    "framesThenAgain": [
     3,
     5

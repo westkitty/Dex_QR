@@ -312,3 +312,40 @@ body.dragging .viewport { outline: 3px dashed var(--acc); outline-offset: 3px; }
 :root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after { animation: none !important; transition: none !important; }
 :root[data-motion="reduce"] button:active:not(:disabled) { transform: none; }
 @media (max-width: 520px) { header.top { padding: 8px 10px; gap: 6px; } header.top nav a.home, .brand span, .tool .lbl { display: none; } header.top nav a { padding: 0 10px; } }
+/* Cycle 9: the reverse-channel Done code (receiver) and "Confirm with camera" (sender). The Done code is drawn on
+ * its own white canvas with a 4-module quiet zone; the ring and glow belong to the wrapper's padding around it,
+ * never to the code. Animations play once (the glow three times, 2.4 s apart: far below any flashing threshold);
+ * the resting pose is the finished picture, so reduced motion shows it static. */
+.ackpanel { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: var(--s5); padding: 16px; color: #d7e2ec; text-align: left; background: radial-gradient(closest-side, color-mix(in srgb, #4cd98a 16%, #0c1a14), #05080b); animation: rise .5s var(--ease) both; }
+.ack-code { position: relative; padding: 9px; border-radius: 16px; background: conic-gradient(from 210deg, #4cd98a, #5cc8ff, #4cd98a); box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 10px 30px rgba(0,0,0,.45); animation: ackpop .7s var(--ease) both, ackglow 2.4s .8s ease-in-out 3; flex: none; line-height: 0; }
+.ack-code canvas { display: block; background: #fff; border-radius: 6px; image-rendering: pixelated; }
+.ack-text { display: flex; flex-direction: column; gap: 6px; max-width: 17em; font-size: 14px; line-height: 1.45; }
+.ack-h { display: flex; align-items: center; gap: 8px; font-size: 26px; letter-spacing: -.4px; color: #fff; }
+.ack-h svg { width: 28px; height: 28px; flex: none; }
+.ack-h circle { fill: #4cd98a; } .ack-h path { fill: none; stroke: #00210f; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 16; stroke-dashoffset: 0; animation: draw16 .45s .55s var(--ease) both; }
+.ack-text b { color: #fff; }
+.ack-id { font-family: var(--mono, ui-monospace, monospace); font-size: 12px; color: #9fb0bf; overflow-wrap: anywhere; }
+@media (max-width: 559px) { .ackpanel { gap: 12px; padding: 10px; } .ack-h { font-size: 20px; } .ack-h svg { width: 22px; height: 22px; } .ack-text { font-size: 12.5px; line-height: 1.35; gap: 3px; } .ack-code { padding: 7px; } .ack-id { font-size: 11px; } }
+@media (max-width: 355px) { .ackpanel { flex-direction: column; gap: 8px; text-align: center; } .ack-h { justify-content: center; } }
+@keyframes ackpop { 0% { transform: scale(.86); opacity: 0; } 70% { transform: scale(1.02); opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes ackglow { 0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 10px 30px rgba(0,0,0,.45); } 50% { box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 0 34px 6px color-mix(in srgb, #4cd98a 55%, transparent); } }
+@keyframes draw16 { from { stroke-dashoffset: 16; } to { stroke-dashoffset: 0; } }
+button.camconfirm { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+button.camconfirm svg { width: 20px; height: 20px; flex: none; }
+.ackcam { display: flex; gap: var(--s3); align-items: center; margin-top: var(--s3); padding: var(--s2); border-radius: var(--r-sm); background: var(--card2); border: 1px solid var(--line); animation: rise .35s var(--ease) both; }
+.ackcam-view { position: relative; width: 136px; aspect-ratio: 4 / 3; flex: none; border-radius: 8px; overflow: hidden; background: #000; }
+.ackcam-view video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+.ackcam-corners { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); fill: none; stroke: var(--ok); stroke-width: 4; stroke-linecap: round; vector-effect: non-scaling-stroke; animation: seek 2.4s ease-in-out infinite; }
+.ackcam-side { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 13px; }
+.ackcam-p, .ackcam-hint { margin: 0; }
+.ackcam-hint { color: var(--mut); min-height: 1.4em; }
+.ackcam-hint.warn { color: var(--warn); }
+.ackcam.off .ackcam-view, .ackcam.off #ackcam-cancel, .ackcam.off .ackcam-p { display: none; }
+.ackcam.off { background: var(--warn-bg); border-color: transparent; }
+@media (max-width: 420px) { .ackcam-view { width: 104px; } }
+.finish.confirmed { border-color: var(--ok); background: linear-gradient(180deg, color-mix(in srgb, var(--ok) 22%, var(--card2)), var(--card)); }
+.finish.confirmed .finish-mark { animation: pop .6s var(--ease) both; }
+.sd-rays { display: none; fill: none; stroke: var(--ok); stroke-width: 6; stroke-linecap: round; }
+.stage-done.confirmed .sd-rays { display: inline; transform-box: view-box; transform-origin: 48px 48px; animation: rays .9s .75s var(--ease) both; }
+.stage-done.confirmed b { color: var(--ok); }
+@keyframes rays { 0% { transform: scale(.7); opacity: 0; } 55% { opacity: 1; } 100% { transform: none; opacity: .85; } }

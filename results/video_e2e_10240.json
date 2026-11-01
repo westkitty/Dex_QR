@@ -13,7 +13,7 @@
   "frames": 196,
   "textLength": 643,
   "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
-  "renderMs": 1124
+  "renderMs": 1129
  },
  "crf": "23",
  "fps": "10",
@@ -33,7 +33,7 @@
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.38
+   "seconds": 0.467
   },
   {
    "size": 10240,
@@ -50,7 +50,7 @@
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.355
+   "seconds": 0.401
   },
   {
    "size": 10240,
@@ -67,7 +67,7 @@
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.36
+   "seconds": 0.443
   },
   {
    "size": 10240,
@@ -84,7 +84,7 @@
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.365
+   "seconds": 0.459
   },
   {
    "size": 10240,
@@ -101,7 +101,7 @@
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.346
+   "seconds": 0.422
   },
   {
    "size": 10240,
@@ -118,7 +118,7 @@
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.348
+   "seconds": 0.396
   },
   {
    "size": 10240,
@@ -135,7 +135,7 @@
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.371
+   "seconds": 0.462
   },
   {
    "size": 10240,
@@ -152,7 +152,7 @@
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.357
+   "seconds": 0.407
   },
   {
    "size": 10240,
@@ -169,7 +169,7 @@
    "ok": true,
    "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
    "err": null,
-   "seconds": 0.336
+   "seconds": 0.41
   }
  ]
 }

@@ -146,7 +146,7 @@ async function main() {
     await waitFor(p, () => window.__dexqrReceiver.phase === "no Dex_QR codes found");
     const st = await rstate(p); const secs = (Date.now() - t0) / 1000;
     await p.setInputFiles("#files", foreign);
-    await waitFor(p, (n) => window.__dexqrReceiver.session.stats.frames > n, st.frames, 20000);
+    await waitFor(p, (n) => window.__dexqrReceiver.session.stats.frames >= n + 2, st.frames, 20000);   // both files (cycle 9: was "> n", which raced the second file)
     const st2 = await rstate(p);
     record("receiver: non-Dex_QR codes and a forged huge-K frame are ignored quickly; the same files can be picked again", st.foreign === 2 && st.reasons.limits === 1 && !st.meta && /none from a Dex_QR stream/.test(st.msg) && secs < 15 && st2.frames === st.frames + 2 && errors.length === 0, { foreign: st.foreign, reasons: st.reasons, msg: st.msg, seconds: secs, framesThenAgain: [st.frames, st2.frames], errors });
     await ctx.close();

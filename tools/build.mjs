@@ -7,9 +7,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const css = read("src/pages/common.css");
 const logo = read("src/pages/logo.svg").trim();
-const core = ["src/base45.js", "src/crc32.js", "src/lt.js", "src/packet.js", "src/strength.js", "src/container.js", "src/session.js", "src/render.js"];
+const core = ["src/base45.js", "src/crc32.js", "src/lt.js", "src/packet.js", "src/strength.js", "src/container.js", "src/session.js", "src/render.js", "src/ack.js"];
 const pages = {
-  "sender.html": { tpl: "src/pages/sender.template.html", scripts: ["vendor/qrcodegen.js", ...core, "src/pages/ui.js"], app: "src/pages/sender.app.js" },
+  "sender.html": { tpl: "src/pages/sender.template.html", scripts: ["vendor/qrcodegen.js", "vendor/jsQR.js", ...core, "src/scan.js", "src/pages/ui.js"], app: "src/pages/sender.app.js" },
   "receiver.html": { tpl: "src/pages/receiver.template.html", scripts: ["vendor/qrcodegen.js", "vendor/jsQR.js", "vendor/zxing-wasm-reader.js", "vendor/zxing-reader-wasm.b64.js", ...core, "src/scan.js", "src/coach.js", "src/pages/ui.js", "src/pages/blockmap.js"], app: "src/pages/receiver.app.js" },
   "index.html": { tpl: "src/pages/index.template.html", scripts: [], app: null },
 };

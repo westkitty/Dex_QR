@@ -74,3 +74,8 @@
 - [ ] While receiving normally: "Locked on" and near the end "Almost there"; pause the sender: "Only repeats are arriving" within about 2 s.
 - [ ] With a screen reader (VoiceOver or TalkBack): hint changes are read out, not more than once every few seconds, and do not interrupt.
 - [ ] Encrypted transfer with "Tuned to this device" key stretching from a fast laptop, received on an older phone: a "Heads-up: this device needs about N seconds" note appears above the passphrase box before typing. Time the real check and note it next to N.
+
+**Done confirmation (cycle 9)**
+- [ ] After a transfer completes, the receiver's camera area shows a small "Done" code. On the sender (laptop with a webcam), press **Confirm with camera**, allow the camera, and hold the receiver phone's screen 15–40 cm from the webcam. Note the time until the sender turns green ("Done: the receiver confirmed it") and whether glare on the phone screen or the webcam's mirror image matters.
+- [ ] Show the sender the Done code of a *different* transfer (finish a second, unrelated transfer on another receiver): the sender must say it is for a different transfer and stay unconfirmed.
+- [ ] Deny the camera permission on the sender: it must say so and "Receiver done: stop" must still work. On a device without a camera, "Confirm with camera" must not appear.

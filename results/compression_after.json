@@ -1,5 +1,5 @@
 {
- "when": "2026-11-01T10:20:55.317Z",
+ "when": "2026-11-01T18:50:07.988Z",
  "codeRoot": ".",
  "settings": {
   "blockSize": 400,
@@ -22,8 +22,8 @@
    "compression": "deflate-raw",
    "payloadBytes": 13206,
    "K": 34,
-   "prepareMs": 10.2,
-   "openMs": 2.6,
+   "prepareMs": 12.2,
+   "openMs": 3,
    "frames_loss0": {
     "mean": 35.5,
     "p95": 38,
@@ -46,8 +46,8 @@
    "compression": "deflate-raw",
    "payloadBytes": 13258,
    "K": 34,
-   "prepareMs": 17,
-   "openMs": 14.4
+   "prepareMs": 18.9,
+   "openMs": 16.1
   },
   {
    "file": "trials_102400_zxing.json",
@@ -58,8 +58,8 @@
    "compression": "deflate-raw",
    "payloadBytes": 3857,
    "K": 10,
-   "prepareMs": 1.3,
-   "openMs": 1.3,
+   "prepareMs": 2.1,
+   "openMs": 0.9,
    "frames_loss0": {
     "mean": 11.7,
     "p95": 15,
@@ -82,8 +82,8 @@
    "compression": "deflate-raw",
    "payloadBytes": 3909,
    "K": 10,
-   "prepareMs": 13.9,
-   "openMs": 14.4
+   "prepareMs": 15.2,
+   "openMs": 15
   },
   {
    "file": "sender.html",
@@ -94,8 +94,8 @@
    "compression": "deflate-raw",
    "payloadBytes": 30826,
    "K": 78,
-   "prepareMs": 4.2,
-   "openMs": 1.6,
+   "prepareMs": 5.4,
+   "openMs": 1.9,
    "frames_loss0": {
     "mean": 79.2,
     "p95": 82,
@@ -118,8 +118,8 @@
    "compression": "deflate-raw",
    "payloadBytes": 30878,
    "K": 78,
-   "prepareMs": 15.7,
-   "openMs": 16.1
+   "prepareMs": 19.5,
+   "openMs": 17.8
   },
   {
    "file": "receiver.app.js",
@@ -130,7 +130,7 @@
    "compression": "deflate-raw",
    "payloadBytes": 7019,
    "K": 18,
-   "prepareMs": 0.9,
+   "prepareMs": 1.2,
    "openMs": 0.5,
    "frames_loss0": {
     "mean": 19.6,
@@ -154,8 +154,8 @@
    "compression": "deflate-raw",
    "payloadBytes": 7071,
    "K": 18,
-   "prepareMs": 14.5,
-   "openMs": 13.8
+   "prepareMs": 16.7,
+   "openMs": 15.6
   },
   {
    "file": "video-001.jpeg",
@@ -166,8 +166,8 @@
    "compression": "skipped:no-gain",
    "payloadBytes": 21490,
    "K": 54,
-   "prepareMs": 1.7,
-   "openMs": 0.1,
+   "prepareMs": 1.2,
+   "openMs": 0.3,
    "frames_loss0": {
     "mean": 55.5,
     "p95": 58,
@@ -190,8 +190,8 @@
    "compression": "skipped:no-gain",
    "payloadBytes": 21542,
    "K": 54,
-   "prepareMs": 15.1,
-   "openMs": 13.1
+   "prepareMs": 17.6,
+   "openMs": 14.7
   },
   {
    "file": "random.bin",
@@ -203,7 +203,7 @@
    "payloadBytes": 102441,
    "K": 257,
    "prepareMs": 3.6,
-   "openMs": 0.4,
+   "openMs": 0.3,
    "frames_loss0": {
     "mean": 258.8,
     "p95": 262,
@@ -226,8 +226,8 @@
    "compression": "skipped:no-gain",
    "payloadBytes": 102493,
    "K": 257,
-   "prepareMs": 18.5,
-   "openMs": 13
+   "prepareMs": 33.9,
+   "openMs": 25.2
   }
  ]
 }

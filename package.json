@@ -24,6 +24,7 @@
     "kdf": "node tests/browser/kdf.mjs",
     "look": "node tests/browser/look.mjs",
     "coach": "node tests/browser/coach.mjs --shots work/coach-shots coach",
+    "ack": "node tests/browser/ack.mjs --shots work/ack-shots",
     "pagescan": "node tests/browser/pagescan.mjs --frames 40 --out results/pagescan.json",
     "screens": "node tests/browser/screens.mjs work/screens dexqr",
     "fuzz": "node --expose-gc tests/fuzz/fuzz.mjs --cases 100000 --seed 1 --out results/fuzz_after.json",

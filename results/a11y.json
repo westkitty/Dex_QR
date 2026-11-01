@@ -1,6 +1,6 @@
 {
  "axe": "4.14.0",
- "when": "2026-11-01T17:20:46.168Z",
+ "when": "2026-11-01T19:01:55.087Z",
  "report": [
   {
    "page": "index",
@@ -87,6 +87,18 @@
    "violations": []
   },
   {
+   "page": "sender ack-hint",
+   "width": 390,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "sender confirmed",
+   "width": 390,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
    "page": "sender focus-mode",
    "width": 390,
    "scheme": "dark",
@@ -177,6 +189,18 @@
    "violations": []
   },
   {
+   "page": "sender ack-hint",
+   "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "sender confirmed",
+   "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
    "page": "sender focus-mode",
    "width": 1280,
    "scheme": "dark",
@@ -261,6 +285,18 @@
    "violations": []
   },
   {
+   "page": "sender ack-hint",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender confirmed",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
    "page": "sender focus-mode",
    "width": 390,
    "scheme": "light",
@@ -340,6 +376,18 @@
   },
   {
    "page": "sender finished",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender ack-hint",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender confirmed",
    "width": 1280,
    "scheme": "light",
    "violations": []

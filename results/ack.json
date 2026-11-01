@@ -1,0 +1,309 @@
+{
+ "when": "2026-11-01T20:13:31.152Z",
+ "note": "synthetic frames through Chrome's fake camera; not a real camera",
+ "results": [
+  {
+   "name": "receiver 1280: Done code shown in the camera area, decodes to this transfer's ID",
+   "ok": true,
+   "text": "DAW5000GOG4HM7PU7ZEE.J4",
+   "rid": "7e90228c3b4e3cbe",
+   "version": 2,
+   "errors": []
+  },
+  {
+   "name": "receiver 1280: Done code drawn clean (whole 10 px modules >= 4, white 4-module quiet zone, pure black/white, CSS size = canvas size, ring outside the code)",
+   "ok": true,
+   "px": 10,
+   "canvas": [
+    330,
+    330
+   ],
+   "css": [
+    330,
+    330
+   ]
+  },
+  {
+   "name": "receiver 1280: animation plays",
+   "ok": true,
+   "anim": "ackpop, ackglow"
+  },
+  {
+   "name": "receiver 1280: Reset removes the Done code",
+   "ok": true,
+   "ack": true,
+   "empty": false,
+   "text": ""
+  },
+  {
+   "name": "receiver 1280 reduced motion: Done code shown in the camera area, decodes to this transfer's ID",
+   "ok": true,
+   "text": "DAW5000GOG4HM7PU7ZEE.J4",
+   "rid": "7e90228c3b4e3cbe",
+   "version": 2,
+   "errors": []
+  },
+  {
+   "name": "receiver 1280 reduced motion: Done code drawn clean (whole 10 px modules >= 4, white 4-module quiet zone, pure black/white, CSS size = canvas size, ring outside the code)",
+   "ok": true,
+   "px": 10,
+   "canvas": [
+    330,
+    330
+   ],
+   "css": [
+    330,
+    330
+   ]
+  },
+  {
+   "name": "receiver 1280 reduced motion: animation off (static final picture)",
+   "ok": true,
+   "anim": "none"
+  },
+  {
+   "name": "receiver 390: Done code shown in the camera area, decodes to this transfer's ID",
+   "ok": true,
+   "text": "DAW5000GOG4HM7PU7ZEE.J4",
+   "rid": "7e90228c3b4e3cbe",
+   "version": 2,
+   "errors": []
+  },
+  {
+   "name": "receiver 390: Done code drawn clean (whole 6 px modules >= 4, white 4-module quiet zone, pure black/white, CSS size = canvas size, ring outside the code)",
+   "ok": true,
+   "px": 6,
+   "canvas": [
+    198,
+    198
+   ],
+   "css": [
+    198,
+    198
+   ]
+  },
+  {
+   "name": "receiver 390: animation plays",
+   "ok": true,
+   "anim": "ackpop, ackglow"
+  },
+  {
+   "name": "receiver 390: Reset removes the Done code",
+   "ok": true,
+   "ack": true,
+   "empty": false,
+   "text": ""
+  },
+  {
+   "name": "receiver 390 reduced motion: Done code shown in the camera area, decodes to this transfer's ID",
+   "ok": true,
+   "text": "DAW5000GOG4HM7PU7ZEE.J4",
+   "rid": "7e90228c3b4e3cbe",
+   "version": 2,
+   "errors": []
+  },
+  {
+   "name": "receiver 390 reduced motion: Done code drawn clean (whole 6 px modules >= 4, white 4-module quiet zone, pure black/white, CSS size = canvas size, ring outside the code)",
+   "ok": true,
+   "px": 6,
+   "canvas": [
+    198,
+    198
+   ],
+   "css": [
+    198,
+    198
+   ]
+  },
+  {
+   "name": "receiver 390 reduced motion: animation off (static final picture)",
+   "ok": true,
+   "anim": "none"
+  },
+  {
+   "name": "sender 1280: fake camera with foreign, other-transfer and stream codes: recognised as such and ignored (not confirmed)",
+   "ok": true,
+   "verdicts": [
+    "started",
+    "other",
+    "stream",
+    "foreign"
+   ],
+   "hint": "That QR code is not a Dex_QR Done code. Show the receiver's finished screen.",
+   "decoder": "jsqr",
+   "errors": []
+  },
+  {
+   "name": "sender 1280: stream keeps its rate while the camera looks (>= 27 of 30 fps)",
+   "ok": true,
+   "setFps": 30,
+   "beforeCamera": 30,
+   "whileCameraScans": 30
+  },
+  {
+   "name": "sender 1280: Stop the camera releases it and brings back Confirm with camera; manual stop still works",
+   "ok": true
+  },
+  {
+   "name": "sender 1280: manual \"Receiver done: stop\" unchanged",
+   "ok": true,
+   "h": "Sent postcard.bin"
+  },
+  {
+   "name": "sender 390: fake camera with foreign, other-transfer and stream codes: recognised as such and ignored (not confirmed)",
+   "ok": true,
+   "verdicts": [
+    "started",
+    "other",
+    "stream",
+    "foreign"
+   ],
+   "hint": "That Done code is for a different transfer (2490228c…). This one is 7e90228c…: show the receiver that got this file.",
+   "decoder": "jsqr",
+   "errors": []
+  },
+  {
+   "name": "sender 390: stream keeps its rate while the camera looks (>= 27 of 30 fps)",
+   "ok": true,
+   "setFps": 30,
+   "beforeCamera": 30,
+   "whileCameraScans": 30
+  },
+  {
+   "name": "sender 390: Stop the camera releases it and brings back Confirm with camera; manual stop still works",
+   "ok": true
+  },
+  {
+   "name": "sender 390: manual \"Receiver done: stop\" unchanged",
+   "ok": true,
+   "h": "Sent postcard.bin"
+  },
+  {
+   "name": "sender: newer ACK version rejected with a plain-language message, not confirmed",
+   "ok": true,
+   "hint": "That Done code comes from a newer Dex_QR version (confirmation format 2) that this page cannot read. Use the same Dex_QR version on both devices, or press “Receiver done: stop”."
+  },
+  {
+   "name": "sender 1280: the receiver's Done code confirms the transfer (camera released, stream stopped, green Confirmed state, announced, focus on Send another file)",
+   "ok": true,
+   "ms": 1470,
+   "verdicts": [
+    "started",
+    "other",
+    "done"
+   ],
+   "h": "Done: the receiver confirmed it",
+   "focus": "finish-again",
+   "errors": []
+  },
+  {
+   "name": "sender 1280: celebration animates once",
+   "ok": true,
+   "rays": "rays"
+  },
+  {
+   "name": "sender: Send another file after a confirmed Done clears the confirmed state",
+   "ok": true
+  },
+  {
+   "name": "sender 1280 reduced motion: the receiver's Done code confirms the transfer (camera released, stream stopped, green Confirmed state, announced, focus on Send another file)",
+   "ok": true,
+   "ms": 590,
+   "verdicts": [
+    "started",
+    "other",
+    "done"
+   ],
+   "h": "Done: the receiver confirmed it",
+   "focus": "finish-again",
+   "errors": []
+  },
+  {
+   "name": "sender 1280 reduced motion: celebration static (no animation, final picture shown)",
+   "ok": true,
+   "rays": "none"
+  },
+  {
+   "name": "sender 390: the receiver's Done code confirms the transfer (camera released, stream stopped, green Confirmed state, announced, focus on Send another file)",
+   "ok": true,
+   "ms": 1467,
+   "verdicts": [
+    "started",
+    "other",
+    "done"
+   ],
+   "h": "Done: the receiver confirmed it",
+   "focus": "finish-again",
+   "errors": []
+  },
+  {
+   "name": "sender 390: celebration animates once",
+   "ok": true,
+   "rays": "rays"
+  },
+  {
+   "name": "sender 390 reduced motion: the receiver's Done code confirms the transfer (camera released, stream stopped, green Confirmed state, announced, focus on Send another file)",
+   "ok": true,
+   "ms": 592,
+   "verdicts": [
+    "started",
+    "other",
+    "done"
+   ],
+   "h": "Done: the receiver confirmed it",
+   "focus": "finish-again",
+   "errors": []
+  },
+  {
+   "name": "sender 390 reduced motion: celebration static (no animation, final picture shown)",
+   "ok": true,
+   "rays": "none"
+  },
+  {
+   "name": "sender (no camera API): Confirm with camera not offered; \"Receiver done: stop\" works as before",
+   "ok": true,
+   "errors": []
+  },
+  {
+   "name": "sender (no camera device): Confirm with camera not offered; \"Receiver done: stop\" works as before",
+   "ok": true,
+   "errors": []
+  },
+  {
+   "name": "sender (camera permission refused): plain-language message, no camera left on, manual stop still offered",
+   "ok": true,
+   "hint": "Camera permission was denied, so the Done code cannot be read here. When the receiver says Done, press “Receiver done: stop”."
+  },
+  {
+   "name": "no network requests from any page",
+   "ok": true,
+   "net": []
+  }
+ ],
+ "measurements": {
+  "receiver_ack_1280": {
+   "modulePx": 10,
+   "canvasPx": 330,
+   "qrVersion": 2
+  },
+  "receiver_ack_390": {
+   "modulePx": 6,
+   "canvasPx": 198,
+   "qrVersion": 2
+  },
+  "sender_fps_1280": {
+   "setFps": 30,
+   "beforeCamera": 30,
+   "whileCameraScans": 30
+  },
+  "sender_fps_390": {
+   "setFps": 30,
+   "beforeCamera": 30,
+   "whileCameraScans": 30
+  },
+  "confirm_ms_1280": 1470,
+  "confirm_ms_1280 reduced motion": 590,
+  "confirm_ms_390": 1467,
+  "confirm_ms_390 reduced motion": 592
+ }
+}

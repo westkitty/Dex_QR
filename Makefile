@@ -5,8 +5,8 @@ ZBAR_LIB ?=
 export PY
 export LD_LIBRARY_PATH := $(ZBAR_LIB):$(LD_LIBRARY_PATH)
 
-.PHONY: all build lint test fuzz fuzz-quick sweep trials video browser ux look coach a11y soak compress keycheck kdf screens pagescan sender-shots bench compress-bench keycheck-bench report
-all: build lint test fuzz-quick trials video browser ux look coach a11y soak compress keycheck bench compress-bench keycheck-bench report
+.PHONY: all build lint test fuzz fuzz-quick sweep trials video browser ux look coach ack ack-shots a11y soak compress keycheck kdf screens pagescan sender-shots bench compress-bench keycheck-bench report
+all: build lint test fuzz-quick trials video browser ux look coach ack a11y soak compress keycheck bench compress-bench keycheck-bench report
 build:   ; node tools/build.mjs
 lint:    ; node tools/lint.mjs
 test:    ; node --test tests/unit/*.test.mjs
@@ -26,6 +26,8 @@ keycheck: build ; node tests/browser/keycheck.mjs
 kdf:     build ; node tests/browser/kdf.mjs
 look:    build ; node tests/browser/look.mjs
 coach:   build ; node tests/browser/coach.mjs --shots work/coach-shots coach
+ack:     build ; node tests/browser/ack.mjs --shots work/ack-shots
+ack-shots: build ; node tests/browser/ack-shots.mjs --tag after --out work/ack-shots
 pagescan: build ; node tests/browser/pagescan.mjs --frames 40 --out results/pagescan.json
 sender-shots: build ; node tests/browser/sender-shots.mjs --tag after --out work/sender-shots
 screens: build ; node tests/browser/screens.mjs work/screens dexqr
