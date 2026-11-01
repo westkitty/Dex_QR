@@ -191,3 +191,5 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Fragile:** keep `CALIBRATION.cap` ≤ `MAX_ITERATIONS` (older receivers); keep `packet.js` ITER_MIN/ITER_MAX equal to container MIN/MAX.
 - **Untested:** real phone/laptop cameras, derive time on phones (a count tuned on a fast laptop may take several seconds there), Safari, Firefox, screen readers.
 - **Next:** cycle 5, fuzzing parseText / parseKeyFrame / ReceiverSession.
+
+- **Commit:** `0d984d7869c55d6c74f91d2f2b86a27cb86f4a35` on `main` (pushed 8949cb7..0d984d7; this line added in a docs follow-up commit).
