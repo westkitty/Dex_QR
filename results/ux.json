@@ -1,12 +1,12 @@
 {
- "when": "2026-11-01T16:14:32.366Z",
+ "when": "2026-11-01T17:18:47.160Z",
  "results": [
   {
    "name": "sender frame clock matches the set rate (8 and 25 fps, within 3%)",
    "ok": true,
    "measured": {
     "8": 8.15,
-    "25": 24.95
+    "25": 24.99
    },
    "before": "8 fps measured 7.50 with the old scheduler"
   },
@@ -91,7 +91,7 @@
     "limits": 1
    },
    "msg": "Those files contain QR codes, but none from a Dex_QR stream.",
-   "seconds": 0.158,
+   "seconds": 0.135,
    "framesThenAgain": [
     3,
     5
@@ -142,7 +142,7 @@
    "name": "receiver at 390 px: camera view first, no horizontal overflow, buttons ≥ 44 px tall",
    "ok": true,
    "videoTop": 74,
-   "startTop": 552.25,
+   "startTop": 551.5,
    "overflow": false,
    "minTarget": 44
   },

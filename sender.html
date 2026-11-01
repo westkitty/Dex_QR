@@ -158,8 +158,64 @@ canvas.qr { image-rendering: pixelated; max-width: 100%; max-height: 100%; heigh
 .live b { color: var(--fg); font-size: 15px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line2); flex: none; }
 .dot.on { background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: ping 2s ease-out infinite; }
-.tips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.tips li { font-size: 12.5px; color: var(--mut); background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; }
+/* Cycle 8: "how to receive" card and the finished state. Both sit below the ring, outside the code area; the
+ * code's size formula only reads the stage width and the window height, so neither card changes module size.
+ * The resting (unanimated) pose of every animated part is the calm final picture, so reduced motion (system
+ * setting or the motion toggle, which stop all animations below) shows a complete static illustration. */
+.howto { display: flex; gap: var(--s4); align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3) var(--s4); }
+.howto-art { width: 150px; height: auto; flex: none; }
+.howto h2 { font-size: 15px; margin-bottom: 4px; }
+.howto-steps { margin: 0; padding-left: 1.3em; font-size: 13.5px; color: var(--fg); display: grid; gap: 2px; }
+.howto-steps li::marker { color: var(--acc); font-weight: 800; }
+.howto-tip { margin: 6px 0 0; font-size: 12.5px; color: var(--mut); }
+@media (max-width: 520px) { .howto { flex-direction: column; align-items: stretch; text-align: left; } .howto-art { width: 132px; align-self: center; } }
+.h-screen { fill: var(--card2); stroke: var(--line2); stroke-width: 2; }
+.h-panel { fill: #fff; }
+.h-dots rect { fill: #111; }
+.h-stand { fill: var(--line2); }
+.h-body { fill: var(--sec); stroke: var(--line2); stroke-width: 2; }
+.h-glass { fill: var(--field); }
+.h-corners { fill: none; stroke: var(--ok); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.h-scan { fill: var(--acc); opacity: 0; }
+.h-ok circle { fill: var(--ok); } .h-ok path { fill: none; stroke: var(--on-ok); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.h-beam path { stroke: var(--acc); stroke-width: 2.4; stroke-linecap: round; opacity: .55; }
+.h-phone, .h-ok, .h-scan, .h-beam { transform-box: fill-box; transform-origin: center; }
+.howto-art .h-phone { animation: hphone 6s var(--ease) infinite; }
+.howto-art .h-scan { animation: hscan 6s linear infinite; }
+.howto-art .h-ok { animation: hok 6s var(--ease) infinite; }
+.howto-art .h-corners { animation: hcorner 6s linear infinite; }
+.howto-art .h-beam { animation: hbeam 6s ease-in-out infinite; }
+@keyframes hphone { 0% { transform: translateX(22px) rotate(8deg); opacity: 0; } 12% { opacity: 1; } 34%, 88% { transform: none; opacity: 1; } 100% { transform: none; opacity: 0; } }
+@keyframes hscan { 0%, 36% { transform: translateY(0); opacity: 0; } 40% { opacity: 1; } 64% { transform: translateY(40px); opacity: 1; } 68%, 100% { transform: translateY(40px); opacity: 0; } }
+@keyframes hok { 0%, 66% { transform: scale(.4); opacity: 0; } 74% { transform: scale(1.1); opacity: 1; } 80%, 90% { transform: none; opacity: 1; } 100% { transform: none; opacity: 0; } }
+@keyframes hcorner { 0%, 66% { stroke: var(--line2); } 72%, 100% { stroke: var(--ok); } }
+@keyframes hbeam { 0%, 34% { opacity: 0; } 46%, 62% { opacity: .55; } 72%, 100% { opacity: 0; } }
+
+.finish { background: linear-gradient(180deg, color-mix(in srgb, var(--ok) 10%, var(--card2)), var(--card)); border: 1px solid color-mix(in srgb, var(--ok) 55%, var(--line)); border-radius: var(--r); padding: var(--s4); box-shadow: var(--shadow); animation: rise .45s var(--ease); }
+.finish.side { margin-top: var(--s3); box-shadow: none; }
+.finish { padding: var(--s3); }
+.finish .btns { margin-top: var(--s2); }
+.finish .btns button { flex: 1 1 auto; padding: 8px 12px; }
+.finish .lead { font-size: 13px; margin-top: 2px; }
+.finish-head { display: flex; gap: var(--s3); align-items: flex-start; }
+.finish-head h2 { font-size: 16px; }
+.finish-mark { width: 32px; height: 32px; flex: none; }
+.finish.final .finish-mark { width: 40px; height: 40px; }
+.finish-mark circle { fill: var(--ok); }
+.finish-mark path { fill: none; stroke: var(--on-ok); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 40; stroke-dashoffset: 0; animation: draw40 .5s .2s var(--ease) both; }
+.finish.final .finish-mark { animation: pop .6s var(--ease) both; }
+.finish-stats { margin-top: var(--s3); }
+button.okbtn { background: var(--ok); color: var(--on-ok); }
+.ring.reached { background: conic-gradient(from 0deg, var(--ok) 0, color-mix(in srgb, var(--ok) 60%, var(--acc)) 100%); }
+.stage-done { display: flex; flex-direction: column; align-items: center; gap: var(--s2); padding: var(--s6) var(--s4); text-align: center; color: var(--fg); animation: rise .5s var(--ease); }
+.stage-done svg { width: 120px; height: 120px; }
+.stage-done b { font-size: 24px; letter-spacing: -.3px; }
+.stage-done span { color: var(--mut); font-size: 14px; overflow-wrap: anywhere; max-width: 32em; }
+.sd-ring { fill: none; stroke: var(--ok); stroke-width: 6; stroke-dasharray: 264; stroke-dashoffset: 0; transform: rotate(-90deg); transform-box: fill-box; transform-origin: center; animation: draw264 .8s var(--ease) both; }
+.sd-check { fill: none; stroke: var(--ok); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 64; stroke-dashoffset: 0; animation: draw64 .5s .6s var(--ease) both; }
+@keyframes draw40 { from { stroke-dashoffset: 40; } to { stroke-dashoffset: 0; } }
+@keyframes draw64 { from { stroke-dashoffset: 64; } to { stroke-dashoffset: 0; } }
+@keyframes draw264 { from { stroke-dashoffset: 264; } to { stroke-dashoffset: 0; } }
 .summary { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s3); }
 .chip { font-size: 12.5px; padding: 3px 10px; border-radius: 99px; background: var(--sec); color: var(--fg); }
 .chip.lock { background: var(--ok-bg); color: var(--ok); }
@@ -294,7 +350,7 @@ body.dragging .viewport { outline: 3px dashed var(--acc); outline-offset: 3px; }
     </li>
     <li class="step" id="step3">
       <h2><span class="num" aria-hidden="true">3</span> Show the code</h2>
-      <div class="step-body">
+      <div class="step-body" id="step3-body">
         <div class="btns">
           <button id="play" type="button" class="big" disabled aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path id="play-icon" fill="currentColor" d="M8 5v14l11-7z"/></svg><span id="play-text">Start sending</span></button>
         </div>
@@ -345,20 +401,52 @@ body.dragging .viewport { outline: 3px dashed var(--acc); outline-offset: 3px; }
     <div class="note">The sender cannot see what the receiver got. The bar shows frames sent against an estimate of what a receiver needs (about K × 1.05 frames if none are missed). Keep playing until the receiver says it is done; the stream never repeats a packet.</div>
     </div>
   </details>
-  <div class="note">Keys: <kbd>Space</kbd> or <kbd>K</kbd> play/pause, <kbd>F</kbd> full screen, <kbd>Esc</kbd> leave it. The code flashes black and white at the chosen speed (8 per second by default); if flashing light bothers you, look away while it plays or lower the speed. The page's own animations are slow fades; turn them off with the motion button at the top.</div>
+  <div class="note">Keys: <kbd>Space</kbd> or <kbd>K</kbd> play/pause, <kbd>F</kbd> full screen, <kbd>Esc</kbd> leave it. The code flashes black and white at the chosen speed (8 per second by default); if flashing light bothers you, look away while it plays or lower the speed. The page's own animations are slow fades and a 6-second how-to loop beside the code (nothing flashes); turn them off with the motion button at the top.</div>
 </section>
 <section class="stagewrap" aria-label="QR stream">
   <div class="ring idle" id="ring">
     <div class="stage idle" id="stage">
       <div class="stage-empty" id="stage-empty"><svg viewBox="0 0 120 120" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".55"><path d="M10 34V18a8 8 0 0 1 8-8h16M86 10h16a8 8 0 0 1 8 8v16M110 86v16a8 8 0 0 1-8 8H86M34 110H18a8 8 0 0 1-8-8V86"/></g><g fill="currentColor" opacity=".35"><rect x="30" y="30" width="22" height="22" rx="3"/><rect x="68" y="30" width="22" height="22" rx="3"/><rect x="30" y="68" width="22" height="22" rx="3"/><rect x="70" y="70" width="8" height="8" rx="2"/><rect x="82" y="78" width="8" height="8" rx="2"/><rect x="70" y="84" width="6" height="6" rx="2"/></g></svg><span>Your animated code appears here.<br>Choose a file, then press <b>Start sending</b>.</span></div>
+      <div class="stage-done" id="stage-done" hidden><svg viewBox="0 0 96 96" aria-hidden="true" focusable="false"><circle class="sd-ring" cx="48" cy="48" r="42"/><path class="sd-check" d="M29 50l13 13 26-29"/></svg><b>Sent</b><span id="stage-done-name"></span></div>
       <canvas id="qr" class="qr" width="10" height="10" role="img" aria-label="Animated QR code stream (choose a file first)" hidden></canvas>
       <div class="stage-bar" id="stagebar" hidden><span id="stage-info" aria-hidden="true"></span><button id="stage-play" type="button" class="secondary">Pause</button><button id="stage-exit" type="button" class="secondary">Exit full screen</button></div>
     </div>
   </div>
   <div class="live" id="live"><span class="dot" id="live-dot" aria-hidden="true"></span><span id="live-text">Ready when you are</span></div>
-  <ul class="tips" aria-label="Tips for the receiver">
-    <li>Turn this screen's brightness up</li><li>Hold the camera 20–40 cm away</li><li>Keep the whole code in view</li><li>Missed frames are fine: keep going</li>
-  </ul>
+  <section class="finish" id="finish" hidden aria-labelledby="finish-h">
+    <div class="finish-head">
+      <svg class="finish-mark" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="22"/><path d="M14 25l7 7 13-15"/></svg>
+      <div><h2 id="finish-h">The receiver should have it by now</h2><p class="lead" id="finish-p"></p></div>
+    </div>
+    <dl class="stats finish-stats" id="finish-stats" hidden></dl>
+    <div class="btns">
+      <button id="finish-stop" type="button" class="okbtn">Receiver done: stop</button>
+      <button id="finish-again" type="button" class="secondary">Send another file</button>
+      <button id="finish-resume" type="button" class="secondary" hidden>Show the code again</button>
+    </div>
+  </section>
+  <div class="sr-only" id="finish-say" aria-live="polite"></div>
+  <section class="howto" id="howto" aria-labelledby="howto-h">
+    <svg class="howto-art" viewBox="0 0 160 112" aria-hidden="true" focusable="false">
+      <rect class="h-screen" x="6" y="14" width="78" height="66" rx="6"/>
+      <rect class="h-panel" x="14" y="21" width="62" height="52" rx="3"/>
+      <g class="h-dots"><rect x="27" y="28" width="7" height="7" rx="1.5"/><rect x="38" y="28" width="5" height="5" rx="1.2"/><rect x="47" y="30" width="7" height="7" rx="1.5"/><rect x="58" y="28" width="5" height="5" rx="1.2"/><rect x="30" y="40" width="5" height="5" rx="1.2"/><rect x="40" y="38" width="7" height="7" rx="1.5"/><rect x="52" y="41" width="5" height="5" rx="1.2"/><rect x="27" y="52" width="7" height="7" rx="1.5"/><rect x="39" y="51" width="5" height="5" rx="1.2"/><rect x="48" y="52" width="7" height="7" rx="1.5"/><rect x="58" y="51" width="5" height="5" rx="1.2"/><rect x="34" y="62" width="5" height="5" rx="1.2"/><rect x="50" y="62" width="5" height="5" rx="1.2"/></g>
+      <rect class="h-stand" x="38" y="80" width="14" height="10" rx="2"/><rect class="h-stand" x="28" y="90" width="34" height="4" rx="2"/>
+      <g class="h-phone"><rect class="h-body" x="104" y="16" width="44" height="80" rx="8"/><rect class="h-glass" x="108" y="24" width="36" height="62" rx="3"/>
+        <path class="h-corners" d="M112 34v-5h5M140 34v-5h-5M112 76v5h5M140 76v5h-5"/><rect class="h-scan" x="112" y="38" width="28" height="2.5" rx="1.2"/>
+        <g class="h-ok"><circle cx="126" cy="55" r="10"/><path d="M121 55.5l3.5 3.5 6.5-7"/></g></g>
+      <g class="h-beam"><path d="M86 47h14" /><path d="M88 41l10 0M88 53l10 0" opacity=".5"/></g>
+    </svg>
+    <div class="howto-text">
+      <h2 id="howto-h">How to receive</h2>
+      <ol class="howto-steps">
+        <li>On the other device, open <b>Receive</b> and press <b>Start scanning</b>.</li>
+        <li>Point its camera here from 20–40 cm, with the whole code in view.</li>
+        <li>Hold steady until it says <b>Done</b>. Missed frames are fine.</li>
+      </ol>
+      <p class="howto-tip">Tip: turn this screen's brightness up.</p>
+    </div>
+  </section>
 </section>
 </main>
 <script>/* ---- vendor/qrcodegen.js ---- */
@@ -2601,6 +2689,7 @@ var qrcodegen;
   const state = {
     session: null, playing: false, sent: 0, due: 0, qrSize: 0, raf: 0, ecl: "M", text: "",
     prepared: null, preparing: false, fpsSamples: [], actualFps: 0, wakeLock: null, focusMode: false,
+    need: 0, finish: "", playMs: 0, playSince: 0,   // cycle 8: finished state ("" | "likely" | "final")
   };
   window.__dexqrSender = state; // read-only hook for automated tests
   const UI = window.DexUI;
@@ -2659,6 +2748,8 @@ var qrcodegen;
     const f = fps();
     const need = Math.ceil((Math.ceil(s.K * 1.05) + 1) / s.dataFrameShare);   // key-check frames take 1 in 32
     const pct = Math.min(100, (100 * state.sent) / need);
+    state.need = need;
+    checkFinish();
     $("s-sent").textContent = String(state.sent) + (state.playing && state.actualFps ? ` (${state.actualFps.toFixed(1)} fps actual)` : "");
     $("bar").style.width = pct.toFixed(1) + "%";
     $("barwrap").setAttribute("aria-valuenow", pct.toFixed(0));
@@ -2703,6 +2794,9 @@ var qrcodegen;
   function setPlaying(on) {
     if (!state.session) return;
     if (on === state.playing) return;
+    if (on && state.finish === "final") leaveFinal();
+    const now = performance.now();
+    if (on) state.playSince = now; else if (state.playSince) { state.playMs += now - state.playSince; state.playSince = 0; }
     state.playing = on;
     syncPlayButton();
     $("play").setAttribute("aria-pressed", String(on));
@@ -2796,7 +2890,7 @@ var qrcodegen;
       const startSeed = crypto.getRandomValues(new Uint32Array(1))[0];
       state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, iterations, startSeed, compress: $("zip").checked, keyCheck: $("kc").checked });
       state.prepared = key;
-      state.sent = 0; state.fileSha = hex(sha);
+      state.sent = 0; state.fileSha = hex(sha); state.playMs = 0; state.playSince = 0; clearFinish();
       const s = state.session;
       $("s-file").textContent = `${f.name} (${f.size.toLocaleString()} bytes)`;
       $("s-sha").textContent = state.fileSha;
@@ -2829,6 +2923,98 @@ var qrcodegen;
     // The stage switches from the placeholder to the white code panel.
     $("stage").classList.remove("idle"); $("ring").classList.remove("idle"); $("stage-empty").hidden = true; $("qr").hidden = false;
     redraw();
+  }
+
+
+  /* Cycle 8: the finished state. The sender cannot see the receiver, so "likely done" is the frame estimate:
+   * once the stream has sent what a receiver needs with no missed frames, a card below the code says so and
+   * offers one-press actions; the stream keeps playing (a receiver that missed frames needs a few more). A second
+   * line appears once even 30% missed frames should be covered. "Receiver says Done: stop" ends the session with
+   * a summary in place of the code; "Send another file" goes back to step 1 with the passphrase and tuning kept. */
+  function say(text) { const el = $("finish-say"); el.textContent = ""; setTimeout(() => { el.textContent = text; }, 60); }
+  function checkFinish() {
+    const s = state.session; if (!s || !state.need || state.finish === "final") return;
+    const lossy = state.sent >= Math.ceil(state.need / 0.7);
+    if (state.sent < state.need) return;
+    if (!state.finish) {
+      state.finish = "likely";
+      $("finish").hidden = false; $("finish").classList.remove("final");
+      $("finish-h").textContent = "The receiver should have it by now";
+      $("finish-stats").hidden = true; $("finish-stop").hidden = false; $("finish-resume").hidden = true;
+      $("ring").classList.add("reached");
+      if (/Sending\./.test($("msg").textContent)) msg("", "");   // the card replaces the "Sending" line
+      say("Estimate reached: a receiver that missed no frames has the file. Keep the code showing until it says Done.");
+    }
+    const t = lossy ? "Enough even if 30% of frames were missed. Not done yet? Check the receiver's camera view." : "Enough frames if none were missed. Keep showing the code until the receiver says Done.";
+    if ($("finish-p").textContent !== t) { $("finish-p").textContent = t; if (lossy) say("Enough frames even with 30% missed."); }
+  }
+  // Keep the card where the sender is looking: beside the code in the control column on wide screens (the code
+  // fills the window height there, so below it would be off screen), directly under the code on phones.
+  const narrow = window.matchMedia ? window.matchMedia("(max-width: 860px)") : null;
+  function placeFinish() {
+    const card = $("finish"), wide = !(narrow && narrow.matches);
+    if (wide && card.parentElement !== $("step3-body")) $("msg").after(card);
+    else if (!wide && card.previousElementSibling !== $("live")) $("live").after(card);
+    card.classList.toggle("side", wide);
+  }
+  if (narrow && narrow.addEventListener) narrow.addEventListener("change", placeFinish);
+  placeFinish();
+  function clearFinish() {
+    $("finish-again").className = "secondary";
+    state.finish = ""; $("finish").hidden = true; $("finish").classList.remove("final"); $("ring").classList.remove("reached");
+    $("stage-done").hidden = true; $("finish-p").textContent = "";
+  }
+  function statRow(dl, k, v) { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); }
+  function finishNow() {
+    const s = state.session; if (!s) return;
+    setPlaying(false);
+    if (document.fullscreenElement || state.focusMode) exitFull();
+    state.finish = "final";
+    const f = $("file").files[0], name = f ? f.name : "the file", secs = state.playMs / 1000;
+    $("finish").hidden = false; $("finish").classList.add("final"); $("ring").classList.add("reached");
+    $("finish-h").textContent = `Sent ${name}`;
+    $("finish-p").textContent = "The stream is stopped. Check that the receiver saved the file and that its SHA-256 matches the one under Transfer details.";
+    const dl = $("finish-stats"); dl.textContent = "";
+    if (f) statRow(dl, "Size", fmtSize(f.size));
+    statRow(dl, "Frames shown", `${state.sent.toLocaleString("en-US")} (estimate ${state.need.toLocaleString("en-US")})`);
+    statRow(dl, "Time", fmtTime(secs) + (secs > 0 ? ` at ${(state.sent / secs).toFixed(1)} fps` : ""));
+    statRow(dl, "Encrypted", s.encrypted ? "yes" : "no");
+    dl.hidden = false;
+    $("finish-stop").hidden = true; $("finish-resume").hidden = false; $("finish-again").className = "okbtn";
+    // The stage shows a check mark instead of the code: nothing is being sent now.
+    $("qr").hidden = true; $("stage").classList.add("idle"); $("ring").classList.remove("idle");
+    $("stage-done-name").textContent = `${name} · ${state.sent.toLocaleString("en-US")} frames · ${fmtTime(secs)}`;
+    $("stage-done").hidden = false;
+    $("live-text").textContent = `Finished · ${state.sent} frames sent`;
+    msg(`✓ Finished: ${name} was shown in ${state.sent} frames. Send another file, or show the code again if the receiver is not done.`, "ok");
+    say(`Finished. Sent ${name} in ${state.sent} frames. Press Send another file to choose the next one.`);
+    $("finish-again").focus();
+  }
+  function leaveFinal() {
+    state.finish = "likely";
+    $("stage-done").hidden = true; $("qr").hidden = false; $("stage").classList.remove("idle");
+    $("finish").classList.remove("final"); $("finish-stats").hidden = true; $("finish-stop").hidden = false; $("finish-resume").hidden = true; $("finish-again").className = "secondary";
+    $("finish-h").textContent = "The receiver should have it by now";
+    $("finish-p").textContent = "";
+    redraw(); checkFinish();
+  }
+  function sendAnother() {
+    setPlaying(false);
+    if (document.fullscreenElement || state.focusMode) exitFull();
+    clearFinish();
+    state.session = null; state.prepared = null; state.sent = 0; state.text = ""; state.playMs = 0; state.need = 0;
+    $("file").value = "";
+    $("qr").hidden = true; $("stage").classList.add("idle"); $("ring").classList.add("idle"); $("ring").style.setProperty("--p", "0");
+    $("stage-empty").hidden = false; $("summary").hidden = true; $("fs").disabled = true;
+    $("bar").style.width = "0%"; $("barwrap").setAttribute("aria-valuenow", "0"); $("s-eta").textContent = "–"; $("s-sent").textContent = "0";
+    ["s-file", "s-sha", "s-enc", "s-zip", "s-id", "s-k", "s-qr"].forEach((id) => { $(id).textContent = "–"; });
+    $("qr").setAttribute("aria-label", "Animated QR code stream (choose a file first)");
+    $("live-text").textContent = "Ready when you are";
+    fileChanged();
+    msg("Ready for the next file. The passphrase and tuning are kept; clear the passphrase if the next receiver should not use it.", "ok");
+    $("step1").scrollIntoView({ block: "nearest", behavior: UI && UI.reducedMotion() ? "auto" : "smooth" });
+    $("file").focus();
+    try { if ($("file").showPicker) $("file").showPicker(); else $("file").click(); } catch (e) { /* the drop box stays focused; Enter opens the picker */ }
   }
 
   /* Step 1: file picker, drag and drop anywhere on the page, or paste. */
@@ -2897,6 +3083,9 @@ var qrcodegen;
     const files = e.clipboardData && e.clipboardData.files;
     if (files && files.length) { e.preventDefault(); takeFiles(files, "pasted"); }
   });
+  $("finish-stop").addEventListener("click", finishNow);
+  $("finish-again").addEventListener("click", sendAnother);
+  $("finish-resume").addEventListener("click", () => setPlaying(true));
   $("stage-play").addEventListener("click", () => setPlaying(!state.playing));
   $("fs").addEventListener("click", enterFull);
   $("stage-exit").addEventListener("click", exitFull);

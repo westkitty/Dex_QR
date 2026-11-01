@@ -84,3 +84,16 @@ Append-only record of each improvement cycle: what was tried, measured and decid
 - Verified on the final build: lint 0, unit 84/84, coach 18/18, look 16/16, ux 17/17, browser 17/17, compression 4/4, keycheck 5/5, kdf 5/5, a11y 0 in 50 states, soak pass (30.02 fps, flat heaps), drop trials 1,800/1,800 identical, H.264 27/27, fuzz-quick 0.
 - Untested: real cameras (thresholds tuned on synthetic frames only), screen readers, Safari, Firefox.
 - Next: real-device checklist run; then a sender-side "receiver tips" card and a reverse-channel ACK design.
+
+## 2026-11-01, cycle 8 (routine run 12:10)
+
+- Lock: `.dev-state/cycle.lock` held by "routine cycle 8 (run 12:10)"; start 044bb59, clean, in sync with origin/main.
+- Picked the planned item (owner priority: ease of use and looks): a "How to receive" card beside the code and a clear finished state on the sender.
+- Before first: tests/browser/pagescan.mjs (new) on a `git worktree` of 044bb59 decodes 40 page screenshots per width (code crop and whole viewport, clean, moderate, harsh) with zbar and zxing-cpp and records module size; tests/browser/sender-shots.mjs (new) took the before screenshots.
+- Layout decision: a card to the right of the code would narrow the stage and drop the module size from 8 to 7 px at 1280; rejected. The how-to card replaces the tip chips under the code. The finished card first went under the code too, but at 1280×800 it landed at 690–917 px (off screen); it now moves into the control column on wide screens and stays under the code on phones (matchMedia 860 px, same breakpoint as the grid). Card made compact and the redundant "Sending" message cleared when it appears; then 618–762 px at 1280 and 602–745 px at 390.
+- Animation: SVG with CSS keyframes on transform and opacity only, 6 s loop; the resting style of each part is the final pose, so the global reduced-motion rule leaves a complete still picture. The mini code in the picture has no finder patterns (dots only), so decoders do not see a second code: whole-viewport decode 40/40 with 0 wrong and 0 multiple results.
+- "Likely done" uses the existing estimate (K × 1.05 + 1 over the data-frame share) and a second line at estimate / 0.7. The stream never stops by itself.
+- Verified: lint 0, unit 84/84, look 25/25, ux 17/17, browser 17/17, a11y 0 in 58 states, soak 30.02 fps flat heap, drop trials 1,800/1,800 identical, pagescan before/after equal except harsh-level noise (different random streams).
+- Not rerun: coach, H.264, compression, keycheck, kdf, fuzz (no change to the receiver, codec, container or session code).
+- Untested: real cameras, screen readers, Safari, Firefox.
+- Next: cycle 9, a reverse-channel ACK design (receiver shows a small "done" QR the sender can scan with its own camera) so "likely done" can become "done".

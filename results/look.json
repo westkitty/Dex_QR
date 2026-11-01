@@ -1,5 +1,5 @@
 {
- "when": "2026-11-01T16:14:01.332Z",
+ "when": "2026-11-01T17:25:43.237Z",
  "results": [
   {
    "name": "home: Send and Receive buttons above the fold open the sender and receiver; no scripts",
@@ -74,9 +74,158 @@
    "name": "sender at 390 px: Start sending scrolls the code fully into view",
    "ok": true,
    "panelBelowFoldBefore": true,
-   "top": 377,
-   "bottom": 644,
+   "top": 309,
+   "bottom": 576,
    "vh": 844,
+   "errors": []
+  },
+  {
+   "name": "sender: How to receive card is outside the code area with 3 steps; animated: phone animation runs",
+   "ok": true,
+   "visible": true,
+   "overlap": false,
+   "artHidden": "true",
+   "steps": 3,
+   "anim": "hphone",
+   "okOpacity": "0",
+   "okAnim": "hok",
+   "heading": "How to receive",
+   "errors": []
+  },
+  {
+   "name": "sender: How to receive card is outside the code area with 3 steps; reduced (system): no animation, complete static picture (check shown)",
+   "ok": true,
+   "visible": true,
+   "overlap": false,
+   "artHidden": "true",
+   "steps": 3,
+   "anim": "none",
+   "okOpacity": "1",
+   "okAnim": "none",
+   "heading": "How to receive",
+   "errors": []
+  },
+  {
+   "name": "sender: How to receive card is outside the code area with 3 steps; reduced (motion toggle): no animation, complete static picture (check shown)",
+   "ok": true,
+   "visible": true,
+   "overlap": false,
+   "artHidden": "true",
+   "steps": 3,
+   "anim": "none",
+   "okOpacity": "1",
+   "okAnim": "none",
+   "heading": "How to receive",
+   "errors": []
+  },
+  {
+   "name": "sender @1280: at the frame estimate a \"should have it\" card appears in view, outside the code; the stream keeps playing; polite announcement",
+   "ok": true,
+   "hiddenEarly": true,
+   "sent": 27,
+   "need": 6,
+   "playing": true,
+   "finish": "likely",
+   "inView": true,
+   "overlap": false,
+   "reached": true,
+   "say": "Enough frames even with 30% missed.",
+   "h": "The receiver should have it by now",
+   "qrHidden": false
+  },
+  {
+   "name": "sender @1280: \"Receiver says Done: stop\" stops, shows Sent with a summary instead of the code and focuses Send another file",
+   "ok": true,
+   "playing": false,
+   "finish": "final",
+   "qrHidden": true,
+   "done": true,
+   "h": "Sent tiny.txt",
+   "stats": "Size1.5 KBFrames shown28 (estimate 6)Time1 s at 30.6 fpsEncryptedno",
+   "focus": "finish-again",
+   "say": "Finished. Sent tiny.txt in 28 frames. Press Send another file to choose the next one."
+  },
+  {
+   "name": "sender @1280: Show the code again resumes the stream; Send another file clears the file and returns to step 1; the next file sends with one press",
+   "ok": true,
+   "back": {
+    "playing": true,
+    "qrHidden": false,
+    "done": false,
+    "finish": "likely"
+   },
+   "again": {
+    "session": false,
+    "playing": false,
+    "files": 0,
+    "step1": "step current",
+    "play": true,
+    "finishHidden": true,
+    "empty": true,
+    "focus": "file",
+    "ring": "ring idle"
+   },
+   "next": {
+    "sent": 9,
+    "finish": "likely",
+    "qr": true,
+    "name": "next.txt (1,500 bytes)"
+   },
+   "errors": []
+  },
+  {
+   "name": "sender @390: at the frame estimate a \"should have it\" card appears in view, outside the code; the stream keeps playing; polite announcement",
+   "ok": true,
+   "hiddenEarly": true,
+   "sent": 30,
+   "need": 6,
+   "playing": true,
+   "finish": "likely",
+   "inView": true,
+   "overlap": false,
+   "reached": true,
+   "say": "Enough frames even with 30% missed.",
+   "h": "The receiver should have it by now",
+   "qrHidden": false
+  },
+  {
+   "name": "sender @390: \"Receiver says Done: stop\" stops, shows Sent with a summary instead of the code and focuses Send another file",
+   "ok": true,
+   "playing": false,
+   "finish": "final",
+   "qrHidden": true,
+   "done": true,
+   "h": "Sent tiny.txt",
+   "stats": "Size1.5 KBFrames shown31 (estimate 6)Time2 s at 30.8 fpsEncryptedno",
+   "focus": "finish-again",
+   "say": "Finished. Sent tiny.txt in 31 frames. Press Send another file to choose the next one."
+  },
+  {
+   "name": "sender @390: Show the code again resumes the stream; Send another file clears the file and returns to step 1; the next file sends with one press",
+   "ok": true,
+   "back": {
+    "playing": true,
+    "qrHidden": false,
+    "done": false,
+    "finish": "likely"
+   },
+   "again": {
+    "session": false,
+    "playing": false,
+    "files": 0,
+    "step1": "step current",
+    "play": true,
+    "finishHidden": true,
+    "empty": true,
+    "focus": "file",
+    "ring": "ring idle"
+   },
+   "next": {
+    "sent": 9,
+    "finish": "likely",
+    "qr": true,
+    "name": "next.txt (1,500 bytes)"
+   },
    "errors": []
   },
   {

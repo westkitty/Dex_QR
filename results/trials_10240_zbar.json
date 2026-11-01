@@ -13,16 +13,16 @@
   "frames": 196,
   "textLength": 643,
   "sha256": "36b8e3bf52b5b59b5b983a9d65ebe3093bb010d42f7136848b1021c2afc9704c",
-  "renderMs": 1124
+  "renderMs": 1129
  },
  "decoder": "zbar",
  "decoderSummary": {
   "decoder": "zbar",
   "files": 196,
   "decoded": 196,
-  "wall_s": 0.36,
-  "ms_per_frame_mean": 8.38,
-  "ms_per_frame_max": 34.9
+  "wall_s": 0.17,
+  "ms_per_frame_mean": 3.7,
+  "ms_per_frame_max": 15.93
  },
  "frameDecodeRate": 1,
  "summary": [

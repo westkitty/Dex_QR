@@ -242,3 +242,16 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Next:** run docs/TEST_CHECKLIST.md on real devices and retune thresholds; then a sender-side "receiver tips" card and a reverse-channel ACK design.
 
 - **Commit:** `f1238ac22eb5ca92c69500d911900dae49cd7398` on `main` (pushed 6c29dba..f1238ac; this line added in a docs follow-up commit).
+
+---
+
+## 2026-11-01 — Cycle 8 of 12 (routine run 12:10): sender "How to receive" card and finished state
+
+- **Lock:** `.dev-state/cycle.lock` held by "routine cycle 8 (run 12:10)"; start 044bb59, clean, in sync with origin/main.
+- **What:** src/pages/sender.template.html: `#howto` card (animated SVG, 3 steps) replaces the `.tips` chips; `#finish` card (`#finish-h`, `#finish-p`, `#finish-stats`, `#finish-stop`, `#finish-again`, `#finish-resume`), `#finish-say` polite region, `#stage-done` check in the stage, `#step3-body`. src/pages/sender.app.js: `state.need`, `state.finish` ("" | "likely" | "final"), `state.playMs`; `checkFinish`, `finishNow`, `leaveFinal`, `sendAnother`, `placeFinish` (control column above 860 px, under the code below). src/pages/common.css: howto/finish/stage-done styles, `.ring.reached`, keyframes hphone/hscan/hok/hcorner/hbeam/draw40/draw64/draw264.
+- **Numbers:** presses from receiver-done to next file streaming 3 → 2; done signal none → card + green ring at the estimate; module size 8 px @1280, 3 px @390 unchanged; pagescan clean/moderate 40/40 both decoders both widths before and after, whole viewport 40/40 with 0 wrong; harsh zxing 34→35 (1280), 18→17 (390); soak 30.02 fps flat heap; trials 1,800/1,800 identical; axe 0 in 58 states.
+- **Invariants kept:** QR drawing, quiet zone and module-size formula untouched; cards never overlap the stage (tested); reduced motion gives a still final picture (tested for the system setting and the Motion button); no flashing; offline, single file, 0 network requests; no dependency; protocol unchanged.
+- **Tests:** lint 0, unit 84/84, look 25/25 (9 new), ux 17/17, browser 17/17, a11y 0 in 58 states, soak pass, drop trials identical. New: tests/browser/pagescan.mjs, tests/browser/sender-shots.mjs.
+- **Fragile:** the finished card's position depends on the 860 px breakpoint and the control column's height at 1280×800 (it ends at 762 px of 800); a longer step-2 note would push it off screen (look test catches it). The IDs above are the test contract.
+- **Untested:** real cameras, screen readers, Safari, Firefox. "Likely done" is an estimate; the sender cannot see the receiver.
+- **Next:** reverse-channel ACK design (item 6).

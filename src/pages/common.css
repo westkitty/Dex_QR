@@ -150,8 +150,64 @@ canvas.qr { image-rendering: pixelated; max-width: 100%; max-height: 100%; heigh
 .live b { color: var(--fg); font-size: 15px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line2); flex: none; }
 .dot.on { background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: ping 2s ease-out infinite; }
-.tips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.tips li { font-size: 12.5px; color: var(--mut); background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; }
+/* Cycle 8: "how to receive" card and the finished state. Both sit below the ring, outside the code area; the
+ * code's size formula only reads the stage width and the window height, so neither card changes module size.
+ * The resting (unanimated) pose of every animated part is the calm final picture, so reduced motion (system
+ * setting or the motion toggle, which stop all animations below) shows a complete static illustration. */
+.howto { display: flex; gap: var(--s4); align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s3) var(--s4); }
+.howto-art { width: 150px; height: auto; flex: none; }
+.howto h2 { font-size: 15px; margin-bottom: 4px; }
+.howto-steps { margin: 0; padding-left: 1.3em; font-size: 13.5px; color: var(--fg); display: grid; gap: 2px; }
+.howto-steps li::marker { color: var(--acc); font-weight: 800; }
+.howto-tip { margin: 6px 0 0; font-size: 12.5px; color: var(--mut); }
+@media (max-width: 520px) { .howto { flex-direction: column; align-items: stretch; text-align: left; } .howto-art { width: 132px; align-self: center; } }
+.h-screen { fill: var(--card2); stroke: var(--line2); stroke-width: 2; }
+.h-panel { fill: #fff; }
+.h-dots rect { fill: #111; }
+.h-stand { fill: var(--line2); }
+.h-body { fill: var(--sec); stroke: var(--line2); stroke-width: 2; }
+.h-glass { fill: var(--field); }
+.h-corners { fill: none; stroke: var(--ok); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.h-scan { fill: var(--acc); opacity: 0; }
+.h-ok circle { fill: var(--ok); } .h-ok path { fill: none; stroke: var(--on-ok); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.h-beam path { stroke: var(--acc); stroke-width: 2.4; stroke-linecap: round; opacity: .55; }
+.h-phone, .h-ok, .h-scan, .h-beam { transform-box: fill-box; transform-origin: center; }
+.howto-art .h-phone { animation: hphone 6s var(--ease) infinite; }
+.howto-art .h-scan { animation: hscan 6s linear infinite; }
+.howto-art .h-ok { animation: hok 6s var(--ease) infinite; }
+.howto-art .h-corners { animation: hcorner 6s linear infinite; }
+.howto-art .h-beam { animation: hbeam 6s ease-in-out infinite; }
+@keyframes hphone { 0% { transform: translateX(22px) rotate(8deg); opacity: 0; } 12% { opacity: 1; } 34%, 88% { transform: none; opacity: 1; } 100% { transform: none; opacity: 0; } }
+@keyframes hscan { 0%, 36% { transform: translateY(0); opacity: 0; } 40% { opacity: 1; } 64% { transform: translateY(40px); opacity: 1; } 68%, 100% { transform: translateY(40px); opacity: 0; } }
+@keyframes hok { 0%, 66% { transform: scale(.4); opacity: 0; } 74% { transform: scale(1.1); opacity: 1; } 80%, 90% { transform: none; opacity: 1; } 100% { transform: none; opacity: 0; } }
+@keyframes hcorner { 0%, 66% { stroke: var(--line2); } 72%, 100% { stroke: var(--ok); } }
+@keyframes hbeam { 0%, 34% { opacity: 0; } 46%, 62% { opacity: .55; } 72%, 100% { opacity: 0; } }
+
+.finish { background: linear-gradient(180deg, color-mix(in srgb, var(--ok) 10%, var(--card2)), var(--card)); border: 1px solid color-mix(in srgb, var(--ok) 55%, var(--line)); border-radius: var(--r); padding: var(--s4); box-shadow: var(--shadow); animation: rise .45s var(--ease); }
+.finish.side { margin-top: var(--s3); box-shadow: none; }
+.finish { padding: var(--s3); }
+.finish .btns { margin-top: var(--s2); }
+.finish .btns button { flex: 1 1 auto; padding: 8px 12px; }
+.finish .lead { font-size: 13px; margin-top: 2px; }
+.finish-head { display: flex; gap: var(--s3); align-items: flex-start; }
+.finish-head h2 { font-size: 16px; }
+.finish-mark { width: 32px; height: 32px; flex: none; }
+.finish.final .finish-mark { width: 40px; height: 40px; }
+.finish-mark circle { fill: var(--ok); }
+.finish-mark path { fill: none; stroke: var(--on-ok); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 40; stroke-dashoffset: 0; animation: draw40 .5s .2s var(--ease) both; }
+.finish.final .finish-mark { animation: pop .6s var(--ease) both; }
+.finish-stats { margin-top: var(--s3); }
+button.okbtn { background: var(--ok); color: var(--on-ok); }
+.ring.reached { background: conic-gradient(from 0deg, var(--ok) 0, color-mix(in srgb, var(--ok) 60%, var(--acc)) 100%); }
+.stage-done { display: flex; flex-direction: column; align-items: center; gap: var(--s2); padding: var(--s6) var(--s4); text-align: center; color: var(--fg); animation: rise .5s var(--ease); }
+.stage-done svg { width: 120px; height: 120px; }
+.stage-done b { font-size: 24px; letter-spacing: -.3px; }
+.stage-done span { color: var(--mut); font-size: 14px; overflow-wrap: anywhere; max-width: 32em; }
+.sd-ring { fill: none; stroke: var(--ok); stroke-width: 6; stroke-dasharray: 264; stroke-dashoffset: 0; transform: rotate(-90deg); transform-box: fill-box; transform-origin: center; animation: draw264 .8s var(--ease) both; }
+.sd-check { fill: none; stroke: var(--ok); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 64; stroke-dashoffset: 0; animation: draw64 .5s .6s var(--ease) both; }
+@keyframes draw40 { from { stroke-dashoffset: 40; } to { stroke-dashoffset: 0; } }
+@keyframes draw64 { from { stroke-dashoffset: 64; } to { stroke-dashoffset: 0; } }
+@keyframes draw264 { from { stroke-dashoffset: 264; } to { stroke-dashoffset: 0; } }
 .summary { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s3); }
 .chip { font-size: 12.5px; padding: 3px 10px; border-radius: 99px; background: var(--sec); color: var(--fg); }
 .chip.lock { background: var(--ok-bg); color: var(--ok); }

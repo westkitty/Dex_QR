@@ -1,6 +1,6 @@
 {
  "axe": "4.14.0",
- "when": "2026-11-01T16:15:34.523Z",
+ "when": "2026-11-01T17:20:46.168Z",
  "report": [
   {
    "page": "index",
@@ -75,6 +75,18 @@
    "violations": []
   },
   {
+   "page": "sender likely-done",
+   "width": 390,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "sender finished",
+   "width": 390,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
    "page": "sender focus-mode",
    "width": 390,
    "scheme": "dark",
@@ -153,6 +165,18 @@
    "violations": []
   },
   {
+   "page": "sender likely-done",
+   "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "sender finished",
+   "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
    "page": "sender focus-mode",
    "width": 1280,
    "scheme": "dark",
@@ -225,6 +249,18 @@
    "violations": []
   },
   {
+   "page": "sender likely-done",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender finished",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
    "page": "sender focus-mode",
    "width": 390,
    "scheme": "light",
@@ -292,6 +328,18 @@
   },
   {
    "page": "receiver done",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender likely-done",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender finished",
    "width": 1280,
    "scheme": "light",
    "violations": []

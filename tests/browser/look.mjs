@@ -95,6 +95,56 @@ const browser = await chromium.launch({ executablePath: CHROME, headless: true }
   await ctx.close();
 }
 
+// 2c. Cycle 8: "How to receive" card beside the code (outside the code area), animated unless motion is reduced.
+for (const [label, opts, toggle] of [["animated", {}, false], ["reduced (system)", { reduced: true }, false], ["reduced (motion toggle)", {}, true]]) {
+  const { ctx, p, errors } = await open(browser, "sender.html", opts);
+  if (toggle) await p.click("#motion");
+  await dropFiles(p, "body", [{ name: "howto.bin", type: "application/octet-stream", bytes: sample }]);
+  await p.click("#play"); await waitFor(p, () => window.__dexqrSender.playing); await p.waitForTimeout(700);
+  const r = await p.evaluate(() => {
+    const h = document.getElementById("howto"), st = document.getElementById("stage").getBoundingClientRect(), hr = h.getBoundingClientRect();
+    const art = h.querySelector(".howto-art"), phone = art.querySelector(".h-phone"), ok = art.querySelector(".h-ok");
+    const cs = getComputedStyle(phone), oks = getComputedStyle(ok);
+    const overlap = !(hr.bottom <= st.top || hr.top >= st.bottom || hr.right <= st.left || hr.left >= st.right);
+    return { visible: !h.hidden && hr.height > 0, overlap, artHidden: art.getAttribute("aria-hidden"), steps: h.querySelectorAll("ol li").length, anim: cs.animationName, okOpacity: oks.opacity, okAnim: oks.animationName, heading: document.getElementById("howto-h").textContent };
+  });
+  const reduced = label !== "animated";
+  record(`sender: How to receive card is outside the code area with 3 steps; ${label}: ` + (reduced ? "no animation, complete static picture (check shown)" : "phone animation runs"),
+    r.visible && !r.overlap && r.artHidden === "true" && r.steps === 3 && (reduced ? r.anim === "none" && r.okAnim === "none" && r.okOpacity === "1" : r.anim === "hphone" && r.okAnim === "hok") && errors.length === 0, { ...r, errors });
+  await ctx.close();
+}
+
+// 2d. Cycle 8: finished state. A tiny file at 30 fps reaches the frame estimate quickly; the card appears (in view,
+// outside the code), the stream keeps playing; stop shows the summary; Send another file returns to step 1.
+for (const [w, h] of [[1280, 800], [390, 844]]) {
+  const { ctx, p, errors } = await open(browser, "sender.html", { viewport: { width: w, height: h } });
+  await p.evaluate(() => { document.getElementById("tuning").open = true; });
+  await p.fill("#fps", "30"); await p.dispatchEvent("#fps", "change");
+  await p.evaluate(() => { document.getElementById("tuning").open = false; });
+  await dropFiles(p, "body", [{ name: "tiny.txt", type: "text/plain", bytes: Array.from(testFile(1500, "tiny")) }]);
+  await p.click("#play"); await waitFor(p, () => window.__dexqrSender.playing);
+  const hiddenEarly = await p.evaluate(() => document.getElementById("finish").hidden);
+  const ok1 = await waitFor(p, () => !document.getElementById("finish").hidden, null, 15000);
+  await p.waitForTimeout(700);
+  const likely = await p.evaluate(() => {
+    const s = window.__dexqrSender, f = document.getElementById("finish").getBoundingClientRect(), st = document.getElementById("stage").getBoundingClientRect();
+    return { sent: s.sent, need: s.need, playing: s.playing, finish: s.finish, inView: f.top >= 0 && f.bottom <= innerHeight, overlap: !(f.bottom <= st.top || f.top >= st.bottom || f.right <= st.left || f.left >= st.right), reached: document.getElementById("ring").classList.contains("reached"), say: document.getElementById("finish-say").textContent, h: document.getElementById("finish-h").textContent, qrHidden: document.getElementById("qr").hidden };
+  });
+  record(`sender @${w}: at the frame estimate a "should have it" card appears in view, outside the code; the stream keeps playing; polite announcement`, hiddenEarly && ok1 && likely.sent >= likely.need && likely.playing && likely.finish === "likely" && likely.inView && !likely.overlap && likely.reached && /Estimate reached|30%/.test(likely.say) && !likely.qrHidden, { hiddenEarly, ...likely });
+  await p.click("#finish-stop"); await p.waitForTimeout(300);
+  const fin = await p.evaluate(() => ({ playing: window.__dexqrSender.playing, finish: window.__dexqrSender.finish, qrHidden: document.getElementById("qr").hidden, done: !document.getElementById("stage-done").hidden, h: document.getElementById("finish-h").textContent, stats: document.getElementById("finish-stats").textContent, focus: document.activeElement.id, say: document.getElementById("finish-say").textContent }));
+  record(`sender @${w}: "Receiver says Done: stop" stops, shows Sent with a summary instead of the code and focuses Send another file`, !fin.playing && fin.finish === "final" && fin.qrHidden && fin.done && /Sent tiny\.txt/.test(fin.h) && /Frames shown/.test(fin.stats) && fin.focus === "finish-again" && /Finished/.test(fin.say), fin);
+  await p.click("#finish-resume"); await waitFor(p, () => window.__dexqrSender.playing); await p.waitForTimeout(300);
+  const back = await p.evaluate(() => ({ playing: window.__dexqrSender.playing, qrHidden: document.getElementById("qr").hidden, done: !document.getElementById("stage-done").hidden, finish: window.__dexqrSender.finish }));
+  await p.click("#finish-again"); await p.waitForTimeout(300);
+  const again = await p.evaluate(() => ({ session: !!window.__dexqrSender.session, playing: window.__dexqrSender.playing, files: document.getElementById("file").files.length, step1: document.getElementById("step1").className, play: document.getElementById("play").disabled, finishHidden: document.getElementById("finish").hidden, empty: !document.getElementById("stage-empty").hidden, focus: document.activeElement.id, ring: document.getElementById("ring").className }));
+  await dropFiles(p, "body", [{ name: "next.txt", type: "text/plain", bytes: Array.from(testFile(1500, "next")) }]);
+  await p.click("#play"); await waitFor(p, () => window.__dexqrSender.playing); await p.waitForTimeout(200);
+  const next = await p.evaluate(() => ({ sent: window.__dexqrSender.sent, finish: window.__dexqrSender.finish, qr: !document.getElementById("qr").hidden, name: document.getElementById("s-file").textContent }));
+  record(`sender @${w}: Show the code again resumes the stream; Send another file clears the file and returns to step 1; the next file sends with one press`, back.playing && !back.qrHidden && !back.done && back.finish === "likely" && !again.session && !again.playing && again.files === 0 && /current/.test(again.step1) && again.play && again.finishHidden && again.empty && again.focus === "file" && /idle/.test(again.ring) && next.qr && /next\.txt/.test(next.name) && errors.length === 0, { back, again, next, errors });
+  await ctx.close();
+}
+
 // 3. Theme toggle cycles auto -> light -> dark -> auto, persists across reloads; colours change.
 {
   const { ctx, p, errors } = await open(browser, "sender.html");

@@ -13,16 +13,16 @@
   "frames": 1397,
   "textLength": 643,
   "sha256": "0b01f1c848f6b08fd0d593f95a90cc9593aa939ee2f7a0f2165a4824a9ef8e9b",
-  "renderMs": 8644
+  "renderMs": 7709
  },
  "decoder": "zxing",
  "decoderSummary": {
   "decoder": "zxing",
   "files": 1397,
   "decoded": 1397,
-  "wall_s": 0.6,
-  "ms_per_frame_mean": 2.33,
-  "ms_per_frame_max": 52.83
+  "wall_s": 0.21,
+  "ms_per_frame_mean": 0.96,
+  "ms_per_frame_max": 13.81
  },
  "frameDecodeRate": 1,
  "summary": [

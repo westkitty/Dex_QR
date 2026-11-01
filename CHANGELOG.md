@@ -218,3 +218,33 @@ parseText and parseKeyFrame themselves had **no** findings before the fixes: eve
 **Fixed while finishing (the cycle was resumed after the first run stopped):** the slow-device check expected "about 15–17 seconds", but the simulation adds 16 s on top of the real derive (1.1–1.5 s), so 18 s is a correct reading; it now accepts 16–19 s. The 390 px "receiving" screenshot was skipped by the script; now taken.
 
 **Not tested.** Real phone or laptop cameras: every coach threshold was chosen on synthetic frames only and may be wrong for real glare, focus hunting or low light (docs/TEST_CHECKLIST.md has the device checks). Screen readers with real users, Safari, Firefox. The "too small", "cut off" and "glare" hints are covered by unit tests only, not by the fake-camera runs.
+
+## 2026-11-01 — Cycle 8: sender "How to receive" card and a finished state
+
+**What changed for the person sending.**
+- A **How to receive** card under the code: a small animated picture (a phone slides in front of the screen, a scan line sweeps, the corners turn green and a check pops) and three short steps (open Receive and press Start scanning; point the camera from 20–40 cm with the whole code in view; hold steady until it says Done). It replaces the four tip chips. The loop is 6 s and only moves and fades; nothing flashes. With reduced motion (system setting or the Motion button) it is a calm, complete still picture (phone in place, check shown).
+- A **finished state**. Once the stream has sent the frames a receiver needs with no missed frames, the progress ring turns green and a card says "The receiver should have it by now" (it updates once even 30% missed frames should be covered). The stream keeps playing. On wide screens the card sits in the control column (the code fills the window height, so under it would be off screen); on phones it sits right under the code. Both placements are in view in the tests at 1280×800 and 390×844. A polite live region announces it.
+- **Receiver done: stop** stops the stream and shows a summary (size, frames shown against the estimate, time and real fps, encrypted or not) and a large check mark with "Sent" in place of the code. **Send another file** (focused) returns to step 1, clears the file, keeps the passphrase and tuning and opens the file picker. **Show the code again** resumes the same stream.
+
+**Measured (headless Chrome, synthetic; no camera).**
+
+| | Before (044bb59) | After |
+|---|---|---|
+| Signal that the receiver is probably done | none (bar only) | card + green ring at the frame estimate; announcement |
+| Presses from "receiver is done" to the next file streaming | 3 (Pause, browse, Start sending) | 2 (Send another file opens the picker, Start sending) |
+| Summary after sending | none | size, frames, time, fps, encryption |
+| Module size / code size, 1280×800 | 8 px / 712 CSS px | 8 px / 712 CSS px |
+| Module size / code size, 390×844 | 3 px / 267 CSS px | 3 px / 267 CSS px |
+| Page-rendering scan (new tests/browser/pagescan.mjs, 40 frames, zbar and zxing-cpp): code crop as painted, clean / moderate | 40/40 / 40/40 at both widths | 40/40 / 40/40 at both widths |
+| Whole viewport (code plus the new cards), clean | 40/40 both decoders, both widths | 40/40 both decoders, both widths, 0 wrong, 0 multiple |
+| Harsh degradation, zxing-cpp 1280 / 390 | 34/40 / 18/40 | 35/40 / 17/40 (different random stream each run; harsh is near the decoder's limit) |
+| Harsh degradation, zbar 1280 / 390 | 0/40 / 1/40 | 0/40 / 0/40 |
+| Soak, sender 60 s at 30 fps | 30.02 fps, flat heap (cycle 7) | 30.02 fps, heap 2.3 → 2.5 MB |
+| Drop trials | 1,800/1,800 | 1,800/1,800, results identical |
+| axe serious/critical | 0 in 50 states | 0 in 58 states (sender likely-done and finished added, both themes, both widths) |
+
+**Hard rules kept.** QR drawing, module size and quiet zone unchanged (the size formula only reads the stage width and window height; the cards are below the ring or in the control column, and the tests check they never overlap the stage). The flashing note was updated to mention the 6 s how-to loop. Offline, single file, 0 network requests; no new dependency; protocol unchanged. sender.html 176,186 → 191,554 bytes (index.html and receiver.html are rebuilt with the shared stylesheet).
+
+**Tests (final build):** lint 0; unit 84/84; look 16 → 25/25 (new: how-to card outside the code with 3 steps, animated / static with system reduced motion / static with the Motion button; finished state at 1280 and 390: card in view and outside the code while playing, stop shows the summary and focuses Send another file, Show the code again resumes, Send another file returns to step 1 and the next file sends); ux 17/17; browser 17/17; a11y 0 in 58 states; soak pass; drop trials 1,800/1,800 identical. New tools: tests/browser/pagescan.mjs (`make pagescan`), tests/browser/sender-shots.mjs. Screenshots: docs/screenshots/cycle8-{before,after}-sender-*-{1280,390}.png.
+
+**Not tested.** Real phone or laptop cameras pointed at the sender (the scan numbers come from screenshots decoded by zbar and zxing-cpp with synthetic degradation), screen readers with real users, Safari, Firefox. The "likely done" moment is the frame estimate, not a message from the receiver: the sender still cannot see the receiver (item 6, reverse channel).

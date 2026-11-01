@@ -27,6 +27,7 @@ const doneFrames = [];
   const s = await DQ.SenderSession.create({ name: "done.txt", data: new TextEncoder().encode("finished ".repeat(900)), blockSize: 400, compress: false, startSeed: 9 });
   for (let i = 0; i < Math.ceil(s.K * 1.6) + 6; i++) { const f = path.join(TMP, `done_${i}.png`); fs.writeFileSync(f, encodeGray(DQ.render.toGray(DQ.render.makeQr(s.nextFrame(), "M"), 4))); doneFrames.push(f); }
 }
+const tiny = path.join(TMP, "tiny.txt"); fs.writeFileSync(tiny, "tiny ".repeat(300));
 const sample = path.join(TMP, "sample.txt"); fs.writeFileSync(sample, "Dex_QR accessibility sample\n".repeat(200));
 
 const states = {
@@ -44,6 +45,9 @@ const states = {
   "receiver coach-ok": async (p) => { await p.evaluate(() => { const c = document.getElementById("coach"); c.hidden = false; c.className = "coach ok"; document.getElementById("coach-text").textContent = window.DexQR.coach.HINTS.steady.text; }); },
   "receiver slow-passphrase-warning": async (p) => { await p.evaluate(() => { const s = crypto.subtle, o = s.deriveBits.bind(s); s.deriveBits = async (a, k, l) => { const r = await o(a, k, l); if (a && a.name === "PBKDF2") await new Promise((res) => setTimeout(res, a.iterations * 0.05)); return r; }; }); await p.click("details.opts summary"); await p.selectOption("#dec", "zxing"); await p.setInputFiles("#files", encFrames); await poll(p, () => !document.getElementById("passslow").hidden); },
   "receiver done": async (p) => { await p.click("details.opts summary"); await p.selectOption("#dec", "zxing"); await p.setInputFiles("#files", doneFrames); await poll(p, () => window.__dexqrReceiver.phase === "done"); await p.waitForTimeout(1600); },
+  // Cycle 8: the sender's finished states (tiny file at 30 fps reaches the frame estimate in about a second).
+  "sender likely-done": async (p) => { await p.click("#tuning summary"); await p.fill("#fps", "30"); await p.dispatchEvent("#fps", "change"); await p.setInputFiles("#file", tiny); await p.click("#play"); await poll(p, () => !document.getElementById("finish").hidden); await p.waitForTimeout(700); },
+  "sender finished": async (p) => { await p.click("#tuning summary"); await p.fill("#fps", "30"); await p.dispatchEvent("#fps", "change"); await p.setInputFiles("#file", tiny); await p.click("#play"); await poll(p, () => !document.getElementById("finish").hidden); await p.click("#finish-stop"); await p.waitForTimeout(1400); },
   "sender focus-mode": async (p) => { await p.setInputFiles("#file", sample); await p.click("#prepare"); await p.waitForTimeout(800); await p.evaluate(() => { delete Element.prototype.requestFullscreen; }); await p.click("#fs"); await p.waitForTimeout(200); },
 };
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });

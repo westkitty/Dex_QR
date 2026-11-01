@@ -7,6 +7,7 @@
   const state = {
     session: null, playing: false, sent: 0, due: 0, qrSize: 0, raf: 0, ecl: "M", text: "",
     prepared: null, preparing: false, fpsSamples: [], actualFps: 0, wakeLock: null, focusMode: false,
+    need: 0, finish: "", playMs: 0, playSince: 0,   // cycle 8: finished state ("" | "likely" | "final")
   };
   window.__dexqrSender = state; // read-only hook for automated tests
   const UI = window.DexUI;
@@ -65,6 +66,8 @@
     const f = fps();
     const need = Math.ceil((Math.ceil(s.K * 1.05) + 1) / s.dataFrameShare);   // key-check frames take 1 in 32
     const pct = Math.min(100, (100 * state.sent) / need);
+    state.need = need;
+    checkFinish();
     $("s-sent").textContent = String(state.sent) + (state.playing && state.actualFps ? ` (${state.actualFps.toFixed(1)} fps actual)` : "");
     $("bar").style.width = pct.toFixed(1) + "%";
     $("barwrap").setAttribute("aria-valuenow", pct.toFixed(0));
@@ -109,6 +112,9 @@
   function setPlaying(on) {
     if (!state.session) return;
     if (on === state.playing) return;
+    if (on && state.finish === "final") leaveFinal();
+    const now = performance.now();
+    if (on) state.playSince = now; else if (state.playSince) { state.playMs += now - state.playSince; state.playSince = 0; }
     state.playing = on;
     syncPlayButton();
     $("play").setAttribute("aria-pressed", String(on));
@@ -202,7 +208,7 @@
       const startSeed = crypto.getRandomValues(new Uint32Array(1))[0];
       state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, iterations, startSeed, compress: $("zip").checked, keyCheck: $("kc").checked });
       state.prepared = key;
-      state.sent = 0; state.fileSha = hex(sha);
+      state.sent = 0; state.fileSha = hex(sha); state.playMs = 0; state.playSince = 0; clearFinish();
       const s = state.session;
       $("s-file").textContent = `${f.name} (${f.size.toLocaleString()} bytes)`;
       $("s-sha").textContent = state.fileSha;
@@ -235,6 +241,98 @@
     // The stage switches from the placeholder to the white code panel.
     $("stage").classList.remove("idle"); $("ring").classList.remove("idle"); $("stage-empty").hidden = true; $("qr").hidden = false;
     redraw();
+  }
+
+
+  /* Cycle 8: the finished state. The sender cannot see the receiver, so "likely done" is the frame estimate:
+   * once the stream has sent what a receiver needs with no missed frames, a card below the code says so and
+   * offers one-press actions; the stream keeps playing (a receiver that missed frames needs a few more). A second
+   * line appears once even 30% missed frames should be covered. "Receiver says Done: stop" ends the session with
+   * a summary in place of the code; "Send another file" goes back to step 1 with the passphrase and tuning kept. */
+  function say(text) { const el = $("finish-say"); el.textContent = ""; setTimeout(() => { el.textContent = text; }, 60); }
+  function checkFinish() {
+    const s = state.session; if (!s || !state.need || state.finish === "final") return;
+    const lossy = state.sent >= Math.ceil(state.need / 0.7);
+    if (state.sent < state.need) return;
+    if (!state.finish) {
+      state.finish = "likely";
+      $("finish").hidden = false; $("finish").classList.remove("final");
+      $("finish-h").textContent = "The receiver should have it by now";
+      $("finish-stats").hidden = true; $("finish-stop").hidden = false; $("finish-resume").hidden = true;
+      $("ring").classList.add("reached");
+      if (/Sending\./.test($("msg").textContent)) msg("", "");   // the card replaces the "Sending" line
+      say("Estimate reached: a receiver that missed no frames has the file. Keep the code showing until it says Done.");
+    }
+    const t = lossy ? "Enough even if 30% of frames were missed. Not done yet? Check the receiver's camera view." : "Enough frames if none were missed. Keep showing the code until the receiver says Done.";
+    if ($("finish-p").textContent !== t) { $("finish-p").textContent = t; if (lossy) say("Enough frames even with 30% missed."); }
+  }
+  // Keep the card where the sender is looking: beside the code in the control column on wide screens (the code
+  // fills the window height there, so below it would be off screen), directly under the code on phones.
+  const narrow = window.matchMedia ? window.matchMedia("(max-width: 860px)") : null;
+  function placeFinish() {
+    const card = $("finish"), wide = !(narrow && narrow.matches);
+    if (wide && card.parentElement !== $("step3-body")) $("msg").after(card);
+    else if (!wide && card.previousElementSibling !== $("live")) $("live").after(card);
+    card.classList.toggle("side", wide);
+  }
+  if (narrow && narrow.addEventListener) narrow.addEventListener("change", placeFinish);
+  placeFinish();
+  function clearFinish() {
+    $("finish-again").className = "secondary";
+    state.finish = ""; $("finish").hidden = true; $("finish").classList.remove("final"); $("ring").classList.remove("reached");
+    $("stage-done").hidden = true; $("finish-p").textContent = "";
+  }
+  function statRow(dl, k, v) { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); }
+  function finishNow() {
+    const s = state.session; if (!s) return;
+    setPlaying(false);
+    if (document.fullscreenElement || state.focusMode) exitFull();
+    state.finish = "final";
+    const f = $("file").files[0], name = f ? f.name : "the file", secs = state.playMs / 1000;
+    $("finish").hidden = false; $("finish").classList.add("final"); $("ring").classList.add("reached");
+    $("finish-h").textContent = `Sent ${name}`;
+    $("finish-p").textContent = "The stream is stopped. Check that the receiver saved the file and that its SHA-256 matches the one under Transfer details.";
+    const dl = $("finish-stats"); dl.textContent = "";
+    if (f) statRow(dl, "Size", fmtSize(f.size));
+    statRow(dl, "Frames shown", `${state.sent.toLocaleString("en-US")} (estimate ${state.need.toLocaleString("en-US")})`);
+    statRow(dl, "Time", fmtTime(secs) + (secs > 0 ? ` at ${(state.sent / secs).toFixed(1)} fps` : ""));
+    statRow(dl, "Encrypted", s.encrypted ? "yes" : "no");
+    dl.hidden = false;
+    $("finish-stop").hidden = true; $("finish-resume").hidden = false; $("finish-again").className = "okbtn";
+    // The stage shows a check mark instead of the code: nothing is being sent now.
+    $("qr").hidden = true; $("stage").classList.add("idle"); $("ring").classList.remove("idle");
+    $("stage-done-name").textContent = `${name} · ${state.sent.toLocaleString("en-US")} frames · ${fmtTime(secs)}`;
+    $("stage-done").hidden = false;
+    $("live-text").textContent = `Finished · ${state.sent} frames sent`;
+    msg(`✓ Finished: ${name} was shown in ${state.sent} frames. Send another file, or show the code again if the receiver is not done.`, "ok");
+    say(`Finished. Sent ${name} in ${state.sent} frames. Press Send another file to choose the next one.`);
+    $("finish-again").focus();
+  }
+  function leaveFinal() {
+    state.finish = "likely";
+    $("stage-done").hidden = true; $("qr").hidden = false; $("stage").classList.remove("idle");
+    $("finish").classList.remove("final"); $("finish-stats").hidden = true; $("finish-stop").hidden = false; $("finish-resume").hidden = true; $("finish-again").className = "secondary";
+    $("finish-h").textContent = "The receiver should have it by now";
+    $("finish-p").textContent = "";
+    redraw(); checkFinish();
+  }
+  function sendAnother() {
+    setPlaying(false);
+    if (document.fullscreenElement || state.focusMode) exitFull();
+    clearFinish();
+    state.session = null; state.prepared = null; state.sent = 0; state.text = ""; state.playMs = 0; state.need = 0;
+    $("file").value = "";
+    $("qr").hidden = true; $("stage").classList.add("idle"); $("ring").classList.add("idle"); $("ring").style.setProperty("--p", "0");
+    $("stage-empty").hidden = false; $("summary").hidden = true; $("fs").disabled = true;
+    $("bar").style.width = "0%"; $("barwrap").setAttribute("aria-valuenow", "0"); $("s-eta").textContent = "–"; $("s-sent").textContent = "0";
+    ["s-file", "s-sha", "s-enc", "s-zip", "s-id", "s-k", "s-qr"].forEach((id) => { $(id).textContent = "–"; });
+    $("qr").setAttribute("aria-label", "Animated QR code stream (choose a file first)");
+    $("live-text").textContent = "Ready when you are";
+    fileChanged();
+    msg("Ready for the next file. The passphrase and tuning are kept; clear the passphrase if the next receiver should not use it.", "ok");
+    $("step1").scrollIntoView({ block: "nearest", behavior: UI && UI.reducedMotion() ? "auto" : "smooth" });
+    $("file").focus();
+    try { if ($("file").showPicker) $("file").showPicker(); else $("file").click(); } catch (e) { /* the drop box stays focused; Enter opens the picker */ }
   }
 
   /* Step 1: file picker, drag and drop anywhere on the page, or paste. */
@@ -303,6 +401,9 @@
     const files = e.clipboardData && e.clipboardData.files;
     if (files && files.length) { e.preventDefault(); takeFiles(files, "pasted"); }
   });
+  $("finish-stop").addEventListener("click", finishNow);
+  $("finish-again").addEventListener("click", sendAnother);
+  $("finish-resume").addEventListener("click", () => setPlaying(true));
   $("stage-play").addEventListener("click", () => setPlaying(!state.playing));
   $("fs").addEventListener("click", enterFull);
   $("stage-exit").addEventListener("click", exitFull);
