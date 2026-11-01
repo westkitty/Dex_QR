@@ -97,7 +97,7 @@ Encrypted payloads shrink the same way (+52 bytes each: CSV 76,431 → 13,258). 
 
 **Not tested.** Real cameras (including whether the smaller key-check QR reads at the same distance), Safari and Firefox.
 
-## Cycle 4 (2026-11-01, about 6:45 AM EST): PBKDF2 tuned to the device, and a pattern-aware passphrase strength meter
+## Cycle 4 (2026-11-01, about 6:30 AM EST): PBKDF2 tuned to the device, and a pattern-aware passphrase strength meter
 
 **What changed.**
 - The sender measures PBKDF2-HMAC-SHA-256 on this device (probes totalling 900,000 iterations, about 0.1 s) and picks the iteration count that takes about 1 s here, rounded down to 100,000, never below 600,000 (the old fixed count) and never above 8,000,000. "Standard: 600,000" stays as an option. The count travels in the existing DQE1 iteration field and key-check frame: no format change.
