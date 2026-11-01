@@ -265,3 +265,5 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Invariants kept:** stream QR drawing, quiet zone and module size untouched; decoration outside codes; offline, single file, 0 network requests; no dependency; protocol stream frames unchanged and backward compatible.
 - **Untested:** real cameras, Safari, Firefox, screen readers. A Done code is a convenience, not proof; compare the SHA-256.
 - **Next:** real-device checklist run, then coach threshold retune.
+
+- **Commit:** `85e182a909c69085c990a2aa93fe2bcbda5d3d11` on `main` (this line added in a docs follow-up commit).
