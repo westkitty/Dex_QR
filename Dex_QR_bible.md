@@ -156,3 +156,20 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Files touched:** src/container.js, src/packet.js, src/session.js, src/pages/{sender,receiver}.{app.js,template.html}, src/pages/common.css, built pages, tests/unit/compression.test.mjs, tests/unit/robustness.test.mjs (one test now passes compress:false), tests/fixtures/*, tests/bench/compression.mjs, tests/browser/compression.mjs, Makefile, package.json, docs, results.
 - **Untested:** real cameras; Safari/Firefox CompressionStream behaviour.
 - **Next:** cycle 3, early wrong-passphrase detection via a key check value.
+
+---
+
+## 2026-11-01 — Cycle 3 of 12 (manual run on the owner's request): early wrong-passphrase detection
+
+- **Lock:** `.dev-state/cycle.lock` taken by "manual cycle 3" at 05:29 EST (released by cycle 2), starting at f89f51b, clean and in sync with origin/main.
+- **What:** encrypted streams interleave a key-check frame (`DK` + Base45 of 36 bytes: version, KDF id, file ID, iterations, salt, 2-byte KCV, CRC-32) at frame 0 and every 32nd frame. KCV = HKDF-SHA-256(PBKDF2 output, empty salt, info "Dex_QR key check v1")[0..2]. The AES key is still the PBKDF2 output, so DQE1 and data packets are unchanged.
+- **Receiver UX:** passphrase box from the first encrypted packet with a "Check passphrase" button; verdict announced (alert for wrong, status otherwise); focus returns to the field on a wrong passphrase; scanning and progress continue; a passphrase typed before any key frame waits and is checked automatically when one arrives; with a match the file opens by itself at the end using the cached key. New "Passphrase check" status row.
+- **Sender UX:** "Let the receiver check the passphrase early" (default on) with an explanation of the trade-off; part of the stale-settings check; ETA accounts for the key frames.
+- **Numbers (simulated, 100 trials, 8 fps):** mean time to a wrong-passphrase verdict 20 KB 6.7 → 2.1 s, 100 KB 31.6 → 2.1 s, 500 KB 156.7 → 2.1 s at 0% loss; 500 KB at 50% loss 314.0 → 6.7 s (p95 326.0 → 19.8 s). Frames to the file +2.6% to +3.9%. +0 bytes per data packet. Full table in CHANGELOG.md; data in results/keycheck.json and results/keycheck_browser.json.
+- **Compatibility:** pre-cycle-3 receivers ignore `DK` frames (they are foreign codes to them); pre-cycle-3 encrypted streams open as before with the check at the end; a payload built now decrypts with the old `deriveKey` code (unit test).
+- **Security note:** no guess gets cheaper, but one filmed key frame lets an attacker filter guesses (16 bits, cannot confirm). Documented in THREAT_NOTE.md; senders can turn it off.
+- **Tests:** unit 44/44 (9 new), key-check browser 5/5 (new), browser 17/17, ux 17/17, axe 0 serious/critical in 14 states, compression browser 4/4, soak 2/2, lint 0. Drop trials and H.264 not rerun (no codec or data-packet change).
+- **Files touched:** src/container.js, src/packet.js, src/session.js, src/pages/{sender,receiver}.{app.js,template.html}, built pages, tests/unit/keycheck.test.mjs, tests/browser/keycheck.mjs, tests/browser/a11y.mjs, tests/bench/keycheck.mjs, Makefile, package.json, README.md, CHANGELOG.md, docs/{PROTOCOL,THREAT_NOTE,TEST_CHECKLIST,ROADMAP,DEVELOPMENT_LOG}.md, results/{keycheck,keycheck_browser,a11y,ux,…}.json.
+- **Fragile:** `receiver.app.js` early-check flow (`earlyCheck`, `checkToken`, `pendingCheck`): keep the token and session checks; the early check must stay advisory (AES-GCM decides).
+- **Untested:** real cameras (does the version-3 key QR read at the same distance; autofocus with the size change), Safari, Firefox, screen readers.
+- **Next:** cycle 4, PBKDF2 iteration calibration and a better strength estimate (or fuzzing of the parsers).

@@ -13,6 +13,16 @@
  *   19   4   seed    = LT encoding-symbol id (uint32)
  *   23   T   LT-encoded block (XOR of the chosen source blocks)
  * 23+T   4   CRC-32 of bytes [0, 23+T)
+ *
+ * Key-check frame (cycle 3, encrypted transfers only), Base45 with the text prefix "DK":
+ *    0   1   key-frame version (=1)
+ *    1   1   KDF id (1 = PBKDF2-HMAC-SHA-256 key, KCV = HKDF-SHA-256(key, "Dex_QR key check v1")[0..2])
+ *    2   8   fileId of the transfer it belongs to
+ *   10   4   PBKDF2 iterations (uint32)
+ *   14  16   salt (the same salt as in the DQE1 payload header)
+ *   30   2   KCV
+ *   32   4   CRC-32 of bytes [0, 32)
+ * Receivers from before cycle 3 see the "DK" prefix as some other QR code and skip it.
  */
 (function (root) {
   "use strict";
@@ -30,6 +40,11 @@
   // files up to 32 MiB with presets T >= 200 B (K <= 167,773), so these caps reject nothing it can send.
   const MAX_LENGTH = 32 * 1024 * 1024 + 4096;   // 32 MiB file + container/encryption overhead
   const MAX_K = 262144;                         // 2^18 blocks
+  const KEY_PREFIX = "DK";
+  const KEY_VERSION = 1;
+  const KEY_KDF_PBKDF2 = 1;
+  const KEY_FRAME_LEN = 36;
+  const ITER_MIN = 100000, ITER_MAX = 10000000;   // same bounds as container.MIN/MAX_ITERATIONS
 
   function hex(bytes) { return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(""); }
 
@@ -81,6 +96,31 @@
     };
   }
 
+  function buildKeyFrame({ fileId, iterations, salt, kcv }) {
+    const b = new Uint8Array(KEY_FRAME_LEN), dv = new DataView(b.buffer);
+    b[0] = KEY_VERSION; b[1] = KEY_KDF_PBKDF2;
+    b.set(fileId.subarray ? fileId.subarray(0, 8) : fileId, 2);
+    dv.setUint32(10, iterations >>> 0);
+    b.set(salt, 14); b.set(kcv, 30);
+    dv.setUint32(32, DQ.crc32(b, 0, 32));
+    return KEY_PREFIX + DQ.base45.encode(b);
+  }
+
+  /* Parse a key-check frame. Returns {ok:true, fileId, fileIdHex, iterations, salt, kcv} or {ok:false, reason}. */
+  function parseKeyFrame(text) {
+    if (typeof text !== "string" || !text.startsWith(KEY_PREFIX)) return { ok: false, reason: "foreign" };
+    let b;
+    try { b = DQ.base45.decode(text.slice(KEY_PREFIX.length)); } catch (e) { return { ok: false, reason: "base45" }; }
+    if (b.length !== KEY_FRAME_LEN) return { ok: false, reason: "length" };
+    const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    if (DQ.crc32(b, 0, 32) !== dv.getUint32(32)) return { ok: false, reason: "crc" };
+    if (b[0] !== KEY_VERSION || b[1] !== KEY_KDF_PBKDF2) return { ok: false, reason: "version" };
+    const iterations = dv.getUint32(10);
+    if (iterations < ITER_MIN || iterations > ITER_MAX) return { ok: false, reason: "limits" };
+    const fileId = b.slice(2, 10);
+    return { ok: true, fileId, fileIdHex: hex(fileId), iterations, salt: b.slice(14, 30), kcv: b.slice(30, 32) };
+  }
+
   /* 32-bit key mixed into every packet's PRNG seed. */
   function fileKey32(fileId) { return ((fileId[0] << 24) | (fileId[1] << 16) | (fileId[2] << 8) | fileId[3]) >>> 0; }
 
@@ -90,5 +130,5 @@
     return PREFIX.length + Math.floor(n / 2) * 3 + (n % 2 ? 2 : 0);
   }
 
-  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, FLAG_COMPRESSED, MAX_LENGTH, MAX_K, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
+  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, FLAG_COMPRESSED, MAX_LENGTH, MAX_K, KEY_PREFIX, KEY_FRAME_LEN, buildKeyFrame, parseKeyFrame, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
 })(typeof globalThis !== "undefined" ? globalThis : this);

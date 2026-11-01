@@ -68,3 +68,31 @@ Encrypted payloads shrink the same way (+52 bytes each: CSV 76,431 → 13,258). 
 **Tests.** Unit 24 → 35 (11 new in tests/unit/compression.test.mjs, written first and failing 0/11 before the implementation; one existing test now passes `compress: false` because 300 kB of zeros legitimately fits once compressed). Recorded v1/v2, plain/encrypted streams from commit 79094f4 (tests/fixtures/legacy_streams.json) still decode. New headless Chrome suite tests/browser/compression.mjs 4/4 with the browser's real CompressionStream, 0 network requests. Existing suites rerun: lint 0 problems, browser 17/17, ux 17/17, axe 0 serious/critical violations, soak 2/2, drop trials 1,800/1,800 (results/trials_*.json byte-identical to before), H.264 end-to-end 27/27.
 
 **Not tested:** real phone or laptop cameras; Safari and Firefox CompressionStream (Chrome 156 headless and Node 24 only).
+
+## Cycle 3 (2026-11-01, about 5:45 AM EST): wrong passphrase detected within seconds (key check value)
+
+**What changed.** Encrypted streams now carry a small separate **key-check frame** (QR text prefix `DK`, 36 bytes, QR version 3) as frame 0 and every 32nd frame. It holds the file ID, PBKDF2 iterations, salt and a 2-byte key check value, `HKDF-SHA-256(PBKDF2 output, info "Dex_QR key check v1")[0..2]`. The receiver shows the passphrase box from the first packet; **Check passphrase** derives the key once and compares the KCV, so a wrong passphrase is reported while scanning continues, and with the right one the file opens by itself at the end using the same derived key (no second PBKDF2). The sender has a new "Let the receiver check the passphrase early" box (on by default). Data packets, the DQE1 payload and the key derivation are byte-for-byte unchanged. See docs/PROTOCOL.md §2 and §4a and docs/THREAT_NOTE.md.
+
+**Before → after** (tests/bench/keycheck.mjs, results/keycheck.json; simulated channel, random start frame, 100 trials per row, 8 fps, PBKDF2 600,000 iterations measured at 75 ms in Node and about 145 ms end-to-end in headless Chrome; "before" is the earliest possible moment, the end of decoding, plus one PBKDF2):
+
+| File (incompressible, 400 B blocks) | Loss | Wrong passphrase known, before → after (mean) | p95, before → after | Frames to the file, before → after |
+|---|---|---|---|---|
+| 20 KB (K = 51) | 0% | 6.7 s → 2.1 s | 7.2 s → 4.0 s | 53.2 → 54.6 (+2.6%) |
+| 20 KB | 30% | 9.6 s → 3.4 s | 11.1 s → 9.3 s | 76.4 → 77.1 (+0.9%) |
+| 20 KB | 50% | 13.3 s → 5.5 s | 15.5 s → 13.7 s | 105.6 → 108.1 (+2.4%) |
+| 100 KB (K = 251) | 0% | 31.6 s → 2.1 s | 32.0 s → 3.8 s | 252.4 → 260.5 (+3.2%) |
+| 100 KB | 30% | 45.4 s → 4.0 s | 48.5 s → 11.6 s | 362.2 → 374.7 (+3.5%) |
+| 100 KB | 50% | 63.5 s → 5.4 s | 68.7 s → 15.6 s | 507.2 → 523.3 (+3.2%) |
+| 500 KB (K = 1251) | 0% | 156.7 s → 2.1 s | 157.2 s → 4.0 s | 1252.6 → 1292.9 (+3.2%) |
+| 500 KB | 30% | 223.1 s → 4.0 s | 228.5 s → 11.7 s | 1784.3 → 1854.1 (+3.9%) |
+| 500 KB | 50% | 314.0 s → 6.7 s | 326.0 s → 19.8 s | 2511.3 → 2580.0 (+2.7%) |
+
+**Bytes.** +0 bytes per data packet, +0 bytes of payload. One 36-byte (56-character) key-check frame per 32 frames, encrypted streams only. 
+
+**Compatibility.** Receivers from before this cycle skip `DK` frames as unrelated QR codes and decode the stream as before (they lose about 3% of stream time). Encrypted streams from older senders (no key frames) still open; the receiver says it is waiting for a key-check frame and checks at the end (recorded fixtures, unit and browser tests). The early check is advisory: AES-GCM still decides at the end.
+
+**Security.** The KCV makes no guess cheaper (PBKDF2 dominates) but lets someone who films a single key-check frame start filtering guesses offline; 2 bytes cannot confirm a guess (1 in 65,536 wrong ones pass). Strong passphrases are unaffected in practice. Untick the sender box to send the old format. Details in THREAT_NOTE.md.
+
+**Tests.** Unit 44/44 (9 new), key-check browser 5/5 (new, 600,000 iterations, frames decoded by the page's zxing-cpp), browser 17/17, ux 17/17, axe 0 serious/critical in 14 page states (one new: receiver mid-scan with a failed early check), compression browser 4/4, soak 2/2, lint 0. Drop-rate trials and the H.264 run were not repeated: data packets and the codec did not change.
+
+**Not tested.** Real cameras (including whether the smaller key-check QR reads at the same distance), Safari and Firefox.

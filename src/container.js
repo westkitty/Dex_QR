@@ -8,6 +8,9 @@
  * Encrypted payload = "DQE1"(4) | iterations u32 | salt(16) | iv(12) | AES-256-GCM(inner, aad = first 24 bytes)
  *   (compress-then-encrypt: the encrypted inner may be DQZ1; see THREAT_NOTE.md on what the size reveals)
  *   key = PBKDF2-HMAC-SHA-256(passphrase UTF-8, salt, iterations) -> 256-bit AES-GCM key
+ * Key check value (cycle 3): KCV = first 2 bytes of HKDF-SHA-256(ikm = the 32-byte PBKDF2 output, salt = empty,
+ *   info = "Dex_QR key check v1"). The AES key is still the PBKDF2 output itself, so DQE1 is unchanged; the KCV
+ *   travels in separate "DK" key-check frames (packet.js), never inside the payload. See THREAT_NOTE.md.
  * The payload (plain or encrypted) is what gets LT fountain-coded, so with encryption every
  * packet carries fountain-coded ciphertext. File name and MIME type are inside the encrypted part.
  */
@@ -28,6 +31,8 @@
   const MIN_GAIN = 0.02;               // use compression only if it saves at least 2% (fewer frames, worth the dependency)
   // Zip-bomb guard: the receiver never inflates more than this (the packet-level payload limit, 32 MiB + 4 KiB,
   // which is more than the largest inner container the sender accepts: a 32 MiB file + name + MIME).
+  const KCV_LEN = 2;                   // 16 bits: a wrong passphrase passes the early check 1 time in 65,536 (AES-GCM still catches it)
+  const KCV_INFO = te.encode("Dex_QR key check v1");
   const MAX_DECOMPRESSED = (DQ.packet && DQ.packet.MAX_LENGTH) || (32 * 1024 * 1024 + 4096);
 
   class DexQRError extends Error { constructor(code, msg) { super(msg); this.code = code; } }
@@ -54,10 +59,20 @@
     return { name, mime, data: buf.slice(7 + nl + ml) };
   }
 
-  async function deriveKey(passphrase, salt, iterations) {
-    const base = await subtle().importKey("raw", te.encode(passphrase), "PBKDF2", false, ["deriveKey"]);
-    return subtle().deriveKey({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  /* One PBKDF2 run gives both the AES-256-GCM key (the PBKDF2 output itself, exactly as before cycle 3, so old
+   * streams still decrypt) and the key check value (HKDF-SHA-256 of that output with its own label, so the KCV is
+   * not a slice of the key). The raw bits exist only inside this function and are zeroed after import. */
+  async function deriveKeys(passphrase, salt, iterations) {
+    const base = await subtle().importKey("raw", te.encode(passphrase), "PBKDF2", false, ["deriveBits"]);
+    const bits = new Uint8Array(await subtle().deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, base, 256));
+    try {
+      const key = await subtle().importKey("raw", bits, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+      const hk = await subtle().importKey("raw", bits, "HKDF", false, ["deriveBits"]);
+      const kcv = new Uint8Array(await subtle().deriveBits({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: KCV_INFO }, hk, KCV_LEN * 8));
+      return { key, kcv };
+    } finally { bits.fill(0); }
   }
+  function sameBytes(a, b) { if (!a || !b || a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a[i] ^ b[i]; return d === 0; }
 
   async function sha256(bytes) { return new Uint8Array(await subtle().digest("SHA-256", bytes)); }
 
@@ -126,7 +141,7 @@
   /* Build the payload to be fountain-coded. Returns {payload, encrypted, fileId, compression}.
    * compression = {used, algorithm, innerLength, compressedLength, reason}; reason is "off", "unavailable",
    * "no-gain" or "" when used. Pass compress:false to disable. */
-  async function buildPayload({ name, mime, data, passphrase, iterations, compress }) {
+  async function buildPayload({ name, mime, data, passphrase, iterations, compress, keyCheck }) {
     let inner = buildInner(name, mime, data);
     const compression = { used: false, algorithm: null, innerLength: inner.length, compressedLength: null, reason: "off" };
     if (compress !== false) {
@@ -144,7 +159,7 @@
         } else { compression.reason = "no-gain"; compression.algorithm = null; }
       }
     }
-    let payload = inner, encrypted = false;
+    let payload = inner, encrypted = false, check = null;
     if (passphrase) {
       iterations = iterations || DEFAULT_ITERATIONS;
       const salt = root.crypto.getRandomValues(new Uint8Array(16));
@@ -153,14 +168,15 @@
       head.set(MAGIC_ENC, 0);
       new DataView(head.buffer).setUint32(4, iterations);
       head.set(salt, 8); head.set(iv, 24);
-      const key = await deriveKey(passphrase, salt, iterations);
+      const { key, kcv } = await deriveKeys(passphrase, salt, iterations);
+      if (keyCheck !== false) check = { iterations, salt: salt.slice(), kcv };
       const ct = new Uint8Array(await subtle().encrypt({ name: "AES-GCM", iv, additionalData: head.subarray(0, 24) }, key, inner));
       payload = new Uint8Array(36 + ct.length);
       payload.set(head, 0); payload.set(ct, 36);
       encrypted = true;
     }
     const fileId = (await sha256(payload)).slice(0, 8);
-    return { payload, encrypted, fileId, compression };
+    return { payload, encrypted, fileId, compression, keyCheck: check };
   }
 
   /* True for a plaintext DQZ1 payload (drives the informational header flag; never set for encrypted payloads). */
@@ -182,7 +198,14 @@
 
   /* Verify and open a reconstructed payload. Throws DexQRError with code
    * CHECKSUM_MISMATCH | NEED_PASSPHRASE | WRONG_PASSPHRASE | BAD_FORMAT | TOO_LARGE | NO_DECOMPRESSION. */
-  async function openPayload(payload, expectedFileId, passphrase) {
+  /* KDF parameters of a DQE1 payload: {iterations, salt}. */
+  function encryptedParams(payload) {
+    return { iterations: new DataView(payload.buffer, payload.byteOffset).getUint32(4), salt: payload.slice(8, 24) };
+  }
+
+  /* opts.derived = {passphrase, iterations, salt, key} from an earlier early check: reused only when the
+   * passphrase, salt and iteration count all match this payload's header (else a fresh derivation). */
+  async function openPayload(payload, expectedFileId, passphrase, opts = {}) {
     const digest = await sha256(payload);
     for (let i = 0; i < 8; i++) if (digest[i] !== expectedFileId[i]) throw new DexQRError("CHECKSUM_MISMATCH", "Checksum mismatch: the reconstructed data does not match the sender's SHA-256");
     if (!isEncryptedPayload(payload)) return { ...(await openInner(payload)), sha256: digest, encrypted: false };
@@ -190,14 +213,16 @@
     const iterations = new DataView(payload.buffer, payload.byteOffset).getUint32(4);
     if (iterations < MIN_ITERATIONS || iterations > MAX_ITERATIONS) throw new DexQRError("BAD_FORMAT", "Unsupported PBKDF2 iteration count " + iterations);
     const salt = payload.slice(8, 24), iv = payload.slice(24, 36);
-    const key = await deriveKey(passphrase, salt, iterations);
+    const d = opts.derived;
+    const usedCachedKey = !!(d && d.passphrase === passphrase && d.iterations === iterations && sameBytes(d.salt, salt));
+    const key = usedCachedKey ? d.key : (await deriveKeys(passphrase, salt, iterations)).key;
     let inner;
     try {
       inner = new Uint8Array(await subtle().decrypt({ name: "AES-GCM", iv, additionalData: payload.subarray(0, 24) }, key, payload.subarray(36)));
     } catch (e) {
       throw new DexQRError("WRONG_PASSPHRASE", "Wrong passphrase (or the data was tampered with): AES-GCM authentication failed");
     }
-    return { ...(await openInner(inner)), sha256: digest, encrypted: true };
+    return { ...(await openInner(inner)), sha256: digest, encrypted: true, usedCachedKey };
   }
 
   /* Rough passphrase strength estimate (bits). Deliberately conservative and simple; it is a hint, not a guarantee. */
@@ -219,5 +244,5 @@
     return { bits, label };
   }
 
-  DQ.container = { DEFAULT_ITERATIONS, MIN_ITERATIONS, MAX_ITERATIONS, MAX_DECOMPRESSED, MIN_GAIN, ALGORITHMS, DexQRError, buildInner, parseInner, buildPayload, openPayload, isEncryptedPayload, isCompressedPayload, inflateCapped, estimateStrength, sha256 };
+  DQ.container = { DEFAULT_ITERATIONS, MIN_ITERATIONS, MAX_ITERATIONS, KCV_LEN, deriveKeys, sameBytes, encryptedParams, MAX_DECOMPRESSED, MIN_GAIN, ALGORITHMS, DexQRError, buildInner, parseInner, buildPayload, openPayload, isEncryptedPayload, isCompressedPayload, inflateCapped, estimateStrength, sha256 };
 })(typeof globalThis !== "undefined" ? globalThis : this);

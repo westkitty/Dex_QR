@@ -4,6 +4,8 @@
 
 **Compression (added in cycle 2, 2026-11-01; protocol version byte still 2).** The sender may wrap the inner container in a compressed container `DQZ1` (§2) and, for unencrypted payloads only, sets flag bit 1 in every packet (§4). Receivers from before cycle 2 ignore that bit and would report "Not a Dex_QR file container" after the full scan, so a compressed stream needs a receiver from this release or later; any stream an older sender produced (v1 or v2, `DQF1` or `DQE1`) still decodes byte for byte (tested against recorded streams in `tests/fixtures/legacy_streams.json`). Senders can turn compression off, and they skip it automatically when it does not help, in which case the payload is exactly the pre-cycle-2 format.
 
+**Key-check frames (added in cycle 3, 2026-11-01; protocol version byte still 2, data packets and payload unchanged).** Encrypted streams may interleave a small separate QR frame with the text prefix `DK` (§4a) carrying the KDF parameters and a 2-byte key check value, so a receiver can reject a wrong passphrase after one such frame instead of after the whole file. Receivers from before cycle 3 treat `DK` frames as unrelated QR codes and ignore them (they only cost about 3% more stream time), so the stream stays fully readable by them. Pre-cycle-3 encrypted streams have no key-check frames and open as before; the passphrase is then checked at the end. The DQE1 payload, its key derivation and the data packets are byte-for-byte unchanged (unit test: a cycle-3 payload decrypts with the pre-cycle-3 `deriveKey` code).
+
 This note is detailed enough for an independent re-implementation. The reference code is `src/*.js`.
 
 ## 1. Overview
@@ -55,6 +57,8 @@ The sender shows an endless stream of QR codes, one packet per frame, with seeds
 | rest | AES-256-GCM ciphertext of the inner container (`DQF1` or `DQZ1`: compress-then-encrypt), with a 16-byte tag. The additional authenticated data is the first 24 bytes (magic, *i*, salt). |
 
 The key is `PBKDF2(HMAC-SHA-256, UTF-8(passphrase), salt, i)` → 256-bit AES-GCM key, via WebCrypto `deriveKey`.
+
+**Key check value (cycle 3).** `KCV = HKDF-SHA-256(IKM = the 32 PBKDF2 output bytes, salt = empty, info = UTF-8 "Dex_QR key check v1", L = 2)`. The AES key is the PBKDF2 output itself, exactly as before, so the KCV is a separate, domain-separated derivation and not a slice of the key. Implementations derive the 256 PBKDF2 bits once (`deriveBits`), import them as the AES-GCM key and as an HKDF key, and zero the raw bytes. 2 bytes is deliberate: a wrong passphrase passes the early check 1 time in 65,536 (AES-GCM still rejects it at the end), and an observer holding only a key-check frame cannot confirm a guess, only filter candidates (THREAT_NOTE.md).
 
 **Why PBKDF2 and not Argon2:** WebCrypto has no Argon2 or scrypt. Adding one would mean shipping a third-party WASM or JS KDF, and the receiver must work with nothing but the page. 600,000 iterations is the OWASP figure for PBKDF2-HMAC-SHA256. It takes about 0.3–1 s in a desktop browser and longer on phones (not measured on phones). PBKDF2 is not memory-hard, so the passphrase must be strong (see THREAT_NOTE.md). The UI shows a rough strength estimate and a warning.
 
@@ -109,6 +113,24 @@ All integers are big-endian.
 - **Receiver resource limits** (added 2026-11-01; not a wire-format change): packets claiming K > 262,144 (2^18) or F > 32 MiB + 4 KiB are rejected with reason "limits" before any decoder state is allocated. Without this, one CRC-valid frame claiming K ≈ 16.7 million made the reference receiver allocate per-block state for 16.7 million blocks (measured: 5.9 s and 2.8 GB of heap in Node). The sender UI cannot produce such a stream (32 MiB maximum, T ≥ 200 → K ≤ 167,773), and `SenderSession.create` now refuses anything over the limits.
 - **Switching transfers:** after the lock, packets from one other transfer are kept in a bounded buffer (4,096 distinct packets). When 8 or more of them arrive in a row with none from the locked transfer, the receiver page offers to switch; switching discards the locked transfer and replays the buffered packets. Nothing switches automatically, so a second code in view cannot hijack a transfer in progress.
 
+## 4a. Key-check frame (cycle 3)
+
+Only for encrypted transfers, and only if the sender leaves "Let the receiver check the passphrase early" on (the default). QR text = `"DK"` + Base45 of 36 bytes, big-endian:
+
+| offset | size | field |
+|---|---|---|
+| 0 | 1 | key-frame version (1) |
+| 1 | 1 | KDF id (1 = PBKDF2-HMAC-SHA-256 key with the HKDF KCV of §2) |
+| 2 | 8 | file ID of the transfer it belongs to |
+| 10 | 4 | PBKDF2 iterations (receiver accepts 100,000–10,000,000) |
+| 14 | 16 | salt (the same salt as in the DQE1 header) |
+| 30 | 2 | KCV |
+| 32 | 4 | CRC-32 (IEEE) of bytes 0..31 |
+
+- **Text** 56 characters, QR version 3 at EC M (data frames at 400 B are version 16).
+- **Schedule.** The sender shows the key-check frame as frame 0 and every 32nd frame after (`SenderSession.KEY_EVERY = 32`); data packets keep their order and are only delayed. Cost: 1 frame in 32, measured +2.6% to +3.9% frames to the file (results/keycheck.json). No byte is added to any data packet or to the payload.
+- **Receiver.** Checks prefix, Base45, length 36, CRC, version and KDF id, and the iteration bounds (else reason `key-<reason>`). Key frames are stored per file ID (at most 8 transfers), so one seen before the first data packet, or for a transfer you later switch to, still counts. Only the frame for the locked transfer is used. Two different key frames for the same file ID disable the early check for it (one is forged). The early check is advisory: at the end AES-GCM decides, and a cached key from the early check is reused only if the passphrase, salt and iterations equal the payload header's.
+
 **Evaluation: Base45/alphanumeric vs raw byte mode.**
 - *Raw byte mode* would save about 3%, but readers decode byte mode as text with charset guessing (RFC 9285 §1). The browser BarcodeDetector exposes only `rawValue` strings, and zbar applies charset conversion. Binary data would be corrupted or would need decoder-specific workarounds.
 - *Base64 in byte mode* costs 33%.
@@ -122,7 +144,7 @@ All integers are big-endian.
   - Finisher: once at most 400 blocks remain unresolved and enough packets are buffered, Gaussian elimination on the residual system completes the decode.
 - **Verification:**
   1. Truncate the result to F bytes and check `SHA-256(payload)[0..8] == file ID`. On failure, report **"checksum mismatch"** and save nothing.
-  2. If the payload is encrypted, ask for the passphrase. A failed AES-GCM tag check reports **"wrong passphrase"**, and the user can retry without rescanning.
+  2. If the payload is encrypted, ask for the passphrase (from the first packet on; with a key-check frame it is checked at once against the KCV, §4a). A failed early check or AES-GCM tag check reports **"wrong passphrase"**, and the user can retry without rescanning.
   3. Unwrap the container (inflating `DQZ1` under the limits in §2) and offer the file for download, with the SHA-256 of the file shown for comparison with the sender page.
 
 ## 6. Rendering

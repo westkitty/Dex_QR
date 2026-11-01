@@ -24,6 +24,7 @@
     <dt>Transfer ID</dt><dd id="r-id" class="mono">–</dd>
     <dt>Encrypted</dt><dd id="r-enc">–</dd>
     <dt>Compressed</dt><dd id="r-zip">–</dd>
+    <dt>Passphrase check</dt><dd id="r-key">–</dd>
     <dt>Decoded</dt><dd id="r-prog">–</dd>
     <dt>Packets</dt><dd id="r-pk">–</dd>
     <dt>Frames</dt><dd id="r-frames">0</dd>
@@ -31,7 +32,8 @@
   </dl>
   <form id="passbox" hidden>
     <label for="pass">Passphrase</label>
-    <input id="pass" type="password" autocomplete="off" spellcheck="false">
+    <input id="pass" type="password" autocomplete="off" spellcheck="false" aria-describedby="passhelp">
+    <div class="note" id="passhelp">You can enter it while scanning: it is checked against the sender's key-check frame within seconds, and scanning continues either way.</div>
     <button id="decrypt" type="submit">Decrypt</button>
   </form>
   <div id="result"></div>

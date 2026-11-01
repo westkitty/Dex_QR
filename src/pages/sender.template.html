@@ -18,6 +18,8 @@
   <input id="pass" type="password" autocomplete="new-password" spellcheck="false" placeholder="leave empty for no encryption" aria-describedby="strength passnote">
   <div id="strength" class="strength" aria-live="polite"></div>
   <div class="note" id="passnote">Anyone who can see or record the screen can collect the encrypted stream and guess passphrases offline as fast as their hardware allows. Use a long random passphrase (e.g. 5+ random words) and share it out of band. Without a passphrase, anyone who sees enough frames gets the file.</div>
+  <label class="check"><input id="kc" type="checkbox" checked aria-describedby="kcnote"> Let the receiver check the passphrase early</label>
+  <div class="note" id="kcnote">With a passphrase, one small key-check frame is shown every 32 frames (about 3% longer stream), so a wrong passphrase is reported within seconds instead of after the whole file. It carries a 2-byte check value, not the key; it lets someone who films a single frame start guessing passphrases offline (they still need the whole stream to confirm one). Untick for the old behaviour.</div>
   <label class="check"><input id="zip" type="checkbox" checked aria-describedby="zipnote"> Compress when it helps</label>
   <div class="note" id="zipnote">Packs the file with the browser's built-in deflate before sending, so text, CSV, JSON and source files need far fewer frames. It is skipped automatically for files that do not shrink (JPEG, ZIP, video). With a passphrase, compression happens before encryption, so the stream's length hints at how compressible the file is; untick this if that matters (see the threat note).</div>
   <div class="row">

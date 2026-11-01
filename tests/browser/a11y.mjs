@@ -11,6 +11,16 @@ const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..",
 const CHROME = process.env.CHROME || "/usr/bin/google-chrome";
 const TMP = path.join(ROOT, "work", "a11y_" + Date.now().toString(36));
 fs.mkdirSync(TMP, { recursive: true });
+const DQ = require("../lib/load.cjs").load();
+const { encodeGray } = require("../lib/png.cjs");
+// Encrypted stream start (key-check frame + 2 data frames) for the early passphrase check state (cycle 3).
+const encFrames = [];
+{
+  const s = await DQ.SenderSession.create({ name: "a.txt", data: new TextEncoder().encode("a11y ".repeat(2000)), blockSize: 400, passphrase: "orbit lantern quiet mosaic thunder", iterations: 100000, compress: false });
+  for (let i = 0; i < 3; i++) { const f = path.join(TMP, `enc_${i}.png`); fs.writeFileSync(f, encodeGray(DQ.render.toGray(DQ.render.makeQr(s.nextFrame(), "M"), 4))); encFrames.push(f); }
+}
+// page.waitForFunction evaluates strings, which the pages' CSP forbids; poll with evaluate instead.
+async function poll(p, fn, timeout = 30000) { const end = Date.now() + timeout; while (!(await p.evaluate(fn))) { if (Date.now() > end) throw new Error("timeout"); await new Promise((r) => setTimeout(r, 100)); } }
 const sample = path.join(TMP, "sample.txt"); fs.writeFileSync(sample, "Dex_QR accessibility sample\n".repeat(200));
 
 const states = {
@@ -19,6 +29,7 @@ const states = {
   "sender prepared": async (p) => { await p.setInputFiles("#file", sample); await p.fill("#pass", "abc"); await p.click("#prepare"); await p.waitForTimeout(800); },
   "receiver": async () => {},
   "receiver options": async (p) => { await p.click("details.opts summary"); await p.click("#start"); await p.waitForTimeout(800); },
+  "receiver encrypted early-check": async (p) => { await p.click("details.opts summary"); await p.selectOption("#dec", "zxing"); await p.setInputFiles("#files", encFrames); await poll(p, () => !document.getElementById("passbox").hidden); await p.fill("#pass", "wrong guess"); await p.click("#decrypt"); await poll(p, () => /does not match/.test(document.getElementById("r-key").textContent)); },
   "sender focus-mode": async (p) => { await p.setInputFiles("#file", sample); await p.click("#prepare"); await p.waitForTimeout(800); await p.evaluate(() => { delete Element.prototype.requestFullscreen; }); await p.click("#fs"); await p.waitForTimeout(200); },
 };
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });

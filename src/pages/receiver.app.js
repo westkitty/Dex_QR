@@ -9,6 +9,7 @@
     session: new DQ.ReceiverSession(), stream: null, running: false, frames: 0, detector: null, engine: null, decoderName: "",
     result: null, error: null, phase: "idle", opened: false, opening: false, busyFiles: false, resultUrl: null,
     videoPoll: null, wakeLock: null, resetArmed: 0, scanGen: 0, startToken: 0,
+    keyState: "", pendingCheck: false, checking: false, checkToken: 0, passOffered: null,
   };
   window.__dexqrReceiver = state;                 // read-only hook for automated tests
 
@@ -95,6 +96,7 @@
     $("r-id").textContent = s.meta.fileIdHex;
     $("r-enc").textContent = s.meta.encrypted ? "yes" : "no";
     $("r-zip").textContent = s.meta.encrypted ? "hidden inside the encryption" : s.meta.compressed ? "yes (unpacked after the last block)" : "no";
+    updatePassUi();
     // Warn at the first frame, not after the whole scan, if this browser cannot unpack a compressed stream.
     if (s.meta.compressed && typeof DecompressionStream !== "function" && !state.warnedNoInflate) {
       state.warnedNoInflate = true;
@@ -114,6 +116,61 @@
     } else sw.hidden = true;
   }
 
+  /* Encrypted transfers: offer the passphrase box from the first packet, and say where the early check stands. */
+  function keyText() {
+    const s = state.session;
+    if (!s.meta || !s.meta.encrypted) return "–";
+    if (state.checking) return "checking…";
+    if (s.keyCheckConflict) return "off: two different key-check frames seen (checked at the end instead)";
+    if (state.keyState === "ok") return "✓ matches the sender's key check (final AES-GCM check at the end)";
+    if (state.keyState === "wrong") return "✗ does not match: wrong passphrase";
+    if (state.pendingCheck) return "waiting for the sender's key-check frame";
+    return s.keyCheck ? "key-check frame received; enter the passphrase to check it" : "no key-check frame yet (older senders do not send one; then it is checked at the end)";
+  }
+  function updatePassUi() {
+    const s = state.session;
+    if (state.opened && state.result && state.result.encrypted) { $("r-key").textContent = "✓ AES-GCM authentication passed"; return; }
+    if (!s.meta || !s.meta.encrypted || state.opened) { $("r-key").textContent = s.meta && !s.meta.encrypted ? "not needed" : "–"; return; }
+    $("r-key").textContent = keyText();
+    $("decrypt").textContent = s.done ? "Decrypt" : "Check passphrase";
+    if ($("passbox").hidden) {
+      $("passbox").hidden = false;
+      if (state.passOffered !== s && !s.done) {
+        state.passOffered = s;
+        msg("This transfer is encrypted. You can enter the passphrase now; it is checked within seconds while scanning continues.", "warn");
+      }
+    }
+  }
+
+  /* Early check against the sender's key check value; never stops scanning or discards packets. */
+  async function earlyCheck() {
+    const sess = state.session;
+    if (sess.done) return tryOpen();
+    const pass = $("pass").value;
+    if (!pass) { msg("Enter the passphrase first.", "warn"); $("pass").focus(); return; }
+    const token = ++state.checkToken;
+    state.keyState = ""; state.pendingCheck = false;
+    if (!sess.keyCheck && !sess.keyCheckConflict) {
+      state.pendingCheck = true; updatePassUi();
+      msg("Passphrase noted. It is checked as soon as the sender's key-check frame is seen (one in every 32 frames). If the sender is an older version without key checks, it is checked when the scan completes.", "warn");
+      return;
+    }
+    state.checking = true; updatePassUi();
+    msg("Checking the passphrase (PBKDF2, several hundred thousand iterations)…", "warn");
+    let r;
+    try { r = await sess.checkPassphrase(pass); }
+    catch (e) { r = { result: "error", error: e }; }
+    if (token !== state.checkToken || state.session !== sess) return;    // a newer check or a reset took over
+    state.checking = false;
+    if (sess.done && !state.opened) { updatePassUi(); return; }          // the scan finished meanwhile: tryOpen decides
+    if (r.result === "ok") { state.keyState = "ok"; msg("✓ Passphrase matches the sender's key check. Keep scanning; the file opens by itself when the scan completes.", "ok"); }
+    else if (r.result === "wrong") { state.keyState = "wrong"; msg("✗ Wrong passphrase: it does not match the sender's key check. Type it again; scanning continues and nothing received is lost.", "err"); $("pass").select(); $("pass").focus(); }
+    else if (r.result === "conflict") msg("Two different key-check frames were seen for this transfer, so the early check is off. The passphrase will be checked when the scan completes.", "warn");
+    else if (r.result === "pending") { state.pendingCheck = true; }
+    else if (r.result === "error") msg("✗ Could not check the passphrase: " + ((r.error && r.error.message) || r.error), "err");
+    updatePassUi();
+  }
+
   function safeName(n) { n = String(n || "received.bin").replace(/[\\/\u0000-\u001f\u007f:*?"<>|]+/g, "_").replace(/^\.+/, "").slice(0, 200); return n || "received.bin"; }
   function revokeResult() { if (state.resultUrl) { URL.revokeObjectURL(state.resultUrl); state.resultUrl = null; } }
 
@@ -123,7 +180,7 @@
     const pass = $("pass").value || undefined;
     state.opening = true; $("decrypt").disabled = true;
     setPhase(pass ? "decrypting" : "verifying");
-    if (pass) msg("Deriving key (PBKDF2, several hundred thousand iterations) and decrypting…", "warn");
+    if (pass) msg(sess.derived && sess.derived.passphrase === pass ? "Decrypting with the key from the early check…" : "Deriving key (PBKDF2, several hundred thousand iterations) and decrypting…", "warn");
     try {
       const out = await sess.open(pass);
       if (state.session !== sess) return;                                // reset while we were working
@@ -140,8 +197,8 @@
       const p = document.createElement("div"); p.className = "note mono-wrap"; p.textContent = `SHA-256 of file: ${fileSha}. Compare it with the sender page. Transfer checksum verified (${hexs.slice(0, 16)}…)${out.encrypted ? "; AES-GCM authentication passed" : ""}${out.compressed ? `; unpacked from ${out.compressedLength.toLocaleString()} compressed bytes (${out.compression})` : ""}.`;
       $("result").append(a, p);
       $("passbox").hidden = true; $("pass").value = "";
-      state.result = { name, size: out.data.length, sha256: fileSha, encrypted: out.encrypted, compressed: out.compressed };
-      state.error = null; state.opened = true;
+      state.result = { name, size: out.data.length, sha256: fileSha, encrypted: out.encrypted, compressed: out.compressed, usedCachedKey: !!out.usedCachedKey };
+      state.error = null; state.opened = true; updatePassUi();
       setPhase("done");
       msg("✓ Transfer complete. The file is verified and ready to save.", "ok");
       a.focus();
@@ -149,7 +206,7 @@
       if (state.session !== sess) return;
       state.error = e.code || e.message;
       if (e.code === "NEED_PASSPHRASE") { $("passbox").hidden = false; setPhase("needs passphrase"); msg("All data received. This transfer is encrypted: enter the passphrase.", "warn"); $("pass").focus(); }
-      else if (e.code === "WRONG_PASSPHRASE") { $("passbox").hidden = false; setPhase("wrong passphrase"); msg("✗ Wrong passphrase (AES-GCM authentication failed). Try again; no need to rescan.", "err"); $("pass").select(); $("pass").focus(); }
+      else if (e.code === "WRONG_PASSPHRASE") { state.keyState = "wrong"; $("r-key").textContent = "✗ wrong passphrase (AES-GCM authentication failed)"; $("passbox").hidden = false; $("decrypt").textContent = "Decrypt"; setPhase("wrong passphrase"); msg("✗ Wrong passphrase (AES-GCM authentication failed). Try again; no need to rescan.", "err"); $("pass").select(); $("pass").focus(); }
       else if (e.code === "TOO_LARGE") { setPhase("refused"); msg("✗ " + e.message + " Press Reset to scan something else.", "err"); }
       else if (e.code === "NO_DECOMPRESSION") { setPhase("cannot unpack"); msg("✗ " + e.message, "err"); }
       else if (e.code === "CHECKSUM_MISMATCH") { setPhase("checksum mismatch"); msg("✗ Checksum mismatch: the reconstructed data does not match the sender's SHA-256. Nothing was saved. Press Reset and scan again; if it repeats, the stream on screen is corrupted or forged.", "err"); }
@@ -165,6 +222,7 @@
     const wasDone = s.done;
     for (const t of texts) s.addText(t);
     updateStats();
+    if (state.pendingCheck && !state.checking && !s.done && (s.keyCheck || s.keyCheckConflict)) earlyCheck();
     if (s.done && !wasDone) { stopCamera(); stopVideoFile(); setPhase("verifying"); await tryOpen(); }
     else if (s.meta && !s.done && state.running) setPhase("receiving");
   }
@@ -320,7 +378,8 @@
   function resetAll() {
     stopCamera(); stopVideoFile(); revokeResult();
     state.session = new DQ.ReceiverSession(); state.result = null; state.error = null; state.opened = false; state.opening = false;
-    $("result").textContent = ""; $("passbox").hidden = true; $("pass").value = ""; $("decrypt").disabled = false; $("bar").style.width = "0%"; msg("", "");
+    state.keyState = ""; state.pendingCheck = false; state.checking = false; state.checkToken++; state.passOffered = null;
+    $("result").textContent = ""; $("passbox").hidden = true; $("pass").value = ""; $("decrypt").textContent = "Decrypt"; $("r-key").textContent = "–"; $("decrypt").disabled = false; $("bar").style.width = "0%"; msg("", "");
     ["r-id", "r-enc", "r-prog", "r-pk"].forEach((id) => ($(id).textContent = "–")); setPhase("idle"); updateStats();
   }
 
@@ -332,10 +391,15 @@
     msg(hasPartial() ? "Paused. Progress is kept; press Start camera to continue." : "", "warn");
   });
   $("files").addEventListener("change", (e) => decodeFiles(e.target));
-  $("passbox").addEventListener("submit", (e) => { e.preventDefault(); tryOpen(); });
+  $("passbox").addEventListener("submit", (e) => { e.preventDefault(); if (state.session.done) tryOpen(); else earlyCheck(); });
+  $("pass").addEventListener("input", () => {
+    // A changed passphrase has not been checked yet.
+    if (state.keyState || state.pendingCheck) { state.checkToken++; state.checking = false; state.keyState = ""; state.pendingCheck = false; updatePassUi(); }
+  });
   $("switch").addEventListener("click", () => {
     if (!state.session.pending) return;
     state.session.switchToPending(); $("r-id").textContent = "–";
+    state.keyState = ""; state.checking = false; state.checkToken++;
     updateStats(); msg("Switched to the transfer now on screen. Its packets seen so far were kept.", "ok");
     if (state.session.done) { stopCamera(); stopVideoFile(); setPhase("verifying"); tryOpen(); }
   });

@@ -1,6 +1,6 @@
 {
  "axe": "4.14.0",
- "when": "2026-11-01T10:20:05.773Z",
+ "when": "2026-11-01T10:40:53.865Z",
  "report": [
   {
    "page": "index",
@@ -24,6 +24,11 @@
   },
   {
    "page": "receiver options",
+   "width": 390,
+   "violations": []
+  },
+  {
+   "page": "receiver encrypted early-check",
    "width": 390,
    "violations": []
   },
@@ -54,6 +59,11 @@
   },
   {
    "page": "receiver options",
+   "width": 1280,
+   "violations": []
+  },
+  {
+   "page": "receiver encrypted early-check",
    "width": 1280,
    "violations": []
   },

@@ -60,7 +60,7 @@
   function updateStats() {
     const s = state.session; if (!s) return;
     const f = fps();
-    const need = Math.ceil(s.K * 1.05) + 1;
+    const need = Math.ceil((Math.ceil(s.K * 1.05) + 1) / s.dataFrameShare);   // key-check frames take 1 in 32
     const pct = Math.min(100, (100 * state.sent) / need);
     $("s-sent").textContent = String(state.sent) + (state.playing && state.actualFps ? ` (${state.actualFps.toFixed(1)} fps actual)` : "");
     $("bar").style.width = pct.toFixed(1) + "%";
@@ -71,7 +71,7 @@
   }
 
   function showNext(ts) {
-    drawText(state.session.nextText());
+    drawText(state.session.nextFrame());
     state.sent++;
     if (ts !== undefined) {
       const w = state.fpsSamples; w.push(ts);
@@ -118,13 +118,13 @@
     } catch (e) { /* best effort: the screen may still dim on browsers without the Wake Lock API */ }
   }
 
-  function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value, $("zip").checked].join("\u0000"); }
+  function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value, $("zip").checked, $("kc").checked].join("\u0000"); }
   function checkStale() {
     if (!state.session || state.preparing) return;
     const stale = settingsKey() !== state.prepared;
     $("prepare").classList.toggle("attn", stale);
     $("prepare").textContent = stale ? "Prepare (apply changes)" : "Prepare";
-    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase, compression and density; press Prepare to apply.", "warn");
+    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase, compression, key check and density; press Prepare to apply.", "warn");
     else if ($("msg").classList.contains("warn") && /Settings changed/.test($("msg").textContent)) msg("", "");
   }
 
@@ -149,17 +149,17 @@
       const sha = await DQ.container.sha256(data);
       state.ecl = $("ecl").value;
       const startSeed = crypto.getRandomValues(new Uint32Array(1))[0];
-      state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, startSeed, compress: $("zip").checked });
+      state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, startSeed, compress: $("zip").checked, keyCheck: $("kc").checked });
       state.prepared = key;
       state.sent = 0; state.fileSha = hex(sha);
       const s = state.session;
       $("s-file").textContent = `${f.name} (${f.size.toLocaleString()} bytes)`;
       $("s-sha").textContent = state.fileSha;
-      $("s-enc").textContent = s.encrypted ? "yes (AES-256-GCM, PBKDF2-SHA-256 × 600,000)" : "no — anyone who sees the stream can read the file";
+      $("s-enc").textContent = s.encrypted ? "yes (AES-256-GCM, PBKDF2-SHA-256 × 600,000)" + (s.keyFrameText ? "; early passphrase check on (1 key-check frame in 32)" : "; early passphrase check off") : "no — anyone who sees the stream can read the file";
       $("s-zip").textContent = describeCompression(s.compression);
       $("s-id").textContent = DQ.packet.hex(s.fileId);
       $("s-k").textContent = `${s.K} × ${s.blockSize} bytes`;
-      drawText(s.textForSeed(s.nextSeed));
+      drawText(s.textForSeed(s.nextSeed));   // preview a data packet so the QR line shows the data-frame size
       redraw();
       $("qr").setAttribute("aria-label", "Animated QR code stream, paused");
       updateStats();
@@ -196,7 +196,7 @@
   $("stage-play").addEventListener("click", () => setPlaying(!state.playing));
   $("fs").addEventListener("click", enterFull);
   $("stage-exit").addEventListener("click", exitFull);
-  ["file", "bs", "zip"].forEach((id) => $(id).addEventListener("change", checkStale));
+  ["file", "bs", "zip", "kc"].forEach((id) => $(id).addEventListener("change", checkStale));
   $("pass").addEventListener("input", checkStale);
   // Rendering-only settings apply live: they change how a packet is drawn, not the stream.
   $("ecl").addEventListener("change", () => { state.ecl = $("ecl").value; redraw(); });

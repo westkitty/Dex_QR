@@ -1,0 +1,59 @@
+{
+ "when": "2026-11-01T10:39:14.686Z",
+ "K": 151,
+ "frames": 252,
+ "results": [
+  {
+   "name": "receiver: wrong passphrase reported after 6 of 252 frames, before the file is decoded; scanning progress kept",
+   "ok": true,
+   "early": {
+    "phase": "incomplete",
+    "received": 5,
+    "key": "key-check frame received; enter the passphrase to check it",
+    "button": "Check passphrase"
+   },
+   "wrong": {
+    "msg": "✗ Wrong passphrase: it does not match the sender's key check. Type it again; scanning continues and nothing received is lost.",
+    "role": "alert",
+    "focus": "pass"
+   },
+   "wrongMs": 133,
+   "errors": []
+  },
+  {
+   "name": "receiver: right passphrase accepted early; the file then opens by itself with the cached key (no second PBKDF2)",
+   "ok": true,
+   "okMs": 140,
+   "finPhase": "done",
+   "usedCachedKey": true,
+   "key": "✓ AES-GCM authentication passed"
+  },
+  {
+   "name": "receiver: passphrase entered before a key frame waits, then is checked when one is scanned",
+   "ok": true,
+   "waiting": "waiting for the sender's key-check frame",
+   "after": "✗ does not match: wrong passphrase",
+   "errors": []
+  },
+  {
+   "name": "receiver: pre-cycle-3 encrypted stream (no key frames) still decodes with the passphrase typed early",
+   "ok": true,
+   "mid": "waiting for the sender's key-check frame",
+   "phase": "done",
+   "errors": []
+  },
+  {
+   "name": "sender: key-check frame at frames 0, 32, 64; unticking the box marks settings stale and removes them",
+   "ok": true,
+   "idx": [
+    0,
+    32,
+    64
+   ],
+   "enc": "yes (AES-256-GCM, PBKDF2-SHA-256 × 600,000); early passphrase check on (1 key-check frame in 32)",
+   "stale": "Prepare (apply changes)",
+   "errors": []
+  }
+ ],
+ "networkRequestsOutsideFileDataBlob": []
+}

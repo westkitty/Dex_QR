@@ -37,6 +37,10 @@
 - [ ] Phone on a stand or propped up, compared with hand-held. Hand-held shake causes motion blur at low light. Note the difference in time.
 - [ ] Autofocus hunting at very close range. Tap to focus if the browser allows it.
 
+**Early passphrase check (cycle 3)**
+- [ ] Sender with a passphrase and "Let the receiver check the passphrase early" ticked. On the receiver, type a wrong passphrase while scanning and press Check passphrase: "Wrong passphrase" should appear within a few seconds and the Decoded count keeps rising. Then the right one: "matches", and the file opens by itself at the end.
+- [ ] The key-check frame is a much smaller QR code (version 3) than the data frames. Check that the camera reads it at the same distance, and that the size change every 32 frames does not upset autofocus.
+
 **Robustness**
 - [ ] Start the receiver halfway through the stream. It should still complete, since the stream has no start.
 - [ ] Look away for 5–10 seconds, then come back. It should continue where it left off.

@@ -80,6 +80,8 @@ label.check input { width: 22px; height: 22px; margin: 0; accent-color: #4aa3ff;
   <input id="pass" type="password" autocomplete="new-password" spellcheck="false" placeholder="leave empty for no encryption" aria-describedby="strength passnote">
   <div id="strength" class="strength" aria-live="polite"></div>
   <div class="note" id="passnote">Anyone who can see or record the screen can collect the encrypted stream and guess passphrases offline as fast as their hardware allows. Use a long random passphrase (e.g. 5+ random words) and share it out of band. Without a passphrase, anyone who sees enough frames gets the file.</div>
+  <label class="check"><input id="kc" type="checkbox" checked aria-describedby="kcnote"> Let the receiver check the passphrase early</label>
+  <div class="note" id="kcnote">With a passphrase, one small key-check frame is shown every 32 frames (about 3% longer stream), so a wrong passphrase is reported within seconds instead of after the whole file. It carries a 2-byte check value, not the key; it lets someone who films a single frame start guessing passphrases offline (they still need the whole stream to confirm one). Untick for the old behaviour.</div>
   <label class="check"><input id="zip" type="checkbox" checked aria-describedby="zipnote"> Compress when it helps</label>
   <div class="note" id="zipnote">Packs the file with the browser's built-in deflate before sending, so text, CSV, JSON and source files need far fewer frames. It is skipped automatically for files that do not shrink (JPEG, ZIP, video). With a passphrase, compression happens before encryption, so the stream's length hints at how compressible the file is; untick this if that matters (see the threat note).</div>
   <div class="row">
@@ -1397,6 +1399,16 @@ var qrcodegen;
  *   19   4   seed    = LT encoding-symbol id (uint32)
  *   23   T   LT-encoded block (XOR of the chosen source blocks)
  * 23+T   4   CRC-32 of bytes [0, 23+T)
+ *
+ * Key-check frame (cycle 3, encrypted transfers only), Base45 with the text prefix "DK":
+ *    0   1   key-frame version (=1)
+ *    1   1   KDF id (1 = PBKDF2-HMAC-SHA-256 key, KCV = HKDF-SHA-256(key, "Dex_QR key check v1")[0..2])
+ *    2   8   fileId of the transfer it belongs to
+ *   10   4   PBKDF2 iterations (uint32)
+ *   14  16   salt (the same salt as in the DQE1 payload header)
+ *   30   2   KCV
+ *   32   4   CRC-32 of bytes [0, 32)
+ * Receivers from before cycle 3 see the "DK" prefix as some other QR code and skip it.
  */
 (function (root) {
   "use strict";
@@ -1414,6 +1426,11 @@ var qrcodegen;
   // files up to 32 MiB with presets T >= 200 B (K <= 167,773), so these caps reject nothing it can send.
   const MAX_LENGTH = 32 * 1024 * 1024 + 4096;   // 32 MiB file + container/encryption overhead
   const MAX_K = 262144;                         // 2^18 blocks
+  const KEY_PREFIX = "DK";
+  const KEY_VERSION = 1;
+  const KEY_KDF_PBKDF2 = 1;
+  const KEY_FRAME_LEN = 36;
+  const ITER_MIN = 100000, ITER_MAX = 10000000;   // same bounds as container.MIN/MAX_ITERATIONS
 
   function hex(bytes) { return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(""); }
 
@@ -1465,6 +1482,31 @@ var qrcodegen;
     };
   }
 
+  function buildKeyFrame({ fileId, iterations, salt, kcv }) {
+    const b = new Uint8Array(KEY_FRAME_LEN), dv = new DataView(b.buffer);
+    b[0] = KEY_VERSION; b[1] = KEY_KDF_PBKDF2;
+    b.set(fileId.subarray ? fileId.subarray(0, 8) : fileId, 2);
+    dv.setUint32(10, iterations >>> 0);
+    b.set(salt, 14); b.set(kcv, 30);
+    dv.setUint32(32, DQ.crc32(b, 0, 32));
+    return KEY_PREFIX + DQ.base45.encode(b);
+  }
+
+  /* Parse a key-check frame. Returns {ok:true, fileId, fileIdHex, iterations, salt, kcv} or {ok:false, reason}. */
+  function parseKeyFrame(text) {
+    if (typeof text !== "string" || !text.startsWith(KEY_PREFIX)) return { ok: false, reason: "foreign" };
+    let b;
+    try { b = DQ.base45.decode(text.slice(KEY_PREFIX.length)); } catch (e) { return { ok: false, reason: "base45" }; }
+    if (b.length !== KEY_FRAME_LEN) return { ok: false, reason: "length" };
+    const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    if (DQ.crc32(b, 0, 32) !== dv.getUint32(32)) return { ok: false, reason: "crc" };
+    if (b[0] !== KEY_VERSION || b[1] !== KEY_KDF_PBKDF2) return { ok: false, reason: "version" };
+    const iterations = dv.getUint32(10);
+    if (iterations < ITER_MIN || iterations > ITER_MAX) return { ok: false, reason: "limits" };
+    const fileId = b.slice(2, 10);
+    return { ok: true, fileId, fileIdHex: hex(fileId), iterations, salt: b.slice(14, 30), kcv: b.slice(30, 32) };
+  }
+
   /* 32-bit key mixed into every packet's PRNG seed. */
   function fileKey32(fileId) { return ((fileId[0] << 24) | (fileId[1] << 16) | (fileId[2] << 8) | fileId[3]) >>> 0; }
 
@@ -1474,7 +1516,7 @@ var qrcodegen;
     return PREFIX.length + Math.floor(n / 2) * 3 + (n % 2 ? 2 : 0);
   }
 
-  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, FLAG_COMPRESSED, MAX_LENGTH, MAX_K, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
+  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, FLAG_COMPRESSED, MAX_LENGTH, MAX_K, KEY_PREFIX, KEY_FRAME_LEN, buildKeyFrame, parseKeyFrame, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
 })(typeof globalThis !== "undefined" ? globalThis : this);
 
 </script>
@@ -1489,6 +1531,9 @@ var qrcodegen;
  * Encrypted payload = "DQE1"(4) | iterations u32 | salt(16) | iv(12) | AES-256-GCM(inner, aad = first 24 bytes)
  *   (compress-then-encrypt: the encrypted inner may be DQZ1; see THREAT_NOTE.md on what the size reveals)
  *   key = PBKDF2-HMAC-SHA-256(passphrase UTF-8, salt, iterations) -> 256-bit AES-GCM key
+ * Key check value (cycle 3): KCV = first 2 bytes of HKDF-SHA-256(ikm = the 32-byte PBKDF2 output, salt = empty,
+ *   info = "Dex_QR key check v1"). The AES key is still the PBKDF2 output itself, so DQE1 is unchanged; the KCV
+ *   travels in separate "DK" key-check frames (packet.js), never inside the payload. See THREAT_NOTE.md.
  * The payload (plain or encrypted) is what gets LT fountain-coded, so with encryption every
  * packet carries fountain-coded ciphertext. File name and MIME type are inside the encrypted part.
  */
@@ -1509,6 +1554,8 @@ var qrcodegen;
   const MIN_GAIN = 0.02;               // use compression only if it saves at least 2% (fewer frames, worth the dependency)
   // Zip-bomb guard: the receiver never inflates more than this (the packet-level payload limit, 32 MiB + 4 KiB,
   // which is more than the largest inner container the sender accepts: a 32 MiB file + name + MIME).
+  const KCV_LEN = 2;                   // 16 bits: a wrong passphrase passes the early check 1 time in 65,536 (AES-GCM still catches it)
+  const KCV_INFO = te.encode("Dex_QR key check v1");
   const MAX_DECOMPRESSED = (DQ.packet && DQ.packet.MAX_LENGTH) || (32 * 1024 * 1024 + 4096);
 
   class DexQRError extends Error { constructor(code, msg) { super(msg); this.code = code; } }
@@ -1535,10 +1582,20 @@ var qrcodegen;
     return { name, mime, data: buf.slice(7 + nl + ml) };
   }
 
-  async function deriveKey(passphrase, salt, iterations) {
-    const base = await subtle().importKey("raw", te.encode(passphrase), "PBKDF2", false, ["deriveKey"]);
-    return subtle().deriveKey({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  /* One PBKDF2 run gives both the AES-256-GCM key (the PBKDF2 output itself, exactly as before cycle 3, so old
+   * streams still decrypt) and the key check value (HKDF-SHA-256 of that output with its own label, so the KCV is
+   * not a slice of the key). The raw bits exist only inside this function and are zeroed after import. */
+  async function deriveKeys(passphrase, salt, iterations) {
+    const base = await subtle().importKey("raw", te.encode(passphrase), "PBKDF2", false, ["deriveBits"]);
+    const bits = new Uint8Array(await subtle().deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, base, 256));
+    try {
+      const key = await subtle().importKey("raw", bits, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+      const hk = await subtle().importKey("raw", bits, "HKDF", false, ["deriveBits"]);
+      const kcv = new Uint8Array(await subtle().deriveBits({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: KCV_INFO }, hk, KCV_LEN * 8));
+      return { key, kcv };
+    } finally { bits.fill(0); }
   }
+  function sameBytes(a, b) { if (!a || !b || a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a[i] ^ b[i]; return d === 0; }
 
   async function sha256(bytes) { return new Uint8Array(await subtle().digest("SHA-256", bytes)); }
 
@@ -1607,7 +1664,7 @@ var qrcodegen;
   /* Build the payload to be fountain-coded. Returns {payload, encrypted, fileId, compression}.
    * compression = {used, algorithm, innerLength, compressedLength, reason}; reason is "off", "unavailable",
    * "no-gain" or "" when used. Pass compress:false to disable. */
-  async function buildPayload({ name, mime, data, passphrase, iterations, compress }) {
+  async function buildPayload({ name, mime, data, passphrase, iterations, compress, keyCheck }) {
     let inner = buildInner(name, mime, data);
     const compression = { used: false, algorithm: null, innerLength: inner.length, compressedLength: null, reason: "off" };
     if (compress !== false) {
@@ -1625,7 +1682,7 @@ var qrcodegen;
         } else { compression.reason = "no-gain"; compression.algorithm = null; }
       }
     }
-    let payload = inner, encrypted = false;
+    let payload = inner, encrypted = false, check = null;
     if (passphrase) {
       iterations = iterations || DEFAULT_ITERATIONS;
       const salt = root.crypto.getRandomValues(new Uint8Array(16));
@@ -1634,14 +1691,15 @@ var qrcodegen;
       head.set(MAGIC_ENC, 0);
       new DataView(head.buffer).setUint32(4, iterations);
       head.set(salt, 8); head.set(iv, 24);
-      const key = await deriveKey(passphrase, salt, iterations);
+      const { key, kcv } = await deriveKeys(passphrase, salt, iterations);
+      if (keyCheck !== false) check = { iterations, salt: salt.slice(), kcv };
       const ct = new Uint8Array(await subtle().encrypt({ name: "AES-GCM", iv, additionalData: head.subarray(0, 24) }, key, inner));
       payload = new Uint8Array(36 + ct.length);
       payload.set(head, 0); payload.set(ct, 36);
       encrypted = true;
     }
     const fileId = (await sha256(payload)).slice(0, 8);
-    return { payload, encrypted, fileId, compression };
+    return { payload, encrypted, fileId, compression, keyCheck: check };
   }
 
   /* True for a plaintext DQZ1 payload (drives the informational header flag; never set for encrypted payloads). */
@@ -1663,7 +1721,14 @@ var qrcodegen;
 
   /* Verify and open a reconstructed payload. Throws DexQRError with code
    * CHECKSUM_MISMATCH | NEED_PASSPHRASE | WRONG_PASSPHRASE | BAD_FORMAT | TOO_LARGE | NO_DECOMPRESSION. */
-  async function openPayload(payload, expectedFileId, passphrase) {
+  /* KDF parameters of a DQE1 payload: {iterations, salt}. */
+  function encryptedParams(payload) {
+    return { iterations: new DataView(payload.buffer, payload.byteOffset).getUint32(4), salt: payload.slice(8, 24) };
+  }
+
+  /* opts.derived = {passphrase, iterations, salt, key} from an earlier early check: reused only when the
+   * passphrase, salt and iteration count all match this payload's header (else a fresh derivation). */
+  async function openPayload(payload, expectedFileId, passphrase, opts = {}) {
     const digest = await sha256(payload);
     for (let i = 0; i < 8; i++) if (digest[i] !== expectedFileId[i]) throw new DexQRError("CHECKSUM_MISMATCH", "Checksum mismatch: the reconstructed data does not match the sender's SHA-256");
     if (!isEncryptedPayload(payload)) return { ...(await openInner(payload)), sha256: digest, encrypted: false };
@@ -1671,14 +1736,16 @@ var qrcodegen;
     const iterations = new DataView(payload.buffer, payload.byteOffset).getUint32(4);
     if (iterations < MIN_ITERATIONS || iterations > MAX_ITERATIONS) throw new DexQRError("BAD_FORMAT", "Unsupported PBKDF2 iteration count " + iterations);
     const salt = payload.slice(8, 24), iv = payload.slice(24, 36);
-    const key = await deriveKey(passphrase, salt, iterations);
+    const d = opts.derived;
+    const usedCachedKey = !!(d && d.passphrase === passphrase && d.iterations === iterations && sameBytes(d.salt, salt));
+    const key = usedCachedKey ? d.key : (await deriveKeys(passphrase, salt, iterations)).key;
     let inner;
     try {
       inner = new Uint8Array(await subtle().decrypt({ name: "AES-GCM", iv, additionalData: payload.subarray(0, 24) }, key, payload.subarray(36)));
     } catch (e) {
       throw new DexQRError("WRONG_PASSPHRASE", "Wrong passphrase (or the data was tampered with): AES-GCM authentication failed");
     }
-    return { ...(await openInner(inner)), sha256: digest, encrypted: true };
+    return { ...(await openInner(inner)), sha256: digest, encrypted: true, usedCachedKey };
   }
 
   /* Rough passphrase strength estimate (bits). Deliberately conservative and simple; it is a hint, not a guarantee. */
@@ -1700,7 +1767,7 @@ var qrcodegen;
     return { bits, label };
   }
 
-  DQ.container = { DEFAULT_ITERATIONS, MIN_ITERATIONS, MAX_ITERATIONS, MAX_DECOMPRESSED, MIN_GAIN, ALGORITHMS, DexQRError, buildInner, parseInner, buildPayload, openPayload, isEncryptedPayload, isCompressedPayload, inflateCapped, estimateStrength, sha256 };
+  DQ.container = { DEFAULT_ITERATIONS, MIN_ITERATIONS, MAX_ITERATIONS, KCV_LEN, deriveKeys, sameBytes, encryptedParams, MAX_DECOMPRESSED, MIN_GAIN, ALGORITHMS, DexQRError, buildInner, parseInner, buildPayload, openPayload, isEncryptedPayload, isCompressedPayload, inflateCapped, estimateStrength, sha256 };
 })(typeof globalThis !== "undefined" ? globalThis : this);
 
 </script>
@@ -1711,7 +1778,8 @@ var qrcodegen;
   const DQ = root.DexQR;
 
   class SenderSession {
-    /* opts: {name, mime, data:Uint8Array, blockSize, passphrase?, iterations?, startSeed?, compress? (default true)} */
+    /* opts: {name, mime, data:Uint8Array, blockSize, passphrase?, iterations?, startSeed?, compress? (default true),
+     *        keyCheck? (default true: encrypted streams interleave a "DK" key-check frame every KEY_EVERY frames)} */
     static async create(opts) {
       const s = new SenderSession();
       const built = await DQ.container.buildPayload(opts);
@@ -1725,17 +1793,33 @@ var qrcodegen;
       s.K = s.encoder.K;
       s.meta = { version: s.version, encrypted: s.encrypted, compressed: !s.encrypted && DQ.container.isCompressedPayload(s.payload), fileId: s.fileId, K: s.K, blockSize: s.blockSize, length: s.payload.length };
       s.nextSeed = (opts.startSeed ?? 0) >>> 0;
+      s.keyCheck = built.keyCheck;
+      s.keyFrameText = built.keyCheck ? DQ.packet.buildKeyFrame({ fileId: s.fileId, ...built.keyCheck }) : null;
+      s.frameIndex = 0;
       return s;
     }
+    /* What the sender page shows next: a key-check frame at frame 0, KEY_EVERY, 2*KEY_EVERY, ... (encrypted
+     * streams only), otherwise the next data packet. Data packets are never skipped, only delayed. */
+    nextFrame() {
+      const i = this.frameIndex++;
+      if (this.keyFrameText && i % SenderSession.KEY_EVERY === 0) return this.keyFrameText;
+      return this.nextText();
+    }
+    /* Fraction of frames that are data packets (1 - 1/KEY_EVERY with key frames, else 1). */
+    get dataFrameShare() { return this.keyFrameText ? 1 - 1 / SenderSession.KEY_EVERY : 1; }
     textForSeed(seed) { return DQ.packet.packetToText(DQ.packet.buildPacket(this.meta, seed, this.encoder.encode(seed))); }
     nextText() { const t = this.textForSeed(this.nextSeed); this.nextSeed = (this.nextSeed + 1) >>> 0; return t; }
   }
 
+  SenderSession.KEY_EVERY = 32;   // one key-check frame per 32 frames: +3.1% stream time, at most 4 s wait at 8 fps
+
   class ReceiverSession {
-    constructor(opts = {}) { this.opts = opts; this.reset(); }
+    constructor(opts = {}) { this.opts = opts; this.keyFrames = new Map(); this.reset(); }
     reset() {
       this.meta = null; this.decoder = null;
-      this.stats = { frames: 0, qrTexts: 0, accepted: 0, duplicates: 0, rejected: 0, foreign: 0, otherFile: 0, reasons: {} };
+      this.derived = null;          // {passphrase, iterations, salt, key, kcvOk} from the last early check
+      this.keyCheckMismatch = false;
+      this.stats = { frames: 0, qrTexts: 0, accepted: 0, duplicates: 0, rejected: 0, foreign: 0, otherFile: 0, keyFrames: 0, reasons: {} };
       // Another transfer seen after this one locked: the receiver keeps ignoring it, but remembers its
       // packets (up to PENDING_MAX distinct texts) so the user can switch to it without losing them.
       this.pending = null;          // {fileIdHex, texts: string[], seen: Set<string>}
@@ -1744,6 +1828,7 @@ var qrcodegen;
     /* Feed one decoded QR string. Returns status string. */
     addText(text) {
       this.stats.qrTexts++;
+      if (typeof text === "string" && text.startsWith(DQ.packet.KEY_PREFIX)) return this.addKeyFrame(text);
       const p = DQ.packet.parseText(text);
       if (!p.ok) {
         if (p.reason === "foreign") this.stats.foreign++; else { this.stats.rejected++; this.stats.reasons[p.reason] = (this.stats.reasons[p.reason] || 0) + 1; }
@@ -1766,15 +1851,56 @@ var qrcodegen;
       if (this.decoder.duplicates > before) this.stats.duplicates++; else this.stats.accepted++;
       return r;
     }
+    /* Key-check frames are kept per transfer (up to KEY_MAX transfers) so one seen before the first data
+     * packet, or for a transfer the user later switches to, still counts. Two different key frames for the
+     * same transfer mean one of them is forged: the early check is then disabled for that transfer. */
+    addKeyFrame(text) {
+      const k = DQ.packet.parseKeyFrame(text);
+      if (!k.ok) { this.stats.rejected++; const r = "key-" + k.reason; this.stats.reasons[r] = (this.stats.reasons[r] || 0) + 1; return "rejected:" + r; }
+      this.stats.keyFrames++;
+      const prev = this.keyFrames.get(k.fileIdHex);
+      if (!prev) {
+        if (this.keyFrames.size >= ReceiverSession.KEY_MAX) this.keyFrames.delete(this.keyFrames.keys().next().value);
+        this.keyFrames.set(k.fileIdHex, k);
+      } else if (!prev.conflict && (prev.iterations !== k.iterations || !DQ.container.sameBytes(prev.salt, k.salt) || !DQ.container.sameBytes(prev.kcv, k.kcv))) {
+        prev.conflict = true;
+        if (this.meta && this.meta.fileIdHex === k.fileIdHex) this.derived = null;
+      }
+      return "key-check";
+    }
+    /* The usable key check for the locked transfer, or null. */
+    get keyCheck() {
+      if (!this.meta || !this.meta.encrypted) return null;
+      const k = this.keyFrames.get(this.meta.fileIdHex);
+      return k && !k.conflict ? k : null;
+    }
+    get keyCheckConflict() { const k = this.meta && this.keyFrames.get(this.meta.fileIdHex); return !!(k && k.conflict); }
+    /* Early passphrase check against the sender's KCV, without waiting for the file. Resolves to
+     * {result: "ok" | "wrong" | "pending" (no key frame seen yet) | "conflict" | "not-encrypted" | "no-transfer", ms}.
+     * "ok" means the KCV matched (a wrong passphrase still passes 1 time in 65,536; AES-GCM decides at the end). */
+    async checkPassphrase(passphrase) {
+      const t0 = Date.now();
+      if (!this.meta) return { result: "no-transfer", ms: 0 };
+      if (!this.meta.encrypted) return { result: "not-encrypted", ms: 0 };
+      if (this.keyCheckConflict) return { result: "conflict", ms: 0 };
+      const k = this.keyCheck;
+      if (!k) return { result: "pending", ms: 0 };
+      const meta = this.meta;
+      const d = await DQ.container.deriveKeys(passphrase, k.salt, k.iterations);
+      if (this.meta !== meta || this.keyCheck !== k) return { result: "stale", ms: Date.now() - t0 };
+      const ok = DQ.container.sameBytes(d.kcv, k.kcv);
+      this.derived = { passphrase, iterations: k.iterations, salt: k.salt, key: d.key, kcvOk: ok };
+      return { result: ok ? "ok" : "wrong", ms: Date.now() - t0 };
+    }
     /* True when another transfer has been on screen for a while and the locked one has not: offer a switch. */
     get otherTransferWaiting() { return !!(this.pending && !this.done && this.otherStreak >= ReceiverSession.SWITCH_AFTER); }
     /* Drop the current transfer and continue with the other one, replaying its buffered packets. */
     switchToPending() {
       const pend = this.pending;
       if (!pend) return false;
-      const frames = this.stats.frames;
+      const frames = this.stats.frames, keyFrames = this.stats.keyFrames;
       this.reset();
-      this.stats.frames = frames;
+      this.stats.frames = frames; this.stats.keyFrames = keyFrames;
       for (const t of pend.texts) this.addText(t);
       return true;
     }
@@ -1785,8 +1911,19 @@ var qrcodegen;
       return { K: d.K, recovered: d.knownCount, received: d.received, fraction: d.knownCount / d.K };
     }
     payload() { return this.decoder.result(this.meta.length); }
-    async open(passphrase) { return DQ.container.openPayload(this.payload(), this.meta.fileId, passphrase); }
+    async open(passphrase) {
+      const payload = this.payload();
+      const out = await DQ.container.openPayload(payload, this.meta.fileId, passphrase, { derived: this.derived });
+      // A key frame whose KDF parameters differ from the real payload header was forged or stale: note it.
+      const k = this.keyFrames.get(this.meta.fileIdHex);
+      if (out.encrypted && k) {
+        const h = DQ.container.encryptedParams(payload);
+        if (h.iterations !== k.iterations || !DQ.container.sameBytes(h.salt, k.salt)) this.keyCheckMismatch = true;
+      }
+      return out;
+    }
   }
+  ReceiverSession.KEY_MAX = 8;          // transfers whose key-check frame is remembered
   ReceiverSession.PENDING_MAX = 4096;   // distinct packets kept from another transfer (about 4096 x 0.6 KB of text at most)
   ReceiverSession.SWITCH_AFTER = 8;     // consecutive other-transfer packets before a switch is offered
 
@@ -1900,7 +2037,7 @@ var qrcodegen;
   function updateStats() {
     const s = state.session; if (!s) return;
     const f = fps();
-    const need = Math.ceil(s.K * 1.05) + 1;
+    const need = Math.ceil((Math.ceil(s.K * 1.05) + 1) / s.dataFrameShare);   // key-check frames take 1 in 32
     const pct = Math.min(100, (100 * state.sent) / need);
     $("s-sent").textContent = String(state.sent) + (state.playing && state.actualFps ? ` (${state.actualFps.toFixed(1)} fps actual)` : "");
     $("bar").style.width = pct.toFixed(1) + "%";
@@ -1911,7 +2048,7 @@ var qrcodegen;
   }
 
   function showNext(ts) {
-    drawText(state.session.nextText());
+    drawText(state.session.nextFrame());
     state.sent++;
     if (ts !== undefined) {
       const w = state.fpsSamples; w.push(ts);
@@ -1958,13 +2095,13 @@ var qrcodegen;
     } catch (e) { /* best effort: the screen may still dim on browsers without the Wake Lock API */ }
   }
 
-  function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value, $("zip").checked].join("\u0000"); }
+  function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value, $("zip").checked, $("kc").checked].join("\u0000"); }
   function checkStale() {
     if (!state.session || state.preparing) return;
     const stale = settingsKey() !== state.prepared;
     $("prepare").classList.toggle("attn", stale);
     $("prepare").textContent = stale ? "Prepare (apply changes)" : "Prepare";
-    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase, compression and density; press Prepare to apply.", "warn");
+    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase, compression, key check and density; press Prepare to apply.", "warn");
     else if ($("msg").classList.contains("warn") && /Settings changed/.test($("msg").textContent)) msg("", "");
   }
 
@@ -1989,17 +2126,17 @@ var qrcodegen;
       const sha = await DQ.container.sha256(data);
       state.ecl = $("ecl").value;
       const startSeed = crypto.getRandomValues(new Uint32Array(1))[0];
-      state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, startSeed, compress: $("zip").checked });
+      state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, startSeed, compress: $("zip").checked, keyCheck: $("kc").checked });
       state.prepared = key;
       state.sent = 0; state.fileSha = hex(sha);
       const s = state.session;
       $("s-file").textContent = `${f.name} (${f.size.toLocaleString()} bytes)`;
       $("s-sha").textContent = state.fileSha;
-      $("s-enc").textContent = s.encrypted ? "yes (AES-256-GCM, PBKDF2-SHA-256 × 600,000)" : "no — anyone who sees the stream can read the file";
+      $("s-enc").textContent = s.encrypted ? "yes (AES-256-GCM, PBKDF2-SHA-256 × 600,000)" + (s.keyFrameText ? "; early passphrase check on (1 key-check frame in 32)" : "; early passphrase check off") : "no — anyone who sees the stream can read the file";
       $("s-zip").textContent = describeCompression(s.compression);
       $("s-id").textContent = DQ.packet.hex(s.fileId);
       $("s-k").textContent = `${s.K} × ${s.blockSize} bytes`;
-      drawText(s.textForSeed(s.nextSeed));
+      drawText(s.textForSeed(s.nextSeed));   // preview a data packet so the QR line shows the data-frame size
       redraw();
       $("qr").setAttribute("aria-label", "Animated QR code stream, paused");
       updateStats();
@@ -2036,7 +2173,7 @@ var qrcodegen;
   $("stage-play").addEventListener("click", () => setPlaying(!state.playing));
   $("fs").addEventListener("click", enterFull);
   $("stage-exit").addEventListener("click", exitFull);
-  ["file", "bs", "zip"].forEach((id) => $(id).addEventListener("change", checkStale));
+  ["file", "bs", "zip", "kc"].forEach((id) => $(id).addEventListener("change", checkStale));
   $("pass").addEventListener("input", checkStale);
   // Rendering-only settings apply live: they change how a packet is drawn, not the stream.
   $("ecl").addEventListener("change", () => { state.ecl = $("ecl").value; redraw(); });

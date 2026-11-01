@@ -1,0 +1,243 @@
+{
+ "when": "2026-11-01T10:36:20.957Z",
+ "node": "v24.22.1",
+ "fps": 8,
+ "blockSize": 400,
+ "pbkdf2Ms600k": 75,
+ "keyEvery": 32,
+ "bytes": {
+  "dataPacketHeaderAdded": 0,
+  "payloadBytesAdded": 0,
+  "keyFrameBytes": 36,
+  "keyFrameTextChars": 56,
+  "keyFrameQrVersionAtM": 3,
+  "dataQrVersionAtM400": 16
+ },
+ "rows": [
+  {
+   "size": 20000,
+   "K": 51,
+   "drop": 0,
+   "trials": 100,
+   "beforeFramesToWrongPass": {
+    "mean": 53.2,
+    "p50": 53,
+    "p95": 57,
+    "max": 59
+   },
+   "afterFramesToWrongPass": {
+    "mean": 16.1,
+    "p50": 16,
+    "p95": 31,
+    "max": 32
+   },
+   "beforeSecondsMean": 6.73,
+   "afterSecondsMean": 2.09,
+   "beforeSecondsP95": 7.2,
+   "afterSecondsP95": 3.95,
+   "framesToFileBefore": 53.2,
+   "framesToFileAfter": 54.6,
+   "fileTimeOverheadPct": 2.6
+  },
+  {
+   "size": 20000,
+   "K": 51,
+   "drop": 0.3,
+   "trials": 100,
+   "beforeFramesToWrongPass": {
+    "mean": 76.4,
+    "p50": 76,
+    "p95": 88,
+    "max": 95
+   },
+   "afterFramesToWrongPass": {
+    "mean": 26.9,
+    "p50": 23,
+    "p95": 74,
+    "max": 82
+   },
+   "beforeSecondsMean": 9.63,
+   "afterSecondsMean": 3.44,
+   "beforeSecondsP95": 11.08,
+   "afterSecondsP95": 9.33,
+   "framesToFileBefore": 76.4,
+   "framesToFileAfter": 77.1,
+   "fileTimeOverheadPct": 0.9
+  },
+  {
+   "size": 20000,
+   "K": 51,
+   "drop": 0.5,
+   "trials": 100,
+   "beforeFramesToWrongPass": {
+    "mean": 105.6,
+    "p50": 104,
+    "p95": 123,
+    "max": 134
+   },
+   "afterFramesToWrongPass": {
+    "mean": 43,
+    "p50": 34,
+    "p95": 109,
+    "max": 119
+   },
+   "beforeSecondsMean": 13.28,
+   "afterSecondsMean": 5.45,
+   "beforeSecondsP95": 15.45,
+   "afterSecondsP95": 13.7,
+   "framesToFileBefore": 105.6,
+   "framesToFileAfter": 108.1,
+   "fileTimeOverheadPct": 2.4
+  },
+  {
+   "size": 100000,
+   "K": 251,
+   "drop": 0,
+   "trials": 100,
+   "beforeFramesToWrongPass": {
+    "mean": 252.4,
+    "p50": 252,
+    "p95": 255,
+    "max": 256
+   },
+   "afterFramesToWrongPass": {
+    "mean": 16.4,
+    "p50": 17,
+    "p95": 30,
+    "max": 32
+   },
+   "beforeSecondsMean": 31.63,
+   "afterSecondsMean": 2.13,
+   "beforeSecondsP95": 31.95,
+   "afterSecondsP95": 3.83,
+   "framesToFileBefore": 252.4,
+   "framesToFileAfter": 260.5,
+   "fileTimeOverheadPct": 3.2
+  },
+  {
+   "size": 100000,
+   "K": 251,
+   "drop": 0.3,
+   "trials": 100,
+   "beforeFramesToWrongPass": {
+    "mean": 362.2,
+    "p50": 363,
+    "p95": 387,
+    "max": 398
+   },
+   "afterFramesToWrongPass": {
+    "mean": 31.3,
+    "p50": 23,
+    "p95": 92,
+    "max": 191
+   },
+   "beforeSecondsMean": 45.35,
+   "afterSecondsMean": 3.99,
+   "beforeSecondsP95": 48.45,
+   "afterSecondsP95": 11.58,
+   "framesToFileBefore": 362.2,
+   "framesToFileAfter": 374.7,
+   "fileTimeOverheadPct": 3.5
+  },
+  {
+   "size": 100000,
+   "K": 251,
+   "drop": 0.5,
+   "trials": 100,
+   "beforeFramesToWrongPass": {
+    "mean": 507.2,
+    "p50": 508,
+    "p95": 549,
+    "max": 569
+   },
+   "afterFramesToWrongPass": {
+    "mean": 42.4,
+    "p50": 29,
+    "p95": 124,
+    "max": 161
+   },
+   "beforeSecondsMean": 63.48,
+   "afterSecondsMean": 5.38,
+   "beforeSecondsP95": 68.7,
+   "afterSecondsP95": 15.58,
+   "framesToFileBefore": 507.2,
+   "framesToFileAfter": 523.3,
+   "fileTimeOverheadPct": 3.2
+  },
+  {
+   "size": 500000,
+   "K": 1251,
+   "drop": 0,
+   "trials": 100,
+   "beforeFramesToWrongPass": {
+    "mean": 1252.6,
+    "p50": 1252,
+    "p95": 1257,
+    "max": 1258
+   },
+   "afterFramesToWrongPass": {
+    "mean": 15.8,
+    "p50": 16,
+    "p95": 31,
+    "max": 32
+   },
+   "beforeSecondsMean": 156.65,
+   "afterSecondsMean": 2.05,
+   "beforeSecondsP95": 157.2,
+   "afterSecondsP95": 3.95,
+   "framesToFileBefore": 1252.6,
+   "framesToFileAfter": 1292.9,
+   "fileTimeOverheadPct": 3.2
+  },
+  {
+   "size": 500000,
+   "K": 1251,
+   "drop": 0.3,
+   "trials": 100,
+   "beforeFramesToWrongPass": {
+    "mean": 1784.3,
+    "p50": 1787,
+    "p95": 1827,
+    "max": 1838
+   },
+   "afterFramesToWrongPass": {
+    "mean": 31.7,
+    "p50": 24,
+    "p95": 93,
+    "max": 110
+   },
+   "beforeSecondsMean": 223.11,
+   "afterSecondsMean": 4.04,
+   "beforeSecondsP95": 228.45,
+   "afterSecondsP95": 11.7,
+   "framesToFileBefore": 1784.3,
+   "framesToFileAfter": 1854.1,
+   "fileTimeOverheadPct": 3.9
+  },
+  {
+   "size": 500000,
+   "K": 1251,
+   "drop": 0.5,
+   "trials": 100,
+   "beforeFramesToWrongPass": {
+    "mean": 2511.3,
+    "p50": 2510,
+    "p95": 2607,
+    "max": 2663
+   },
+   "afterFramesToWrongPass": {
+    "mean": 53.2,
+    "p50": 30,
+    "p95": 158,
+    "max": 247
+   },
+   "beforeSecondsMean": 313.99,
+   "afterSecondsMean": 6.73,
+   "beforeSecondsP95": 325.95,
+   "afterSecondsP95": 19.83,
+   "framesToFileBefore": 2511.3,
+   "framesToFileAfter": 2580,
+   "fileTimeOverheadPct": 2.7
+  }
+ ]
+}

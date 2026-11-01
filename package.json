@@ -19,6 +19,8 @@
     "soak": "node tests/browser/soak.mjs",
     "compress": "node tests/browser/compression.mjs",
     "compress-bench": "node tests/bench/compression.mjs",
+    "keycheck": "node tests/browser/keycheck.mjs",
+    "keycheck-bench": "node tests/bench/keycheck.mjs 100",
     "report": "node tools/report.mjs"
   },
   "devDependencies": {

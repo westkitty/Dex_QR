@@ -28,3 +28,16 @@ Append-only record of each improvement cycle: what was tried, measured and decid
 - `make` is not installed on this box, so the Makefile targets were run as their underlying commands (node tools/build.mjs, node tools/lint.mjs, node --test tests/unit/*.test.mjs, and the browser, e2e and soak scripts) with PY and LD_LIBRARY_PATH set to the box's venv and conda zbar.
 - Verified: unit 35/35, lint 0, browser 17/17, ux 17/17, axe 0, soak 2/2, compression browser 4/4, trials 1,800/1,800 (identical files), H.264 27/27.
 - Next: early wrong-passphrase detection via a key check value (roadmap item 5).
+
+## 2026-11-01, cycle 3 (manual run on the owner's request, counted as cycle 3 of 12)
+
+- Took .dev-state/cycle.lock at 05:29 EST (cycle 2 had released it); tree clean at f89f51b, in sync with origin/main. Baseline: unit 35/35, lint 0.
+- Placement was the main design question. Putting the KCV into the DQE1 header would only help once source block 0 is recovered, which with the ML decoder is effectively at the end, and changing DQE1 or the packet header would break older receivers. A separate frame type with its own prefix (`DK`) is skipped by older receivers (the `DQ` prefix check makes it a foreign code), needs no protocol version bump, and can arrive at any time. Cost is time, not bytes: 1 frame in 32.
+- KCV derivation: PBKDF2 `deriveBits` once, import as the AES-GCM key (identical to the old `deriveKey` result, pinned by a test) and as an HKDF key; KCV = HKDF-SHA-256 with info "Dex_QR key check v1", 2 bytes. Raw bits are zeroed after import.
+- Considered and rejected: a 4-byte KCV (a stronger offline confirmation oracle for no UX gain, since AES-GCM catches the 1-in-65,536 false accept), sending the key frame more often (every 16: 6% overhead for about 1 s less wait), and auto-focusing the passphrase box when it appears mid-scan (an unexpected focus move; the page announces it instead).
+- Test first: tests/unit/keycheck.test.mjs (9 tests) failed 8/9 against the old code (the format-unchanged test passed, as intended); then 9/9. One test bug of mine (key frame fed before any data packet) was fixed in the test, not the code.
+- tests/browser/keycheck.mjs (5 checks) through the real receiver page; tests/browser/a11y.mjs gained a state. The first a11y run failed because `page.waitForFunction` evaluates strings, which the page CSP blocks; replaced with an evaluate-polling helper (test-only).
+- A sender blemish caught by tests/browser/run.mjs output: the QR stat line showed "version 3" because the preview drew the key frame; the preview now draws a data packet.
+- The browser suite needs PY=/workspace/toolchain/venv-qr/bin/python and LD_LIBRARY_PATH=/workspace/toolchain/mamba/zbar/lib on this box (the first attempt without them failed to find zbar output; environment, not code).
+- Measured: mean time to a wrong-passphrase verdict 31.6 s → 2.1 s for 100 KB at 0% loss, 314 s → 6.7 s for 500 KB at 50% loss; +2.6% to +3.9% frames to the file. Table in CHANGELOG.md.
+- Next: PBKDF2 iteration calibration and a better strength estimate, or fuzzing parseText / parseKeyFrame / ReceiverSession.

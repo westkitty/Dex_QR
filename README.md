@@ -21,13 +21,14 @@ Dex_QR moves a file from one device to another as a stream of animated QR codes.
    - Point it at the code. The bar shows decoded packets out of K. **Stop** pauses and keeps progress; **Reset** discards it and asks first.
    - If it locked onto an old transfer (say the sender re-prepared with a new passphrase), it offers **Switch to the new transfer**, keeping the new transfer's packets already seen.
    - The camera, decoder and file input choices are under **Camera, decoder and file input**.
+   - For an encrypted transfer the passphrase box appears at the first frame. Type it and press **Check passphrase** while scanning: the sender shows a small key-check frame every 32 frames, so a wrong passphrase is reported within seconds (at 8 fps, about 2 s on average with no missed frames) instead of after the whole file, and scanning carries on. With the right one the file opens by itself at the end. Older senders do not send key-check frames; the passphrase is then checked at the end as before.
    - When it reaches K, the file is checked (SHA-256 against the sender's ID, plus the AES-GCM tag if encrypted). If the transfer is encrypted, you are asked for the passphrase.
    - Press **Save**, then compare the SHA-256 with the sender page.
 3. The receiver can also decode **image files or a video file** instead of the camera, which is handy for testing or for a screen recording.
 
 **Error messages on the receiver:**
 - *Checksum mismatch:* the rebuilt data does not match the sender's SHA-256. Nothing is saved.
-- *Wrong passphrase:* AES-GCM authentication failed. Retype the passphrase; there is no need to rescan.
+- *Wrong passphrase:* the sender's key check (early) or AES-GCM authentication (at the end) failed. Retype the passphrase; there is no need to rescan, and scanning continues during an early check.
 - *Refused (too large when unpacked):* a compressed transfer claimed, or tried, to expand past its declared size or the 32 MiB limit. Nothing is saved; it is a corrupt or hostile stream.
 - *Cannot unpack:* the transfer is compressed and this browser has no `DecompressionStream` (very old browsers). The page says so at the first frame. Use a current browser, or have the sender untick **Compress** and prepare again.
 - A compressed stream needs a receiver page from 2026-11-01 (cycle 2) or later; an older receiver reports a format error at the end. Every older stream still opens in the new receiver.
