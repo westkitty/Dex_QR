@@ -52,6 +52,7 @@ async function senderTest(browser, { size, pass, bs = 400, ecl = "M" }) {
   const data = testFile(size, "browser-sender");
   const inFile = path.join(WORK, `in_${size}.bin`); fs.writeFileSync(inFile, data);
   await page.setInputFiles("#file", inFile);
+  await page.evaluate(() => { const d = document.getElementById("tuning"); if (d) d.open = true; });   // cycle 6: settings live in the Tuning disclosure
   await page.selectOption("#bs", String(bs)); await page.selectOption("#ecl", ecl);
   await page.fill("#px", "4");
   if (pass) await page.fill("#pass", pass);

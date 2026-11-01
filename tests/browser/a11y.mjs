@@ -21,6 +21,12 @@ const encFrames = [];
 }
 // page.waitForFunction evaluates strings, which the pages' CSP forbids; poll with evaluate instead.
 async function poll(p, fn, timeout = 30000) { const end = Date.now() + timeout; while (!(await p.evaluate(fn))) { if (Date.now() > end) throw new Error("timeout"); await new Promise((r) => setTimeout(r, 100)); } }
+// A complete small stream for the finished (celebration) state (cycle 6).
+const doneFrames = [];
+{
+  const s = await DQ.SenderSession.create({ name: "done.txt", data: new TextEncoder().encode("finished ".repeat(900)), blockSize: 400, compress: false, startSeed: 9 });
+  for (let i = 0; i < Math.ceil(s.K * 1.6) + 6; i++) { const f = path.join(TMP, `done_${i}.png`); fs.writeFileSync(f, encodeGray(DQ.render.toGray(DQ.render.makeQr(s.nextFrame(), "M"), 4))); doneFrames.push(f); }
+}
 const sample = path.join(TMP, "sample.txt"); fs.writeFileSync(sample, "Dex_QR accessibility sample\n".repeat(200));
 
 const states = {
@@ -30,15 +36,20 @@ const states = {
   "receiver": async () => {},
   "receiver options": async (p) => { await p.click("details.opts summary"); await p.click("#start"); await p.waitForTimeout(800); },
   "receiver encrypted early-check": async (p) => { await p.click("details.opts summary"); await p.selectOption("#dec", "zxing"); await p.setInputFiles("#files", encFrames); await poll(p, () => !document.getElementById("passbox").hidden); await p.fill("#pass", "wrong guess"); await p.click("#decrypt"); await poll(p, () => /does not match/.test(document.getElementById("r-key").textContent)); },
+  "sender playing": async (p) => { await p.setInputFiles("#file", sample); await p.click("#play"); await poll(p, () => window.__dexqrSender.playing); await p.waitForTimeout(600); },
+  "sender manual-light-theme": async (p) => { await p.click("#theme"); await p.setInputFiles("#file", sample); },
+  "receiver done": async (p) => { await p.click("details.opts summary"); await p.selectOption("#dec", "zxing"); await p.setInputFiles("#files", doneFrames); await poll(p, () => window.__dexqrReceiver.phase === "done"); await p.waitForTimeout(1600); },
   "sender focus-mode": async (p) => { await p.setInputFiles("#file", sample); await p.click("#prepare"); await p.waitForTimeout(800); await p.evaluate(() => { delete Element.prototype.requestFullscreen; }); await p.click("#fs"); await p.waitForTimeout(200); },
 };
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
 const report = [];
 let serious = 0;
-for (const [w, h] of [[390, 844], [1280, 800]]) {
+// Both colour schemes (cycle 6): the light theme follows prefers-color-scheme or the manual toggle.
+for (const scheme of ["dark", "light"]) for (const [w, h] of [[390, 844], [1280, 800]]) {
   for (const [label, setup] of Object.entries(states)) {
+    if (scheme === "light" && label === "sender manual-light-theme") continue;
     const file = label.split(" ")[0] + ".html";
-    const page = await browser.newPage({ viewport: { width: w, height: h } });
+    const page = await browser.newPage({ viewport: { width: w, height: h }, colorScheme: scheme });
     await page.goto("file://" + path.join(ROOT, file));
     await setup(page);
     await page.evaluate(AXE); // CDP evaluation is not subject to the page CSP, so the pages keep their real policy
@@ -47,8 +58,8 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       return r.violations.map((v) => ({ id: v.id, impact: v.impact, help: v.help, nodes: v.nodes.map((n) => n.target.join(" ")).slice(0, 6) }));
     });
     for (const v of res) if (v.impact === "serious" || v.impact === "critical") serious++;
-    report.push({ page: label, width: w, violations: res });
-    console.log(`${label} @${w}px: ${res.length ? res.map((v) => `${v.impact}:${v.id} [${v.nodes.join(", ")}]`).join("; ") : "no violations"}`);
+    report.push({ page: label, width: w, scheme, violations: res });
+    console.log(`${label} @${w}px ${scheme}: ${res.length ? res.map((v) => `${v.impact}:${v.id} [${v.nodes.join(", ")}]`).join("; ") : "no violations"}`);
     await page.close();
   }
 }

@@ -160,3 +160,31 @@ parseText and parseKeyFrame themselves had **no** findings before the fixes: eve
 **Tests.** Unit 70/70 (5 new in tests/unit/fuzz-regressions.test.mjs, written first and failing 5/5 against 2f907a9), browser 17/17, ux 17/17, axe 0 serious/critical, compression 4/4, key-check 5/5, kdf 5/5, lint 0 (43 files), 0 network requests. Fuzz 0 findings in 200,000 cases (seeds 1 and 2) plus the 5,000-case quick run (seed 7).
 
 **Not found / not changed.** A CRC-valid forged packet with the real header but wrong data still makes the file fail its SHA-256 check (rescan needed); the receiver buffers only the most recent other transfer, so stray frames of a third transfer replace that buffer. Both are documented behaviour, not crashes. Real cameras, Safari and Firefox untested.
+
+## Cycle 6 (2026-11-01, about 8:15 AM EST): easier to use and much better looking, with tasteful animation
+
+**What changed.** No protocol, codec or crypto change; this cycle is the interface only.
+- **Home page** (`index.html`): one screen that says what Dex_QR does, with big **Send a file** and **Receive a file** buttons and a three-step "how it works". Still script-free.
+- **Sender:** three numbered steps (1 Choose a file, 2 Lock it (optional), 3 Show the code). Drop a file anywhere on the page, paste it, or press the box to browse. One big **Start sending** button prepares and plays in one press, then becomes Pause / Resume. Speed, density, error correction, module size, compression, the early passphrase check and key stretching moved into a collapsed **Tuning** section; the hashes and IDs into **Transfer details**. A progress ring around the white code panel, a live line ("Sending · frame 120 · 8.0 fps · about 12 s to go") and receiver tips under it. On a phone, Start sending scrolls the code into view.
+- **Receiver:** a **Scan → Receive → Save** step strip; one big **Start scanning** (later **Resume scanning**) button; a reticle on the camera view that closes in and turns green when a frame adds a packet; a block map, a grid of squares that lights up as the transfer's information arrives, with a big percentage; on completion the grid turns green in a ripple, a check mark pops and the scan buttons step aside so **Save** is the one action. Drop QR images or a recording anywhere on the page to decode them.
+- **Look:** one visual system in CSS variables (dark default, a light theme from `prefers-color-scheme`, an **Auto / Light / Dark** toggle), system fonts, rounded cards, soft gradients, an original SVG logo, and a shared header with navigation.
+- **Motion:** CSS, SVG and one canvas only, no dependencies. A **Motion** toggle and the system's reduced-motion setting both switch every page animation off (static check mark, no glow, no ripple). The block map draws only while something animates and stops afterwards; requestAnimationFrame pauses in hidden tabs.
+
+**Before → after (headless Chrome, measured by script):**
+
+| | Before | After |
+|---|---|---|
+| Presses to start sending once a file is picked | 2 (Prepare, Play) | 1 (Start sending) |
+| Sender primary button, top edge at 1280×800 / 390×844 | 1,064 px / 1,126 px (below the fold) | 495 px / 493 px |
+| Words visible in the sender's control panel | 429 | 143 |
+| Form controls before the primary button | 9 | 4 (theme, motion, file, passphrase) |
+| Receiver primary button height | 44 px | 56 px |
+| axe-core page states checked (violations) | 12 (0) | 38 in both themes (0 of any impact) |
+
+**Hard rules kept.** The QR canvas is untouched: same drawing code, same module-size formula, black on white, 4-module quiet zone; a new test checks every quiet-zone pixel is pure white while playing and that the canvas sits inside the white panel. Decoration (the ring) is the wrapper's border outside it. The stream's flashing is unchanged and the note about it is updated; the page's own animations are slow fades, never flashes. CSP unchanged on all three pages; still single-file builds and no network.
+
+**Tests (all on the final build, headless Chrome 156):** lint 0 problems (47 files); unit 70/70; browser 17/17; ux 17/17; look 16/16 (new); compression 4/4; keycheck 5/5; kdf 5/5; a11y 0 violations in 38 states; soak 60 s: sender 30.03 fps, heap 2.4 → 1.9 MB, receiver heap 2.2 → 2.3 MB, one camera stream after churn; drop trials re-rendered from scratch, 1,800/1,800 succeeded, mean overhead 1.067–1.083 (10 KiB), 1.006–1.007 (100 KiB), 1.001 (500 KiB), trial results identical to the committed files (only timing fields differ). 0 network requests in every suite.
+
+**Tests changed on purpose.** Six suites open the new Tuning disclosure before touching its settings (a one-line helper, same assertions). a11y now runs both colour schemes and three new states (sender playing, manual light theme, receiver done).
+
+**Not tested.** Real phone or laptop cameras, Safari, Firefox, screen readers, how the animations feel on a slow phone. The video/GIF clips are headless screenshots in a loop (about 8 fps), not a screen recording.

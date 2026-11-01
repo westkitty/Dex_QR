@@ -105,7 +105,8 @@ async function main() {
   {
     const sample = path.join(WORK, "sample.bin"); fs.writeFileSync(sample, testFile(30000, "kc-sender"));
     const { ctx, p, errors } = await open(browser, "sender.html");
-    await p.setInputFiles("#file", sample); await p.fill("#pass", PASS); await p.click("#prepare");
+    await p.setInputFiles("#file", sample); await p.fill("#pass", PASS); await p.evaluate(() => { const d = document.getElementById("tuning"); if (d) d.open = true; });   // cycle 6: settings live in the Tuning disclosure
+    await p.click("#prepare");
     await waitFor(p, () => /Ready/.test(document.getElementById("msg").textContent), null, 30000);
     const shown = await p.evaluate(() => { const s = window.__dexqrSender, out = []; for (let i = 0; i < 70; i++) { s.renderNextForTest(); out.push(s.text.slice(0, 2)); } return { out, enc: document.getElementById("s-enc").textContent }; });
     const idx = shown.out.map((t, i) => (t === "DK" ? i : -1)).filter((i) => i >= 0);

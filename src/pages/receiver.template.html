@@ -5,50 +5,79 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; media-src blob: mediastream:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
-<title>Dex_QR — receiver</title>
+<title>Dex_QR — receive a file</title>
 <style>/*INLINE_CSS*/</style>
+<!--HEADSCRIPT-->
 </head>
 <body>
-<header><h1>Dex_QR receiver</h1><span class="sub">Scans an animated QR fountain stream with the camera. Everything stays on this device; no network is used.</span></header>
-<main>
+<!--HEADER:recv-->
+<main class="recv">
+<h1 class="sr-only">Receive a file with Dex_QR</h1>
+<section class="preview" aria-label="Camera preview">
+  <div class="viewport" id="viewport">
+    <video id="video" playsinline muted aria-label="Camera preview"></video>
+    <div id="empty" class="empty"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9h2v2H9zM13 13h2v2h-2zM13 9h2M9 13v2"/></svg><span>Press <b>Start scanning</b>, then point this camera at the sender's screen.<br>You can also drop QR images or a screen recording here.</span></div>
+    <div class="reticle" id="reticle" aria-hidden="true" hidden><svg viewBox="0 0 100 100"><g class="corners" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M2 20V8a6 6 0 0 1 6-6h12M80 2h12a6 6 0 0 1 6 6v12M98 80v12a6 6 0 0 1-6 6H80M20 98H8a6 6 0 0 1-6-6V80"/></g><rect class="sweep" x="8" y="0" width="84" height="1.4" rx=".7" fill="currentColor"/></svg></div>
+    <div class="camtag" id="camtag" hidden><span class="dot on" aria-hidden="true"></span><span id="camtag-text">Scanning</span></div>
+    <canvas id="work" hidden></canvas>
+  </div>
+  <ul class="tips" aria-label="Scanning tips">
+    <li>Fill most of the view with the code</li><li>Hold steady; tilt to avoid glare</li><li>Missed frames are fine: any frames will do</li>
+  </ul>
+</section>
 <section class="card" aria-label="Receiver controls">
-  <div class="btns"><button id="start" type="button">Start camera</button><button id="stop" type="button" class="secondary" disabled>Stop</button></div>
+  <ol class="phases" id="phases" aria-label="Steps">
+    <li id="ph-scan" class="current">Scan</li><li id="ph-recv">Receive</li><li id="ph-save">Save</li>
+  </ol>
+  <div class="btns" id="scanbtns"><button id="start" type="button" class="big"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg><span id="start-text">Start scanning</span></button><button id="stop" type="button" class="secondary" disabled>Stop</button></div>
   <div id="msg" class="msg" role="status" aria-live="polite"></div>
-  <div class="bar" id="barwrap" role="progressbar" aria-label="File decoded" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="nothing received yet"><div id="bar"></div></div>
   <div id="switchbox" class="hint" hidden>
     <span id="switchtext"></span>
     <button id="switch" type="button" class="secondary">Switch to the new transfer</button>
   </div>
-  <dl class="stats">
-    <dt>Status</dt><dd id="r-status">idle</dd>
-    <dt>Transfer ID</dt><dd id="r-id" class="mono">–</dd>
-    <dt>Encrypted</dt><dd id="r-enc">–</dd>
-    <dt>Compressed</dt><dd id="r-zip">–</dd>
-    <dt>Passphrase check</dt><dd id="r-key">–</dd>
-    <dt>Decoded</dt><dd id="r-prog">–</dd>
-    <dt>Packets</dt><dd id="r-pk">–</dd>
-    <dt>Frames</dt><dd id="r-frames">0</dd>
-    <dt>Decoder</dt><dd id="r-dec">–</dd>
-  </dl>
   <form id="passbox" hidden>
     <label for="pass">Passphrase</label>
     <input id="pass" type="password" autocomplete="off" spellcheck="false" aria-describedby="passhelp">
     <div class="note" id="passhelp">You can enter it while scanning: it is checked against the sender's key-check frame within seconds, and scanning continues either way.</div>
-    <button id="decrypt" type="submit">Decrypt</button>
+    <div class="btns"><button id="decrypt" type="submit">Decrypt</button></div>
   </form>
   <div id="result"></div>
-  <div class="btns"><button id="reset" type="button" class="secondary">Reset</button></div>
+  <div class="blocks" id="blocks">
+    <div class="blocks-head"><span class="pct" id="pct" aria-hidden="true">0%</span><span class="sub" id="blocks-sub">Waiting for the first code</span></div>
+    <canvas id="blockmap" width="360" height="120" aria-hidden="true"></canvas>
+    <div class="bar" id="barwrap" role="progressbar" aria-label="File decoded" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="nothing received yet"><div id="bar"></div></div>
+    <div class="burst" id="burst" hidden aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/><path d="M30 52l13 13 27-29"/></svg></div>
+  </div>
   <details class="opts">
     <summary>Camera, decoder and file input</summary>
+    <div class="dbody">
     <label for="cam">Camera</label><select id="cam"><option value="">default (back camera if any)</option></select>
     <label for="dec">QR decoder</label>
     <select id="dec"><option value="auto">auto (browser BarcodeDetector if available, else zxing-cpp)</option><option value="zxing">zxing-cpp WebAssembly (built in)</option><option value="jsqr">jsQR (built in, pure JS, weaker)</option><option value="native">BarcodeDetector only</option></select>
     <label for="files">Decode image files or a video file instead of the camera</label>
     <input id="files" type="file" accept="image/*,video/*" multiple>
+    </div>
   </details>
-  <div class="note">“Decoded” counts independent packets (rank) out of the K needed; the file appears once it reaches K. Duplicate frames and frames from another transfer are ignored. Stopping the camera keeps what you have; Reset discards it (it asks first). Camera scanning on real phones and laptops has not been tested by the author — see docs/TEST_CHECKLIST.md.</div>
+  <details class="more" id="rfacts">
+    <summary>Transfer details</summary>
+    <div class="dbody">
+    <dl class="stats">
+      <dt>Status</dt><dd id="r-status">idle</dd>
+      <dt>Transfer ID</dt><dd id="r-id" class="mono">–</dd>
+      <dt>Encrypted</dt><dd id="r-enc">–</dd>
+      <dt>Compressed</dt><dd id="r-zip">–</dd>
+      <dt>Passphrase check</dt><dd id="r-key">–</dd>
+      <dt>Decoded</dt><dd id="r-prog">–</dd>
+      <dt>Packets</dt><dd id="r-pk">–</dd>
+      <dt>Frames</dt><dd id="r-frames">0</dd>
+      <dt>Decoder</dt><dd id="r-dec">–</dd>
+    </dl>
+    <div class="note">“Decoded” counts independent packets (rank) out of the K needed; the file appears once it reaches K. The squares above fill in the same proportion; with small files the decoder solves every block at once at the end, so a square stands for a share of the information, not a specific byte range. Duplicate frames and frames from another transfer are ignored.</div>
+    </div>
+  </details>
+  <div class="btns"><button id="reset" type="button" class="secondary">Reset</button></div>
+  <div class="note">Stopping the camera keeps what you have; Reset discards it (it asks first). Camera scanning on real phones and laptops has not been tested by the author — see docs/TEST_CHECKLIST.md.</div>
 </section>
-<section class="preview" aria-label="Camera preview"><video id="video" playsinline muted aria-label="Camera preview"></video><div id="empty" class="empty">Camera preview appears here after you press Start camera.</div><canvas id="work" hidden></canvas></section>
 </main>
 <!--INLINE_SCRIPTS-->
 <script>/*INLINE_APP*/</script>

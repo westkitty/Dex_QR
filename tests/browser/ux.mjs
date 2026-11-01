@@ -59,7 +59,8 @@ async function main() {
   // ---- sender ----
   {
     const { ctx, p, errors } = await open(browser, "sender.html");
-    await p.setInputFiles("#file", sample); await p.click("#prepare");
+    await p.setInputFiles("#file", sample); await p.evaluate(() => { const d = document.getElementById("tuning"); if (d) d.open = true; });   // cycle 6: settings live in the Tuning disclosure
+    await p.click("#prepare");
     await waitFor(p, () => !!window.__dexqrSender.session && !document.getElementById("prepare").disabled);
     const rates = {};
     for (const f of [8, 25]) {

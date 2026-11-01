@@ -9,6 +9,8 @@
     prepared: null, preparing: false, fpsSamples: [], actualFps: 0, wakeLock: null, focusMode: false,
   };
   window.__dexqrSender = state; // read-only hook for automated tests
+  const UI = window.DexUI;
+  const ICON_PLAY = "M8 5v14l11-7z", ICON_PAUSE = "M7 5h4v14H7zM13 5h4v14h-4z";
 
   function msg(text, cls) {
     const m = $("msg"); m.textContent = text || ""; m.className = "msg" + (text ? " show " + cls : "");
@@ -69,6 +71,12 @@
     const left = Math.max(0, need - state.sent);
     $("s-eta").textContent = `${fmtTime(left / f)} left with no missed frames; ${fmtTime(left / 0.7 / f)} if 30% are missed (total ≈ ${fmtTime(need / f)} / ${fmtTime(need / 0.7 / f)})`;
     $("stage-info").textContent = `frame ${state.sent} · ${f} fps`;
+    // Progress ring: the wrapper's border around the white stage, never on the code itself.
+    $("ring").style.setProperty("--p", pct.toFixed(1));
+    const fpsTxt = state.playing && state.actualFps ? state.actualFps.toFixed(1) : String(f);
+    $("live-text").textContent = state.playing
+      ? `Sending · frame ${state.sent} · ${fpsTxt} fps · ${left ? "about " + fmtTime(left / f) + " to go" : "keep going until the receiver is done"}`
+      : state.sent ? `Paused at frame ${state.sent} · press Resume to continue` : `Ready · ${s.K} blocks · about ${fmtTime(need / f)} at ${f} fps`;
   }
 
   function showNext(ts) {
@@ -102,8 +110,10 @@
     if (!state.session) return;
     if (on === state.playing) return;
     state.playing = on;
-    $("play").textContent = on ? "Pause" : "Play";
+    syncPlayButton();
     $("play").setAttribute("aria-pressed", String(on));
+    $("ring").classList.toggle("playing", on);
+    $("live-dot").classList.toggle("on", on);
     $("stage-play").textContent = on ? "Pause" : "Play";
     $("qr").setAttribute("aria-label", on ? "Animated QR code stream, playing" : "Animated QR code stream, paused");
     cancelAnimationFrame(state.raf);
@@ -119,14 +129,37 @@
     } catch (e) { /* best effort: the screen may still dim on browsers without the Wake Lock API */ }
   }
 
+  /* The big button: "Start sending" prepares (if needed) and plays; then it toggles Pause / Resume. */
+  function syncPlayButton() {
+    const stale = !state.session || settingsKey() !== state.prepared;
+    const label = state.playing ? "Pause" : stale ? "Start sending" : state.sent ? "Resume" : "Start sending";
+    $("play-text").textContent = label;
+    $("play-icon").setAttribute("d", state.playing ? ICON_PAUSE : ICON_PLAY);
+    $("play").classList.toggle("on", state.playing);
+    $("play").disabled = state.preparing || (!state.session && !$("file").files[0]);
+  }
+  async function playClicked() {
+    if (state.preparing) return;
+    if (!state.playing && (!state.session || settingsKey() !== state.prepared)) {
+      if (!(await prepare())) return;
+      setPlaying(true);
+      // On a phone the code panel sits below the controls: bring it into view.
+      if (window.innerWidth <= 860) $("ring").scrollIntoView({ block: "center", behavior: UI.reducedMotion() ? "auto" : "smooth" });
+      msg("✓ Sending. Point the receiver's camera at the code and keep going until it says the file is ready.", "ok");
+      return;
+    }
+    setPlaying(!state.playing);
+  }
+
   function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value, $("zip").checked, $("kc").checked, $("kdf").value].join("\u0000"); }
   function checkStale() {
     if (!state.session || state.preparing) return;
     const stale = settingsKey() !== state.prepared;
     $("prepare").classList.toggle("attn", stale);
     $("prepare").textContent = stale ? "Prepare (apply changes)" : "Prepare";
-    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase, key stretching, compression, key check and density; press Prepare to apply.", "warn");
+    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase, key stretching, compression, key check and density; press Prepare (or pause and press Start sending) to apply.", "warn");
     else if ($("msg").classList.contains("warn") && /Settings changed/.test($("msg").textContent)) msg("", "");
+    syncPlayButton();
   }
 
   function describeCompression(c) {
@@ -147,10 +180,11 @@
 
   async function prepare() {
     const f = $("file").files[0];
-    if (!f) { msg("Pick a file first.", "warn"); $("file").focus(); return; }
-    if (f.size > MAX_FILE) { msg("Files over 32 MiB are not supported (a QR stream that long is impractical).", "err"); return; }
+    if (!f) { msg("Choose a file first: drop it on the box, paste it, or press the box to browse.", "warn"); $("file").focus(); return false; }
+    if (f.size > MAX_FILE) { msg("Files over 32 MiB are not supported (a QR stream that long is impractical).", "err"); return false; }
     setPlaying(false);
     state.preparing = true; $("prepare").disabled = true; $("play").disabled = true;
+    let ok = false;
     msg($("pass").value ? "Preparing the key…" : "Preparing…", "warn");
     try {
       // Key stretching (cycle 4): measure this device once per page load, then derive with that count.
@@ -180,11 +214,54 @@
       redraw();
       $("qr").setAttribute("aria-label", "Animated QR code stream, paused");
       updateStats();
-      $("play").disabled = false; $("fs").disabled = false;
-      msg("✓ Ready. Press Play and point the receiver's camera at the code.", "ok");
-    } catch (e) { msg("✗ Could not prepare: " + e.message, "err"); $("play").disabled = !state.session; }
+      $("fs").disabled = false;
+      showSummary(f, s);
+      msg("✓ Ready. Press Start sending and point the receiver's camera at the code.", "ok");
+      ok = true;
+    } catch (e) { msg("✗ Could not prepare: " + e.message, "err"); }
     state.preparing = false; $("prepare").disabled = false;
-    checkStale();
+    checkStale(); syncPlayButton();
+    return ok;
+  }
+
+  function fmtSize(n) { return n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(n < 10240 ? 1 : 0) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
+  function chip(text, cls) { const c = document.createElement("span"); c.className = "chip" + (cls ? " " + cls : ""); c.textContent = text; return c; }
+  function showSummary(f, s) {
+    const box = $("summary"); box.textContent = "";
+    box.append(chip(s.encrypted ? "🔒 Encrypted" : "Not encrypted", s.encrypted ? "lock" : "open"));
+    if (s.compression && s.compression.used) box.append(chip(`Compressed −${(100 * (1 - s.compression.compressedLength / s.compression.innerLength)).toFixed(0)}%`));
+    box.append(chip(`${s.K} blocks`), chip(`QR v${state.qrVersion}`));
+    box.hidden = false;
+    // The stage switches from the placeholder to the white code panel.
+    $("stage").classList.remove("idle"); $("ring").classList.remove("idle"); $("stage-empty").hidden = true; $("qr").hidden = false;
+    redraw();
+  }
+
+  /* Step 1: file picker, drag and drop anywhere on the page, or paste. */
+  function fileChanged() {
+    const f = $("file").files[0];
+    $("drop").classList.toggle("has", !!f);
+    $("drop-t1").textContent = f ? f.name : "Drop a file here, paste it, or browse";
+    $("drop-t2").textContent = f ? `${fmtSize(f.size)}${f.type ? " · " + f.type : ""} · press to choose another` : "Any type, up to 32 MiB. It never leaves this page.";
+    if (!f) { const u = document.createElement("u"); u.textContent = "browse"; $("drop-t1").textContent = "Drop a file here, paste it, or "; $("drop-t1").append(u); }
+    if (f && f.size > MAX_FILE) msg("This file is over 32 MiB, which is not supported (a QR stream that long is impractical).", "err");
+    syncSteps(); checkStale(); syncPlayButton();
+  }
+  function takeFiles(list, how) {
+    const files = Array.from(list || []).filter((f) => f && f.size >= 0);
+    if (!files.length) return false;
+    const dt = new DataTransfer(); dt.items.add(files[0]);
+    $("file").files = dt.files;
+    fileChanged();
+    if (files.length > 1) msg(`One file at a time: using “${files[0].name}” (${how}). Multi-file transfer is on the roadmap.`, "warn");
+    else if (!state.session) msg("", "");
+    return true;
+  }
+  function syncSteps() {
+    const hasFile = !!$("file").files[0], hasPass = !!$("pass").value;
+    $("step1").className = "step " + (hasFile ? "done" : "current");
+    $("step2").className = "step" + (hasFile && hasPass ? " done" : "");
+    $("step3").className = "step" + (hasFile ? " current" : "");
   }
 
   /* Full screen, with an in-page fallback ("focus mode") where the Fullscreen API is missing or refused (iPhone Safari). */
@@ -209,7 +286,23 @@
   document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && !state.focusMode) $("stagebar").hidden = true; redraw(); });
 
   $("prepare").addEventListener("click", prepare);
-  $("play").addEventListener("click", () => setPlaying(!state.playing));
+  $("play").addEventListener("click", playClicked);
+  $("file").addEventListener("change", fileChanged);
+  $("pass").addEventListener("input", syncSteps);
+  let dragDepth = 0;
+  document.addEventListener("dragenter", (e) => { if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files")) { dragDepth++; $("drop").classList.add("over"); } });
+  document.addEventListener("dragleave", () => { if (dragDepth && --dragDepth === 0) $("drop").classList.remove("over"); });
+  document.addEventListener("dragover", (e) => { if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files")) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; } });
+  document.addEventListener("drop", (e) => {
+    // Always stop the browser from navigating away to the dropped file.
+    if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+    e.preventDefault(); dragDepth = 0; $("drop").classList.remove("over");
+    takeFiles(e.dataTransfer.files, "dropped");
+  });
+  document.addEventListener("paste", (e) => {
+    const files = e.clipboardData && e.clipboardData.files;
+    if (files && files.length) { e.preventDefault(); takeFiles(files, "pasted"); }
+  });
   $("stage-play").addEventListener("click", () => setPlaying(!state.playing));
   $("fs").addEventListener("click", enterFull);
   $("stage-exit").addEventListener("click", exitFull);
@@ -230,6 +323,7 @@
   });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && state.playing) wake(true); });
 
+  syncSteps(); syncPlayButton();
   // Test hook: render the next frame synchronously and return its PNG data URL (used by headless tests only).
   state.renderNextForTest = () => { showNext(); return $("qr").toDataURL("image/png"); };
 })();

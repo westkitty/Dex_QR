@@ -1,0 +1,232 @@
+{
+ "when": "2026-11-01T13:06:46.213Z",
+ "results": [
+  {
+   "name": "home: Send and Receive buttons above the fold open the sender and receiver; no scripts",
+   "ok": true,
+   "info": {
+    "links": [
+     "sender.html",
+     "receiver.html"
+    ],
+    "scripts": 0,
+    "h1": "Send a file through your screen.",
+    "fold": true
+   },
+   "t1": "Dex_QR — send a file",
+   "t2": "Dex_QR — receive a file",
+   "errors": []
+  },
+  {
+   "name": "sender: dropping a file anywhere selects it and enables the big button",
+   "ok": true,
+   "before": {
+    "play": true,
+    "step": "step current"
+   },
+   "afterDrop": {
+    "file": "notes.bin",
+    "t1": "notes.bin",
+    "play": false,
+    "step1": "step done",
+    "step3": "step current",
+    "label": "Start sending"
+   }
+  },
+  {
+   "name": "sender: one press prepares and plays; progress ring and live line update",
+   "ok": true,
+   "sent": 13,
+   "label": "Pause",
+   "ring": "16.0",
+   "ringPlaying": true,
+   "quietDark": 0,
+   "inside": true,
+   "stageBg": "rgb(255, 255, 255)",
+   "live": "Sending · frame 13 · 8.0 fps · about 9 s to go"
+  },
+  {
+   "name": "sender: QR quiet zone stays pure white and the canvas sits inside the white stage (decoration outside)",
+   "ok": true,
+   "quietDark": 0,
+   "inside": true,
+   "stageBg": "rgb(255, 255, 255)"
+  },
+  {
+   "name": "sender: Pause/Resume label; paste picks a file and marks the stream stale; dropping two files uses the first and says so",
+   "ok": true,
+   "paused": {
+    "label": "Resume",
+    "playing": false
+   },
+   "pasted": {
+    "file": "pasted.txt",
+    "label": "Start sending",
+    "stale": "Prepare (apply changes)"
+   },
+   "multi": {
+    "file": "a.txt",
+    "msg": "One file at a time: using “a.txt” (dropped). Multi-file transfer is on the roadmap."
+   },
+   "errors": []
+  },
+  {
+   "name": "sender at 390 px: Start sending scrolls the code fully into view",
+   "ok": true,
+   "panelBelowFoldBefore": true,
+   "top": 377,
+   "bottom": 644,
+   "vh": 844,
+   "errors": []
+  },
+  {
+   "name": "theme toggle: auto → light → dark → auto, labelled, colours change, choice persists to the other page",
+   "ok": true,
+   "seq": [
+    {
+     "t": null,
+     "fg": "rgb(233, 240, 245)"
+    },
+    {
+     "t": "light",
+     "fg": "rgb(15, 26, 36)",
+     "label": "Light colour theme: light. Press to change."
+    },
+    {
+     "t": "dark",
+     "fg": "rgb(233, 240, 245)",
+     "label": "Dark colour theme: dark. Press to change."
+    },
+    {
+     "t": null,
+     "fg": "rgb(233, 240, 245)",
+     "label": "Auto colour theme: automatic (follows the system). Press to change."
+    }
+   ],
+   "persisted": {
+    "t": "light",
+    "lbl": "Light",
+    "stored": "light",
+    "first": [
+     "light",
+     "light"
+    ]
+   },
+   "errors": []
+  },
+  {
+   "name": "reduce-motion toggle: stops decorative animation, the QR stream keeps its speed",
+   "ok": true,
+   "a1": "breathe",
+   "a2": "none",
+   "pressed": "true",
+   "framesIn700ms": 6,
+   "errors": []
+  },
+  {
+   "name": "system reduced-motion: page reports reduced, toggle shows pressed and explains",
+   "ok": true,
+   "pressed": "true",
+   "disabled": true,
+   "reduced": true
+  },
+  {
+   "name": "receiver: block map lights in proportion to decoded rank; steps show Receive; button says Resume",
+   "ok": true,
+   "K": 61,
+   "have": 31,
+   "N": 61,
+   "lit": 31,
+   "pct": "50%",
+   "steps": [
+    "done",
+    "current",
+    ""
+   ],
+   "start": "Resume scanning"
+  },
+  {
+   "name": "receiver: completion fills the map, shows the check, hides scan buttons, focuses Save; drawing stops afterwards",
+   "ok": true,
+   "lit": 61,
+   "N": 61,
+   "pct": "100%",
+   "burst": true,
+   "burstAnim": "pop",
+   "scanHidden": true,
+   "steps": [
+    "done",
+    "done",
+    "current"
+   ],
+   "focus": "download",
+   "framesDrawnIdle": 0
+  },
+  {
+   "name": "receiver: Save marks the last step done; Reset clears map, check and steps",
+   "ok": true,
+   "saved": "done",
+   "reset": {
+    "lit": 0,
+    "burst": false,
+    "scanHidden": false,
+    "steps": "current"
+   },
+   "errors": []
+  },
+  {
+   "name": "receiver: block map lights in proportion to decoded rank; steps show Receive; button says Resume (reduced motion: no burst animation)",
+   "ok": true,
+   "K": 61,
+   "have": 31,
+   "N": 61,
+   "lit": 31,
+   "pct": "50%",
+   "steps": [
+    "done",
+    "current",
+    ""
+   ],
+   "start": "Resume scanning"
+  },
+  {
+   "name": "receiver: completion fills the map, shows the check, hides scan buttons, focuses Save; drawing stops afterwards (reduced motion: no burst animation)",
+   "ok": true,
+   "lit": 61,
+   "N": 61,
+   "pct": "100%",
+   "burst": true,
+   "burstAnim": "none",
+   "scanHidden": true,
+   "steps": [
+    "done",
+    "done",
+    "current"
+   ],
+   "focus": "download",
+   "framesDrawnIdle": 0
+  },
+  {
+   "name": "receiver: Save marks the last step done; Reset clears map, check and steps (reduced motion: no burst animation)",
+   "ok": true,
+   "saved": "done",
+   "reset": {
+    "lit": 0,
+    "burst": false,
+    "scanHidden": false,
+    "steps": "current"
+   },
+   "errors": []
+  },
+  {
+   "name": "receiver: dropped QR images are decoded; a dropped non-image file is explained",
+   "ok": true,
+   "got": {
+    "received": 6
+   },
+   "msg": "Drop QR code images or a video of the stream here. To send a file, open the sender page.",
+   "errors": []
+  }
+ ],
+ "networkRequestsOutsideFileDataBlob": []
+}

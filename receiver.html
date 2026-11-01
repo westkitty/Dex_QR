@@ -5,112 +5,324 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; media-src blob: mediastream:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
-<title>Dex_QR — receiver</title>
-<style>:root { color-scheme: dark; --bg:#101418; --fg:#e8eef2; --mut:#a9b8c4; --acc:#5cc8ff; --bad:#ff7b7b; --ok:#4cd98a; --warn:#ffc35c; --card:#1a2128; --line:#36424d; }
+<title>Dex_QR — receive a file</title>
+<style>/* Dex_QR visual system (cycle 6). System fonts only; every colour is a variable so the light theme and the
+ * manual theme toggle change one place. The QR canvas itself is always drawn black on white with its full
+ * quiet zone; nothing in this file draws over it (decoration lives on the wrapper outside the canvas). */
+:root {
+  color-scheme: dark;
+  --bg: #0a0e13; --bg2: #0f1823; --card: #131b24; --card2: #182330; --field: #0b1118;
+  --fg: #e9f0f5; --mut: #a6b5c3; --line: #2a3644; --line2: #364555;
+  --acc: #5cc8ff; --acc2: #a795ff; --on-acc: #00131f; --acc-soft: rgba(92, 200, 255, .14);
+  --ok: #4cd98a; --on-ok: #00210f; --warn: #ffc35c; --bad: #ff8a8a; --on-bad: #2a0000;
+  --ok-bg: #10291d; --warn-bg: #33270f; --bad-bg: #351616;
+  --sec: #243241; --sec-fg: #e9f0f5;
+  --glow: rgba(92, 200, 255, .35); --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  --cell: #1f2b38; --cell-on: #5cc8ff; --cell-done: #4cd98a;
+  --r: 14px; --r-sm: 9px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #eef3f7; --bg2: #e3ecf4; --card: #ffffff; --card2: #f6f9fb; --field: #ffffff;
+  --fg: #0f1a24; --mut: #46586a; --line: #d3dde6; --line2: #b9c7d4;
+  --acc: #0062b0; --acc2: #6a4fd8; --on-acc: #ffffff; --acc-soft: rgba(0, 98, 176, .10);
+  --ok: #0b7440; --on-ok: #ffffff; --warn: #865600; --bad: #b42318; --on-bad: #ffffff;
+  --ok-bg: #e3f5ea; --warn-bg: #fdf1dc; --bad-bg: #fde8e6;
+  --sec: #e4ebf2; --sec-fg: #0f1a24;
+  --glow: rgba(0, 98, 176, .25); --shadow: 0 8px 24px rgba(16, 38, 60, .10);
+  --cell: #dfe7ee; --cell-on: #0a74c9; --cell-done: #12945a;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #eef3f7; --bg2: #e3ecf4; --card: #ffffff; --card2: #f6f9fb; --field: #ffffff;
+    --fg: #0f1a24; --mut: #46586a; --line: #d3dde6; --line2: #b9c7d4;
+    --acc: #0062b0; --acc2: #6a4fd8; --on-acc: #ffffff; --acc-soft: rgba(0, 98, 176, .10);
+    --ok: #0b7440; --on-ok: #ffffff; --warn: #865600; --bad: #b42318; --on-bad: #ffffff;
+    --ok-bg: #e3f5ea; --warn-bg: #fdf1dc; --bad-bg: #fde8e6;
+    --sec: #e4ebf2; --sec-fg: #0f1a24;
+    --glow: rgba(0, 98, 176, .25); --shadow: 0 8px 24px rgba(16, 38, 60, .10);
+    --cell: #dfe7ee; --cell-on: #0a74c9; --cell-done: #12945a;
+  }
+}
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin:0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--fg); }
+html { background: var(--bg); }
+body {
+  margin: 0; min-height: 100vh; color: var(--fg);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  background: radial-gradient(1200px 600px at 85% -10%, var(--acc-soft), transparent 60%), radial-gradient(900px 500px at -10% 110%, rgba(167, 149, 255, .08), transparent 60%), var(--bg);
+  background-attachment: fixed;
+}
 body.noscroll { overflow: hidden; }
-header { padding: 12px 16px; border-bottom: 1px solid #2a333c; display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
-header h1 { font-size: 18px; margin: 0; }
-header .sub { color: var(--mut); font-size: 13px; }
-main { display:grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 16px; padding: 16px; align-items: start; }
-@media (max-width: 800px) { main { grid-template-columns: 1fr; padding: 10px; gap: 10px; } }
-.card { background: var(--card); border-radius: 10px; padding: 14px; min-width: 0; }
-label { display:block; margin: 10px 0 4px; color: var(--mut); font-size: 13px; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---- header ---- */
+header.top { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--fg); text-decoration: none; min-height: 44px; border-radius: var(--r-sm); }
+.brand svg { width: 34px; height: 34px; flex: none; }
+.brand b { font-size: 18px; letter-spacing: .2px; }
+.brand span { color: var(--mut); font-size: 14px; }
+header.top nav { display: flex; gap: 2px; margin-left: auto; align-items: center; flex-wrap: wrap; }
+header.top nav a { color: var(--mut); text-decoration: none; padding: 0 12px; min-height: 44px; display: inline-flex; align-items: center; border-radius: var(--r-sm); font-weight: 600; font-size: 14px; }
+header.top nav a:hover { color: var(--fg); background: var(--sec); }
+header.top nav a[aria-current="page"] { color: var(--fg); background: var(--acc-soft); }
+.tool { min-height: 44px; min-width: 44px; padding: 0 10px; background: transparent; color: var(--mut); border: 1px solid var(--line); border-radius: var(--r-sm); font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+.tool:hover:not(:disabled) { color: var(--fg); filter: none; background: var(--sec); }
+.tool[aria-pressed="true"] { color: var(--fg); border-color: var(--acc); }
+.tool svg { width: 18px; height: 18px; }
+
+/* ---- layout ---- */
+main { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: var(--s5); padding: var(--s5); align-items: start; max-width: 1400px; margin: 0 auto; }
+main.recv { grid-template-columns: 1fr minmax(300px, 420px); }
+@media (max-width: 860px) { main, main.recv { grid-template-columns: 1fr; padding: var(--s3); gap: var(--s3); } }
+.card { background: linear-gradient(180deg, var(--card2), var(--card)); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s4) var(--s4) var(--s5); min-width: 0; box-shadow: var(--shadow); }
+h2 { font-size: 16px; margin: 0; display: flex; align-items: center; gap: 10px; }
+.lead { color: var(--mut); margin: 4px 0 0; font-size: 14px; }
+
+/* ---- stepped flow ---- */
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s4); }
+.step { position: relative; padding-left: 0; }
+.num { width: 28px; height: 28px; flex: none; border-radius: 50%; display: inline-grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--sec); color: var(--fg); border: 1px solid var(--line2); transition: background .3s var(--ease), color .3s var(--ease), transform .3s var(--ease); }
+.step.done .num { background: var(--ok); color: var(--on-ok); border-color: transparent; }
+.step.current .num { background: var(--acc); color: var(--on-acc); border-color: transparent; box-shadow: 0 0 0 4px var(--acc-soft); }
+.step-body { margin-top: var(--s2); }
+.opt { color: var(--mut); font-weight: 500; font-size: 13px; }
+
+.drop { display: flex; align-items: center; gap: var(--s3); min-height: 88px; padding: var(--s3) var(--s4); border: 2px dashed var(--line2); border-radius: var(--r); background: var(--field); cursor: pointer; transition: border-color .2s var(--ease), background .2s var(--ease), transform .2s var(--ease); margin: 0; color: var(--fg); font-size: 14px; }
+.drop:hover { border-color: var(--acc); }
+.drop:focus-within { outline: 3px solid var(--warn); outline-offset: 2px; }
+.drop.over { border-color: var(--acc); background: var(--acc-soft); transform: scale(1.01); }
+.drop.has { border-style: solid; border-color: color-mix(in srgb, var(--ok) 60%, var(--line)); }
+.drop svg { width: 36px; height: 36px; flex: none; color: var(--acc); }
+.drop .t1 { display: block; font-weight: 700; }
+.drop .t2 { display: block; color: var(--mut); font-size: 13px; overflow-wrap: anywhere; }
+.drop u { color: var(--acc); text-underline-offset: 3px; }
+
+label { display: block; margin: 10px 0 4px; color: var(--mut); font-size: 13px; }
 input, select, button { font: inherit; }
-input[type=text], input[type=password], input[type=number], select { width: 100%; min-height: 40px; padding: 7px 8px; border-radius: 6px; border: 1px solid var(--line); background: #0c1014; color: var(--fg); }
+input[type=text], input[type=password], input[type=number], select { width: 100%; min-height: 44px; padding: 8px 10px; border-radius: var(--r-sm); border: 1px solid var(--line2); background: var(--field); color: var(--fg); transition: border-color .15s, box-shadow .15s; }
+input[type=text]:focus, input[type=password]:focus, input[type=number]:focus, select:focus { border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
 input[type=file] { max-width: 100%; color: var(--mut); }
-.btns { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-button { min-height: 44px; padding: 8px 16px; border-radius: 7px; border: 0; background: var(--acc); color: #00131f; font-weight: 600; cursor: pointer; }
-button:hover:not(:disabled) { filter: brightness(1.12); }
-button:active:not(:disabled) { transform: translateY(1px); }
-button.secondary { background: #2c3a46; color: var(--fg); }
-button.danger { background: var(--bad); color: #2a0000; }
+.btns { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+button { min-height: 44px; padding: 8px 16px; border-radius: var(--r-sm); border: 0; background: var(--acc); color: var(--on-acc); font-weight: 650; cursor: pointer; transition: transform .12s var(--ease), filter .15s, box-shadow .2s var(--ease), background .2s; }
+button:hover:not(:disabled) { filter: brightness(1.08); }
+button:active:not(:disabled) { transform: scale(.97); }
+button.big { min-height: 56px; font-size: 17px; padding: 10px 22px; border-radius: 12px; flex: 1 1 220px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, var(--acc), color-mix(in srgb, var(--acc) 70%, var(--acc2))); box-shadow: 0 6px 18px var(--glow); }
+button.big svg { width: 20px; height: 20px; }
+button.big.on { background: var(--sec); color: var(--sec-fg); box-shadow: none; }
+button.secondary { background: var(--sec); color: var(--sec-fg); }
+button.danger { background: var(--bad); color: var(--on-bad); }
 button.attn { box-shadow: 0 0 0 3px var(--warn); }
-button:disabled { opacity: .45; cursor: not-allowed; }
+button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 :focus-visible { outline: 3px solid var(--warn); outline-offset: 2px; }
 a.dl:focus-visible { outline-color: var(--fg); }
-.row { display:flex; gap: 8px; } .row > * { flex: 1; min-width: 0; }
-.stats { display:grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 13px; margin-top: 10px; }
+.row { display: flex; gap: var(--s2); } .row > * { flex: 1; min-width: 0; }
+.stats { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13px; margin: var(--s2) 0 0; }
 .stats dt { color: var(--mut); } .stats dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .mono, .mono-wrap { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
-.bar { height: 14px; background: #0c1014; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; margin-top: 8px; }
-.bar > div { height: 100%; width: 0%; background: var(--acc); transition: width .15s; }
-.msg { margin-top: 10px; padding: 8px 10px; border-radius: 7px; font-size: 14px; display:none; border-left: 4px solid currentColor; }
-.msg.show { display:block; } .msg.err { background:#3a1717; color: var(--bad); } .msg.ok { background:#123222; color: var(--ok); } .msg.warn { background:#3a2e12; color: var(--warn); }
-.hint { margin-top: 10px; padding: 8px 10px; border-radius: 7px; background:#3a2e12; color: var(--warn); font-size: 13.5px; border-left: 4px solid currentColor; }
-.hint button { display:block; margin-top: 8px; }
+.bar { height: 8px; background: var(--field); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; margin-top: var(--s3); }
+.bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, var(--acc), var(--acc2)); border-radius: 99px; transition: width .3s var(--ease); }
+.msg { margin-top: var(--s3); padding: 9px 12px; border-radius: var(--r-sm); font-size: 14px; display: none; border-left: 4px solid currentColor; }
+.msg.show { display: block; animation: rise .3s var(--ease); }
+.msg.err { background: var(--bad-bg); color: var(--bad); } .msg.ok { background: var(--ok-bg); color: var(--ok); } .msg.warn { background: var(--warn-bg); color: var(--warn); }
+.hint { margin-top: var(--s3); padding: 9px 12px; border-radius: var(--r-sm); background: var(--warn-bg); color: var(--warn); font-size: 13.5px; border-left: 4px solid currentColor; }
+.hint button { display: block; margin-top: 8px; }
 .note { color: var(--mut); font-size: 12.5px; margin-top: 8px; }
-kbd { font: 11.5px ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; background: #0c1014; }
-details.opts { margin-top: 12px; border-top: 1px solid #2a333c; padding-top: 6px; }
-details.opts summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px; color: var(--fg); list-style: none; }
-details.opts summary::-webkit-details-marker { display: none; }
-details.opts summary::before { content: "▸"; color: var(--acc); width: 1em; }
-details.opts[open] summary::before { content: "▾"; }
-.stage { position: relative; display:flex; flex-direction: column; align-items:center; justify-content:center; background:#fff; border-radius: 10px; min-height: 320px; padding: 8px; }
-.stage:fullscreen, .stage.focus { border-radius: 0; padding: 8px; }
+kbd { font: 11.5px ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--line2); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; background: var(--field); color: var(--fg); }
+details.opts, details.more { margin-top: var(--s4); border-top: 1px solid var(--line); padding-top: 4px; }
+details.opts summary, details.more summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 8px; color: var(--fg); list-style: none; font-weight: 600; border-radius: var(--r-sm); }
+details.opts summary::-webkit-details-marker, details.more summary::-webkit-details-marker { display: none; }
+details.opts summary::before, details.more summary::before { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--acc); border-bottom: 2px solid var(--acc); transform: rotate(-45deg); transition: transform .2s var(--ease); margin: 0 4px 0 2px; }
+details[open].opts summary::before, details[open].more summary::before { transform: rotate(45deg); }
+details[open] > .dbody { animation: rise .25s var(--ease); }
+summary .opt { margin-left: auto; }
+
+/* ---- sender stage: the white panel holds the QR canvas; the progress ring is the wrapper's border, outside it ---- */
+.stagewrap { display: flex; flex-direction: column; gap: var(--s3); min-width: 0; }
+.ring { --p: 0; padding: 6px; border-radius: 20px; background: conic-gradient(from 0deg, var(--acc) 0, var(--acc2) calc(var(--p) * 1%), var(--line) calc(var(--p) * 1%)); transition: box-shadow .4s var(--ease); }
+.ring.idle { background: var(--line); }
+.ring.playing { animation: breathe 3.2s ease-in-out infinite; }
+.stage { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; border-radius: 14px; min-height: 320px; padding: 8px; }
+.stage.idle { background: var(--card); }
+.stage:fullscreen, .stage.focus { border-radius: 0; padding: 8px; background: #fff; }
 .stage.focus { position: fixed; inset: 0; z-index: 10; min-height: 0; }
-.stage-bar { display:flex; gap: 8px; align-items:center; margin-top: 8px; color: #333; font-size: 13px; }
+.stage-bar { display: flex; gap: 8px; align-items: center; margin-top: 8px; color: #333; font-size: 13px; }
 .stage-bar button.secondary { background: #e3e8ec; color: #111; }
+.stage-empty { display: flex; flex-direction: column; align-items: center; gap: var(--s3); text-align: center; color: var(--mut); padding: var(--s6) var(--s4); font-size: 14px; }
+.stage-empty svg { width: 120px; height: 120px; }
 canvas.qr { image-rendering: pixelated; max-width: 100%; max-height: 100%; height: auto; }
-.preview { position: relative; min-width: 0; }
-video { display:block; width: 100%; max-height: 70vh; background: #000; border-radius: 10px; min-height: 200px; }
-.empty { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; text-align:center; padding: 16px; color: var(--mut); font-size: 14px; pointer-events: none; }
-@media (max-width: 800px) {
-  .preview { order: -1; }                       /* receiver: the camera view comes first on phones */
-  video { max-height: 45vh; }
-}
+.live { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; color: var(--mut); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.live b { color: var(--fg); font-size: 15px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line2); flex: none; }
+.dot.on { background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: ping 2s ease-out infinite; }
+.tips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.tips li { font-size: 12.5px; color: var(--mut); background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; }
+.summary { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s3); }
+.chip { font-size: 12.5px; padding: 3px 10px; border-radius: 99px; background: var(--sec); color: var(--fg); }
+.chip.lock { background: var(--ok-bg); color: var(--ok); }
+.chip.open { background: var(--warn-bg); color: var(--warn); }
+
+/* ---- receiver ---- */
+.preview { position: relative; min-width: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.viewport { position: relative; border-radius: var(--r); overflow: hidden; background: #000; border: 1px solid var(--line); box-shadow: var(--shadow); }
+.viewport { aspect-ratio: 16 / 10; max-height: 72vh; }
+@media (max-width: 860px) { .viewport { aspect-ratio: 4 / 3; max-height: 52vh; } }
+video { display: block; width: 100%; height: 100%; background: #000; object-fit: contain; }
+.empty { position: absolute; inset: 0; display: flex; flex-direction: column; gap: var(--s3); align-items: center; justify-content: center; text-align: center; padding: 16px; color: #c4d0db; font-size: 14px; pointer-events: none; background: radial-gradient(closest-side, #12202e, #05080b); }
+.empty svg { width: 72px; height: 72px; color: #5cc8ff; }
+.reticle { position: absolute; left: 50%; top: 50%; width: min(62%, 62vh); aspect-ratio: 1; transform: translate(-50%, -50%); pointer-events: none; color: rgba(255, 255, 255, .85); transition: color .25s var(--ease); }
+.reticle svg { width: 100%; height: 100%; overflow: visible; }
+.reticle .corners { transform-origin: 50% 50%; transition: transform .35s var(--ease); }
+.reticle.scanning .corners { animation: seek 2.6s ease-in-out infinite; }
+.reticle.lock { color: #4cd98a; }
+.reticle.lock .corners { animation: none; transform: scale(.9); filter: drop-shadow(0 0 6px rgba(76, 217, 138, .8)); }
+.reticle .sweep { opacity: 0; }
+.reticle.scanning .sweep { opacity: .55; animation: sweep 2.2s ease-in-out infinite; }
+.reticle.lock .sweep { opacity: 0; animation: none; }
+.camtag { position: absolute; left: 12px; top: 12px; font-size: 12px; font-weight: 700; color: #fff; background: rgba(0, 0, 0, .55); padding: 4px 10px; border-radius: 99px; display: flex; align-items: center; gap: 6px; }
+ol.phases { list-style: none; display: flex; gap: 0; margin: 0 0 var(--s3); padding: 0; counter-reset: ph; }
+ol.phases li { flex: 1; text-align: center; font-size: 13px; color: var(--mut); position: relative; padding-top: 34px; font-weight: 600; }
+ol.phases li::before { counter-increment: ph; content: counter(ph); position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--sec); color: var(--fg); border: 1px solid var(--line2); font-weight: 800; z-index: 1; transition: background .3s var(--ease), box-shadow .3s var(--ease); }
+ol.phases li::after { content: ""; position: absolute; top: 13px; left: calc(-50% + 16px); right: calc(50% + 16px); height: 2px; background: var(--line2); }
+ol.phases li:first-child::after { display: none; }
+ol.phases li.done::before { content: "✓"; background: var(--ok); color: var(--on-ok); border-color: transparent; }
+ol.phases li.done::after, ol.phases li.current::after { background: var(--acc); }
+ol.phases li.current { color: var(--fg); }
+ol.phases li.current::before { background: var(--acc); color: var(--on-acc); border-color: transparent; box-shadow: 0 0 0 4px var(--acc-soft); }
+.blocks { position: relative; margin-top: var(--s3); padding: var(--s3); border-radius: var(--r); background: var(--field); border: 1px solid var(--line); }
+.blocks canvas { display: block; width: 100%; height: auto; }
+.blocks-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s2); margin-bottom: var(--s2); }
+.pct { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+.blocks-head .sub { color: var(--mut); font-size: 12.5px; text-align: right; }
+.burst { position: absolute; inset: 0; pointer-events: none; display: grid; place-items: center; }
+.burst svg { width: 96px; height: 96px; }
+.burst circle { fill: var(--ok); }
+.burst path { fill: none; stroke: var(--on-ok); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 60; stroke-dashoffset: 0; }
+.burst.play svg { animation: pop .7s var(--ease) both; }
+.burst.play path { animation: draw .5s .25s var(--ease) both; }
 .strength { font-size: 12.5px; margin-top: 4px; }
 .strength.weak { color: var(--bad); } .strength.fair { color: var(--warn); } .strength.good, .strength.strong { color: var(--ok); }
-a.dl { display:inline-block; margin-top:10px; padding: 11px 16px; background: var(--ok); color:#00210f; border-radius: 7px; font-weight:700; text-decoration:none; }
+a.dl { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: var(--s3); min-height: 56px; padding: 12px 18px; background: var(--ok); color: var(--on-ok); border-radius: 12px; font-weight: 750; text-decoration: none; font-size: 16px; overflow-wrap: anywhere; box-shadow: 0 6px 18px color-mix(in srgb, var(--ok) 35%, transparent); animation: rise .4s var(--ease); }
 code { font-size: 12px; }
-@media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } button:active:not(:disabled) { transform: none; } }
 label.check { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 8px; cursor: pointer; color: var(--fg); }
-label.check input { width: 22px; height: 22px; margin: 0; accent-color: #4aa3ff; }
+label.check input { width: 22px; height: 22px; margin: 0; accent-color: var(--acc); }
+body.dragging .viewport { outline: 3px dashed var(--acc); outline-offset: 3px; }
+
+/* ---- home ---- */
+.home { display: block; max-width: 1040px; }
+.hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: var(--s6); align-items: center; padding: var(--s6) 0 var(--s5); }
+@media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: var(--s4); padding: var(--s3) 0; } .hero-art { order: -1; max-width: 220px; margin: 0 auto; } }
+.hero h1 { font-size: clamp(30px, 5vw, 48px); line-height: 1.08; margin: 0 0 var(--s3); letter-spacing: -1px; }
+.hero h1 em { font-style: normal; background: linear-gradient(90deg, var(--acc), var(--acc2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p { color: var(--mut); font-size: 17px; margin: 0 0 var(--s5); max-width: 34em; }
+.cta { display: flex; gap: var(--s3); flex-wrap: wrap; }
+.cta a { flex: 1 1 200px; display: flex; flex-direction: column; gap: 2px; padding: 16px 20px; border-radius: 14px; text-decoration: none; font-weight: 800; font-size: 19px; min-height: 72px; justify-content: center; transition: transform .15s var(--ease), box-shadow .2s var(--ease); }
+.cta a span { font-weight: 500; font-size: 13.5px; opacity: .9; }
+.cta a.send { background: linear-gradient(135deg, var(--acc), color-mix(in srgb, var(--acc) 70%, var(--acc2))); color: var(--on-acc); box-shadow: 0 8px 22px var(--glow); }
+.cta a.recv { background: var(--card); color: var(--fg); border: 1px solid var(--line2); }
+.cta a:hover { transform: translateY(-2px); }
+.hero-art svg { width: 100%; height: auto; }
+.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); margin-top: var(--s4); }
+@media (max-width: 760px) { .how { grid-template-columns: 1fr; } }
+.how .card { padding: var(--s4); }
+.how h2 { font-size: 15px; margin-bottom: 4px; }
+.how p { margin: 0; color: var(--mut); font-size: 14px; }
+.fine { color: var(--mut); font-size: 13px; margin: var(--s5) 0 var(--s4); }
+.fine a { color: var(--acc); }
+.art-cell { animation: twinkle 4.8s ease-in-out infinite; }
+
+/* ---- motion ---- */
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes breathe { 0%, 100% { box-shadow: 0 0 0 0 var(--glow); } 50% { box-shadow: 0 0 28px 2px var(--glow); } }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); } 100% { box-shadow: 0 0 0 10px transparent; } }
+@keyframes seek { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes sweep { 0% { transform: translateY(8px); } 50% { transform: translateY(84px); } 100% { transform: translateY(8px); } }
+@keyframes pop { 0% { transform: scale(.2); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes draw { from { stroke-dashoffset: 60; } to { stroke-dashoffset: 0; } }
+@keyframes twinkle { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+/* Reduced motion: the system setting or the in-page toggle (data-motion) stops every animation and transition. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  button:active:not(:disabled) { transform: none; }
+}
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after { animation: none !important; transition: none !important; }
+:root[data-motion="reduce"] button:active:not(:disabled) { transform: none; }
+@media (max-width: 520px) { header.top { padding: 8px 10px; gap: 6px; } header.top nav a.home, .brand span, .tool .lbl { display: none; } header.top nav a { padding: 0 10px; } }
 </style>
+<script>try{var d=document.documentElement,t=localStorage.getItem("dexqr-theme"),m=localStorage.getItem("dexqr-motion");if(t==="light"||t==="dark")d.setAttribute("data-theme",t);if(m==="reduce")d.setAttribute("data-motion","reduce")}catch(e){}</script>
 </head>
 <body>
-<header><h1>Dex_QR receiver</h1><span class="sub">Scans an animated QR fountain stream with the camera. Everything stays on this device; no network is used.</span></header>
-<main>
+<header class="top"><a class="brand" href="index.html"><svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><defs><linearGradient id="dqlogo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5cc8ff"/><stop offset="1" stop-color="#a795ff"/></linearGradient></defs><rect x="1" y="1" width="46" height="46" rx="12" fill="url(#dqlogo)"/><g fill="#06121c"><path d="M8 8h13v13H8zM11 11v7h7v-7z" fill-rule="evenodd"/><rect x="13" y="13" width="3" height="3"/><path d="M27 8h13v13H27zM30 11v7h7v-7z" fill-rule="evenodd"/><rect x="32" y="13" width="3" height="3"/><path d="M8 27h13v13H8zM11 30v7h7v-7z" fill-rule="evenodd"/><rect x="13" y="32" width="3" height="3"/><rect x="27" y="35" width="4" height="4" rx="1"/><rect x="31" y="29.5" width="4" height="4" rx="1" opacity=".85"/><rect x="36" y="25" width="4" height="4" rx="1" opacity=".7"/><rect x="35.5" y="34" width="3" height="3" rx="1" opacity=".55"/></g></svg><b>Dex_QR</b><span>Receive</span></a><nav aria-label="Pages"><a class="home" href="index.html">Home</a><a href="sender.html">Send</a><a href="receiver.html" aria-current="page">Receive</a><button id="motion" class="tool" type="button" aria-pressed="false" title="Reduce motion"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M3 12c2.5-5 5.5-5 8 0s5.5 5 8 0M3 18h4M3 6h4"/></svg><span class="lbl">Motion</span></button><button id="theme" class="tool" type="button" aria-label="Auto colour theme: automatic (follows the system). Press to change." title="Colour theme"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 3a9 9 0 1 0 0 18zm0 1.8a7.2 7.2 0 0 1 0 14.4z" fill-rule="evenodd"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="lbl" id="theme-lbl">Auto</span></button></nav></header>
+<main class="recv">
+<h1 class="sr-only">Receive a file with Dex_QR</h1>
+<section class="preview" aria-label="Camera preview">
+  <div class="viewport" id="viewport">
+    <video id="video" playsinline muted aria-label="Camera preview"></video>
+    <div id="empty" class="empty"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9h2v2H9zM13 13h2v2h-2zM13 9h2M9 13v2"/></svg><span>Press <b>Start scanning</b>, then point this camera at the sender's screen.<br>You can also drop QR images or a screen recording here.</span></div>
+    <div class="reticle" id="reticle" aria-hidden="true" hidden><svg viewBox="0 0 100 100"><g class="corners" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M2 20V8a6 6 0 0 1 6-6h12M80 2h12a6 6 0 0 1 6 6v12M98 80v12a6 6 0 0 1-6 6H80M20 98H8a6 6 0 0 1-6-6V80"/></g><rect class="sweep" x="8" y="0" width="84" height="1.4" rx=".7" fill="currentColor"/></svg></div>
+    <div class="camtag" id="camtag" hidden><span class="dot on" aria-hidden="true"></span><span id="camtag-text">Scanning</span></div>
+    <canvas id="work" hidden></canvas>
+  </div>
+  <ul class="tips" aria-label="Scanning tips">
+    <li>Fill most of the view with the code</li><li>Hold steady; tilt to avoid glare</li><li>Missed frames are fine: any frames will do</li>
+  </ul>
+</section>
 <section class="card" aria-label="Receiver controls">
-  <div class="btns"><button id="start" type="button">Start camera</button><button id="stop" type="button" class="secondary" disabled>Stop</button></div>
+  <ol class="phases" id="phases" aria-label="Steps">
+    <li id="ph-scan" class="current">Scan</li><li id="ph-recv">Receive</li><li id="ph-save">Save</li>
+  </ol>
+  <div class="btns" id="scanbtns"><button id="start" type="button" class="big"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg><span id="start-text">Start scanning</span></button><button id="stop" type="button" class="secondary" disabled>Stop</button></div>
   <div id="msg" class="msg" role="status" aria-live="polite"></div>
-  <div class="bar" id="barwrap" role="progressbar" aria-label="File decoded" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="nothing received yet"><div id="bar"></div></div>
   <div id="switchbox" class="hint" hidden>
     <span id="switchtext"></span>
     <button id="switch" type="button" class="secondary">Switch to the new transfer</button>
   </div>
-  <dl class="stats">
-    <dt>Status</dt><dd id="r-status">idle</dd>
-    <dt>Transfer ID</dt><dd id="r-id" class="mono">–</dd>
-    <dt>Encrypted</dt><dd id="r-enc">–</dd>
-    <dt>Compressed</dt><dd id="r-zip">–</dd>
-    <dt>Passphrase check</dt><dd id="r-key">–</dd>
-    <dt>Decoded</dt><dd id="r-prog">–</dd>
-    <dt>Packets</dt><dd id="r-pk">–</dd>
-    <dt>Frames</dt><dd id="r-frames">0</dd>
-    <dt>Decoder</dt><dd id="r-dec">–</dd>
-  </dl>
   <form id="passbox" hidden>
     <label for="pass">Passphrase</label>
     <input id="pass" type="password" autocomplete="off" spellcheck="false" aria-describedby="passhelp">
     <div class="note" id="passhelp">You can enter it while scanning: it is checked against the sender's key-check frame within seconds, and scanning continues either way.</div>
-    <button id="decrypt" type="submit">Decrypt</button>
+    <div class="btns"><button id="decrypt" type="submit">Decrypt</button></div>
   </form>
   <div id="result"></div>
-  <div class="btns"><button id="reset" type="button" class="secondary">Reset</button></div>
+  <div class="blocks" id="blocks">
+    <div class="blocks-head"><span class="pct" id="pct" aria-hidden="true">0%</span><span class="sub" id="blocks-sub">Waiting for the first code</span></div>
+    <canvas id="blockmap" width="360" height="120" aria-hidden="true"></canvas>
+    <div class="bar" id="barwrap" role="progressbar" aria-label="File decoded" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="nothing received yet"><div id="bar"></div></div>
+    <div class="burst" id="burst" hidden aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/><path d="M30 52l13 13 27-29"/></svg></div>
+  </div>
   <details class="opts">
     <summary>Camera, decoder and file input</summary>
+    <div class="dbody">
     <label for="cam">Camera</label><select id="cam"><option value="">default (back camera if any)</option></select>
     <label for="dec">QR decoder</label>
     <select id="dec"><option value="auto">auto (browser BarcodeDetector if available, else zxing-cpp)</option><option value="zxing">zxing-cpp WebAssembly (built in)</option><option value="jsqr">jsQR (built in, pure JS, weaker)</option><option value="native">BarcodeDetector only</option></select>
     <label for="files">Decode image files or a video file instead of the camera</label>
     <input id="files" type="file" accept="image/*,video/*" multiple>
+    </div>
   </details>
-  <div class="note">“Decoded” counts independent packets (rank) out of the K needed; the file appears once it reaches K. Duplicate frames and frames from another transfer are ignored. Stopping the camera keeps what you have; Reset discards it (it asks first). Camera scanning on real phones and laptops has not been tested by the author — see docs/TEST_CHECKLIST.md.</div>
+  <details class="more" id="rfacts">
+    <summary>Transfer details</summary>
+    <div class="dbody">
+    <dl class="stats">
+      <dt>Status</dt><dd id="r-status">idle</dd>
+      <dt>Transfer ID</dt><dd id="r-id" class="mono">–</dd>
+      <dt>Encrypted</dt><dd id="r-enc">–</dd>
+      <dt>Compressed</dt><dd id="r-zip">–</dd>
+      <dt>Passphrase check</dt><dd id="r-key">–</dd>
+      <dt>Decoded</dt><dd id="r-prog">–</dd>
+      <dt>Packets</dt><dd id="r-pk">–</dd>
+      <dt>Frames</dt><dd id="r-frames">0</dd>
+      <dt>Decoder</dt><dd id="r-dec">–</dd>
+    </dl>
+    <div class="note">“Decoded” counts independent packets (rank) out of the K needed; the file appears once it reaches K. The squares above fill in the same proportion; with small files the decoder solves every block at once at the end, so a square stands for a share of the information, not a specific byte range. Duplicate frames and frames from another transfer are ignored.</div>
+    </div>
+  </details>
+  <div class="btns"><button id="reset" type="button" class="secondary">Reset</button></div>
+  <div class="note">Stopping the camera keeps what you have; Reset discards it (it asks first). Camera scanning on real phones and laptops has not been tested by the author — see docs/TEST_CHECKLIST.md.</div>
 </section>
-<section class="preview" aria-label="Camera preview"><video id="video" playsinline muted aria-label="Camera preview"></video><div id="empty" class="empty">Camera preview appears here after you press Start camera.</div><canvas id="work" hidden></canvas></section>
 </main>
 <script>/* ---- vendor/qrcodegen.js ---- */
 /* Vendored: Project Nayuki QR Code generator library (TypeScript edition), compiled to JS with tsc 5.6.3 (--target es2018).
@@ -12429,6 +12641,195 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
 })(typeof globalThis !== "undefined" ? globalThis : this);
 
 </script>
+<script>/* ---- src/pages/ui.js ---- */
+/* Dex_QR shared page chrome (cycle 6): colour theme and reduce-motion toggles. Original code, MIT License.
+ * Preferences go to localStorage when the browser allows it on this origin (file:// included in Chrome);
+ * otherwise they last until the page is closed. Nothing is sent anywhere. */
+(function () {
+  "use strict";
+  const root = document.documentElement;
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { /* page-only */ } },
+  };
+  const mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  const listeners = [];
+  const UI = {
+    /** True when the system asks for reduced motion or the in-page toggle is on. */
+    reducedMotion() { return root.getAttribute("data-motion") === "reduce" || !!(mq && mq.matches); },
+    onMotionChange(fn) { listeners.push(fn); },
+    theme() { return root.getAttribute("data-theme") || "auto"; },
+    /** Resolved colour from a CSS variable, for canvas drawing. */
+    cssVar(name) { return getComputedStyle(root).getPropertyValue(name).trim(); },
+  };
+  const fire = () => listeners.forEach((fn) => { try { fn(UI.reducedMotion()); } catch (e) { /* keep others */ } });
+  if (mq) { if (mq.addEventListener) mq.addEventListener("change", () => { syncMotion(); fire(); }); }
+
+  const NAMES = { auto: "automatic (follows the system)", light: "light", dark: "dark" };
+  const LABELS = { auto: "Auto", light: "Light", dark: "Dark" };
+  function syncTheme() {
+    const b = document.getElementById("theme"); if (!b) return;
+    const t = UI.theme();
+    // The accessible name starts with the visible word (WCAG 2.5.3 label in name).
+    b.setAttribute("aria-label", LABELS[t] + " colour theme: " + NAMES[t] + ". Press to change.");
+    const l = document.getElementById("theme-lbl"); if (l) l.textContent = LABELS[t];
+  }
+  function syncMotion() {
+    const b = document.getElementById("motion"); if (!b) return;
+    const own = root.getAttribute("data-motion") === "reduce", sys = !!(mq && mq.matches);
+    b.setAttribute("aria-pressed", String(own || sys));
+    b.disabled = sys && !own;
+    b.title = sys && !own ? "Motion is already reduced by your system setting" : own ? "Motion reduced: press to allow animation" : "Reduce motion";
+  }
+  function init() {
+    const tb = document.getElementById("theme"), mb = document.getElementById("motion");
+    if (tb) tb.addEventListener("click", () => {
+      const order = ["auto", "light", "dark"], next = order[(order.indexOf(UI.theme()) + 1) % 3];
+      if (next === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", next);
+      store.set("dexqr-theme", next === "auto" ? "" : next);
+      syncTheme();
+      window.dispatchEvent(new CustomEvent("dexqr-theme"));
+    });
+    if (mb) mb.addEventListener("click", () => {
+      const on = root.getAttribute("data-motion") !== "reduce";
+      if (on) root.setAttribute("data-motion", "reduce"); else root.removeAttribute("data-motion");
+      store.set("dexqr-motion", on ? "reduce" : "");
+      syncMotion(); fire();
+    });
+    syncTheme(); syncMotion();
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+  window.DexUI = UI;
+})();
+
+</script>
+<script>/* ---- src/pages/blockmap.js ---- */
+/* Dex_QR receiver block map (cycle 6): a grid of squares that fills as the transfer's information arrives,
+ * with a short completion animation. Original code, MIT License.
+ *
+ * Honesty note: for K <= 3000 the decoder solves all blocks at once at the end (maximum-likelihood mode),
+ * so a lit square stands for a share of the collected information (rank), lit in a fixed shuffled order.
+ * In "peel" mode (K > 3000) a square lights when the blocks it stands for are actually resolved.
+ * Drawing happens only while something animates; requestAnimationFrame pauses in hidden tabs. */
+(function () {
+  "use strict";
+  const MAX_CELLS = 320, GAP = 3, NEW_MS = 700, CELEBRATE_MS = 1500;
+  class BlockMap {
+    constructor(canvas, ui) {
+      this.c = canvas; this.g = canvas.getContext("2d"); this.ui = ui;
+      this.K = 0; this.N = 0; this.lit = new Uint8Array(0); this.litAt = new Float64Array(0); this.order = null;
+      this.doneAt = 0; this.raf = 0; this.lastActive = 0; this.particles = [];
+      this.layoutKey = ""; this.colors = null;
+      this.frameCount = 0;                       // frames drawn (read by tests to check the loop goes idle)
+      const ro = window.ResizeObserver ? new ResizeObserver(() => { this.layoutKey = ""; this.draw(performance.now()); }) : null;
+      if (ro) ro.observe(canvas.parentElement);
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) this.kick(); });
+      window.addEventListener("dexqr-theme", () => { this.colors = null; this.draw(performance.now()); });
+      if (window.matchMedia) { const m = window.matchMedia("(prefers-color-scheme: light)"); if (m.addEventListener) m.addEventListener("change", () => { this.colors = null; this.draw(performance.now()); }); }
+      this.reset();
+    }
+    reset() { this.K = 0; this.setCells(96); this.doneAt = 0; this.particles = []; this.draw(performance.now()); }
+    setCells(n) {
+      this.N = n; this.lit = new Uint8Array(n); this.litAt = new Float64Array(n); this.layoutKey = "";
+      // Fixed pseudo-random fill order (xorshift seeded by n) so progress sparkles across the grid instead of sweeping.
+      const o = Array.from({ length: n }, (_, i) => i); let x = (n * 2654435761) >>> 0 || 1;
+      for (let i = n - 1; i > 0; i--) { x ^= x << 13; x >>>= 0; x ^= x >>> 17; x ^= x << 5; x >>>= 0; const j = x % (i + 1); [o[i], o[j]] = [o[j], o[i]]; }
+      this.order = o;
+    }
+    /** have = progress count (0..K); known = per-block array in peel mode (else null). */
+    update(K, have, known) {
+      if (K !== this.K) { this.K = K; this.setCells(Math.min(K, MAX_CELLS)); this.doneAt = 0; }
+      const now = performance.now(), N = this.N;
+      let changed = false;
+      const light = (i) => { if (!this.lit[i]) { this.lit[i] = 1; this.litAt[i] = now; changed = true; } };
+      if (known && have < K) {
+        for (let i = 0; i < N; i++) {
+          const a = Math.floor((i * K) / N), b = Math.max(a + 1, Math.floor(((i + 1) * K) / N));
+          let k = 0; for (let j = a; j < b; j++) if (known[j]) k++;
+          if (k * 2 >= b - a) light(i);
+        }
+      } else {
+        const L = have >= K ? N : Math.min(N - 1, Math.floor((have / K) * N));
+        for (let r = 0; r < L; r++) light(this.order[r]);
+      }
+      if (changed) { this.lastActive = now; this.kick(); }
+    }
+    celebrate() {
+      if (this.doneAt) return;
+      for (let i = 0; i < this.N; i++) if (!this.lit[i]) { this.lit[i] = 1; this.litAt[i] = 0; }
+      this.doneAt = performance.now();
+      if (!this.ui.reducedMotion()) {
+        const w = this.c.width, h = this.c.height, cx = w / 2, cy = h / 2, dpr = this.dpr || 1;
+        this.particles = Array.from({ length: 42 }, (_, i) => { const a = (i / 42) * Math.PI * 2 + Math.random() * 0.2, v = (0.12 + Math.random() * 0.22) * dpr; return { x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: (1.5 + Math.random() * 2.5) * dpr }; });
+      }
+      this.lastActive = this.doneAt; this.kick();
+    }
+    kick() {
+      if (this.raf) return;
+      if (this.ui.reducedMotion()) { this.draw(performance.now()); return; }
+      const step = (ts) => {
+        this.raf = 0;
+        this.draw(ts);
+        const busy = ts - this.lastActive < NEW_MS + 50 || (this.doneAt && ts - this.doneAt < CELEBRATE_MS);
+        if (busy && !document.hidden) this.raf = requestAnimationFrame(step);
+      };
+      this.raf = requestAnimationFrame(step);
+    }
+    layout() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.max(120, this.c.parentElement.clientWidth - 26);
+      const key = W + "x" + this.N + "@" + dpr;
+      if (key === this.layoutKey) return;
+      this.layoutKey = key; this.dpr = dpr;
+      let s = Math.floor(Math.sqrt((W * 130) / this.N)) - GAP; s = Math.max(5, Math.min(26, s));
+      const cols = Math.max(1, Math.floor((W + GAP) / (s + GAP))), rows = Math.ceil(this.N / cols);
+      this.s = s; this.cols = cols; this.rows = rows;
+      this.ox = Math.floor((W - (cols * (s + GAP) - GAP)) / 2);
+      const H = rows * (s + GAP) - GAP;
+      this.c.width = Math.round(W * dpr); this.c.height = Math.round(H * dpr);
+    }
+    draw(now) {
+      this.layout();
+      if (!this.colors) { const v = (n) => this.ui.cssVar(n); this.colors = { cell: v("--cell"), on: v("--cell-on"), done: v("--cell-done"), glow: v("--acc2") || v("--cell-on") }; }
+      const g = this.g, dpr = this.dpr, s = this.s, col = this.colors, reduce = this.ui.reducedMotion();
+      this.frameCount++;
+      g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, this.c.width, this.c.height);
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const maxD = Math.hypot(this.cols / 2, this.rows / 2) || 1;
+      for (let i = 0; i < this.N; i++) {
+        const cx = i % this.cols, cy = (i / this.cols) | 0;
+        let x = this.ox + cx * (s + GAP), y = cy * (s + GAP), size = s, color = col.cell, glow = 0;
+        if (this.lit[i]) {
+          color = col.on;
+          const age = now - this.litAt[i];
+          if (!reduce && this.litAt[i] && age < NEW_MS) { const k = 1 - age / NEW_MS; size = s * (1 + 0.35 * k); glow = k; }
+          if (this.doneAt) {
+            const delay = (Math.hypot(cx - this.cols / 2 + 0.5, cy - this.rows / 2 + 0.5) / maxD) * 500;
+            const t = reduce ? 1 : (now - this.doneAt - delay) / 300;
+            if (t >= 0) { color = col.done; if (t < 1) { size = s * (1 + 0.22 * Math.sin(Math.PI * t)); glow = Math.max(glow, 1 - t); } }
+          }
+        }
+        const d = (size - s) / 2; x -= d; y -= d;
+        if (glow > 0) { g.shadowColor = color; g.shadowBlur = 6 * glow; } else g.shadowBlur = 0;
+        g.fillStyle = color;
+        const r = Math.min(4, size / 3.5);
+        g.beginPath(); if (g.roundRect) g.roundRect(x, y, size, size, r); else g.rect(x, y, size, size); g.fill();
+      }
+      g.shadowBlur = 0;
+      if (this.particles.length && this.doneAt && !reduce) {
+        const t = now - this.doneAt;
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        if (t < 1000) {
+          g.fillStyle = col.done;
+          for (const p of this.particles) { g.globalAlpha = Math.max(0, 1 - t / 1000); g.beginPath(); g.arc(p.x + p.vx * t, p.y + p.vy * t + 0.00012 * t * t * dpr, p.r, 0, Math.PI * 2); g.fill(); }
+          g.globalAlpha = 1;
+        } else this.particles = [];
+      }
+    }
+  }
+  window.DexBlockMap = BlockMap;
+})();
+
+</script>
 <script>/* Dex_QR receiver page logic. Original code, MIT License. */
 (function () {
   "use strict";
@@ -12443,13 +12844,43 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
     keyState: "", pendingCheck: false, checking: false, checkToken: 0, passOffered: null,
   };
   window.__dexqrReceiver = state;                 // read-only hook for automated tests
+  const UI = window.DexUI;
+  const map = new window.DexBlockMap($("blockmap"), UI);
+  state.blockMap = map;                           // read-only hook for automated tests
 
   function msg(text, cls) {
     const m = $("msg"); m.textContent = text || ""; m.className = "msg" + (text ? " show " + cls : "");
     // Errors interrupt (alert); progress and success messages are polite.
     m.setAttribute("role", cls === "err" ? "alert" : "status");
   }
-  function setPhase(p) { state.phase = p; $("r-status").textContent = p; }
+  /* Phase drives the three-step strip (Scan, Receive, Save), the big button's label and the camera overlay. */
+  const SCAN_PHASES = ["idle", "scanning", "no camera", "no Dex_QR codes found"];
+  function setPhase(p) {
+    state.phase = p; $("r-status").textContent = p;
+    const step = p === "done" ? 2 : SCAN_PHASES.includes(p) && !state.session.meta ? 0 : 1;
+    ["ph-scan", "ph-recv", "ph-save"].forEach((id, i) => {
+      const el = $(id), done = i < step || (i === 2 && state.saved);
+      el.className = done ? "done" : i === step ? "current" : "";
+      if (i === step && !done) el.setAttribute("aria-current", "step"); else el.removeAttribute("aria-current");
+    });
+    $("start-text").textContent = hasPartial() && !state.running ? "Resume scanning" : "Start scanning";
+    // Once the file is ready, saving it is the one primary action: the scan buttons step aside until Reset.
+    $("scanbtns").hidden = p === "done";
+    syncOverlay();
+  }
+  function syncOverlay() {
+    const live = !!state.running;
+    $("reticle").hidden = !live; $("camtag").hidden = !live;
+    $("reticle").classList.toggle("scanning", live && !state.lockTimer);
+    $("camtag-text").textContent = state.session.meta ? "Receiving" : "Looking for a Dex_QR code";
+  }
+  /* Brief lock-on (corners close in and turn green) each time a frame adds a new packet. */
+  function lockPulse() {
+    const r = $("reticle");
+    r.classList.add("lock"); r.classList.remove("scanning");
+    clearTimeout(state.lockTimer);
+    state.lockTimer = setTimeout(() => { state.lockTimer = 0; r.classList.remove("lock"); syncOverlay(); }, 450);
+  }
   function hasPartial() { return !!(state.session.meta && !state.opened); }
 
   // zxing-cpp compiled to WebAssembly (zxing-wasm), inlined as base64: no file or network fetch.
@@ -12513,6 +12944,8 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
     $("r-dec").textContent = state.decoderName || "–";
     const bw = $("barwrap");
     if (!s.meta) {
+      $("pct").textContent = "0%";
+      $("blocks-sub").textContent = state.running ? "Looking for a Dex_QR code…" : "Waiting for the first code";
       bw.setAttribute("aria-valuenow", "0");
       bw.setAttribute("aria-valuetext", "nothing received yet");
       const bad = Object.entries(st.reasons).map(([k, v]) => `${v} ${k}`).join(", ");
@@ -12538,6 +12971,9 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
     const ign = st.foreign ? `, ${st.foreign} other QR codes` : "";
     $("r-pk").textContent = `${p.received} unique, ${st.duplicates} duplicate, ${st.rejected} rejected, ${st.otherFile} from other transfers${ign}`;
     $("bar").style.width = pct.toFixed(1) + "%";
+    $("pct").textContent = (have >= p.K ? 100 : Math.min(99, Math.floor(pct))) + "%";
+    $("blocks-sub").textContent = `${have} of ${p.K} pieces · ${fmtBytes(s.meta.length)}${s.meta.encrypted ? " · encrypted" : ""}`;
+    map.update(p.K, have, s.decoder.mode === "peel" ? s.decoder.known : null);
     bw.setAttribute("aria-valuenow", pct.toFixed(0));
     bw.setAttribute("aria-valuetext", `${have} of ${p.K} blocks decoded`);
     const sw = $("switchbox");
@@ -12546,6 +12982,8 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
       sw.hidden = false;
     } else sw.hidden = true;
   }
+
+  function fmtBytes(n) { return n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(n < 10240 ? 1 : 0) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
 
   /* Encrypted transfers: offer the passphrase box from the first packet, and say where the early check stands. */
   const fmtIter = (n) => Number(n || 0).toLocaleString("en-US");
@@ -12632,7 +13070,9 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
       $("passbox").hidden = true; $("pass").value = "";
       state.result = { name, size: out.data.length, sha256: fileSha, encrypted: out.encrypted, compressed: out.compressed, usedCachedKey: !!out.usedCachedKey };
       state.error = null; state.opened = true; updatePassUi();
+      a.addEventListener("click", () => { state.saved = true; setPhase("done"); });
       setPhase("done");
+      celebrate();
       msg("✓ Transfer complete. The file is verified and ready to save.", "ok");
       a.focus();
     } catch (e) {
@@ -12649,11 +13089,19 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
     }
   }
 
+  function celebrate() {
+    map.celebrate();
+    const b = $("burst"); b.hidden = false; b.classList.remove("play");
+    void b.offsetWidth;                                                  // restart the CSS animation
+    b.classList.add("play");
+  }
+
   async function onDecoded(texts) {
     const s = state.session;
     s.stats.frames++;
-    const wasDone = s.done;
+    const wasDone = s.done, before = s.decoder ? s.decoder.received : 0;
     for (const t of texts) s.addText(t);
+    if (s.decoder && s.decoder.received > before && state.running) lockPulse();
     updateStats();
     if (state.pendingCheck && !state.checking && !s.done && (s.keyCheck || s.keyCheckConflict)) earlyCheck();
     if (s.done && !wasDone) { stopCamera(); stopVideoFile(); setPhase("verifying"); await tryOpen(); }
@@ -12678,7 +13126,7 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
 
   function cameraErrorText(e) {
     switch (e && e.name) {
-      case "NotAllowedError": case "SecurityError": return "Camera permission was denied. Allow the camera for this page in the browser's site settings and press Start camera again, or decode image or video files instead (under “Camera, decoder and file input”).";
+      case "NotAllowedError": case "SecurityError": return "Camera permission was denied. Allow the camera for this page in the browser's site settings and press Start scanning again, or decode image or video files instead (under “Camera, decoder and file input”).";
       case "NotFoundError": case "OverconstrainedError": return "No camera was found" + ($("cam").value ? " with the selected device; choose “default”." : ". Connect one, or decode image or video files instead.");
       case "NotReadableError": case "AbortError": return "The camera is in use by another app or could not start. Close other apps using it and try again.";
       default: return "Camera error: " + ((e && e.message) || e);
@@ -12713,13 +13161,14 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
       stream.getVideoTracks().forEach((t) => t.addEventListener("ended", () => {
         if (state.stream !== stream) return;
         stopCamera(); setPhase(hasPartial() ? "paused" : "idle");
-        msg("The camera stopped (unplugged, or permission was revoked). Progress is kept; press Start camera to continue.", "err");
+        msg("The camera stopped (unplugged, or permission was revoked). Progress is kept; press Resume scanning to continue.", "err");
       }));
       const v = $("video"); v.removeAttribute("src"); v.srcObject = stream; await v.play();
       if (token !== state.startToken) return;                          // the newer start owns the camera now
       $("empty").hidden = true;
       state.running = true; $("start").disabled = true; $("stop").disabled = false;
       setPhase(state.session.meta ? "receiving" : "scanning");
+      updateStats();
       wake(true);
       listCameras();
       scanLoop(++state.scanGen);
@@ -12736,6 +13185,7 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
     const v = $("video"); if (v.srcObject) { v.srcObject = null; }
     if (wasStream) { $("empty").hidden = false; wake(false); }
     $("start").disabled = state.busyFiles; $("stop").disabled = true;
+    syncOverlay();
   }
 
   async function listCameras() {
@@ -12793,7 +13243,7 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
       const finish = () => {
         if (finished) return; finished = true;
         clearInterval(state.videoPoll); state.videoPoll = null; state.finishVideo = null;
-        state.running = false; state.scanGen++;
+        state.running = false; state.scanGen++; syncOverlay();
         v.onended = v.onerror = null; v.pause(); v.removeAttribute("src"); v.load(); URL.revokeObjectURL(url);
         $("empty").hidden = false;
         resolve();
@@ -12801,7 +13251,7 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
       state.finishVideo = finish;
       v.srcObject = null; v.src = url; v.muted = true; v.playbackRate = 0.5;
       $("empty").hidden = true;
-      state.running = true;
+      state.running = true; syncOverlay();
       v.onended = finish; v.onerror = finish;
       v.play().then(() => scanLoop(++state.scanGen)).catch(finish);
       state.videoPoll = setInterval(() => { if (state.session.done) finish(); }, 200);
@@ -12810,18 +13260,34 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
 
   function resetAll() {
     stopCamera(); stopVideoFile(); revokeResult();
-    state.session = new DQ.ReceiverSession(); state.result = null; state.error = null; state.opened = false; state.opening = false;
+    state.session = new DQ.ReceiverSession(); state.result = null; state.error = null; state.opened = false; state.opening = false; state.saved = false;
+    map.reset(); $("burst").hidden = true; $("burst").classList.remove("play");
     state.keyState = ""; state.pendingCheck = false; state.checking = false; state.checkToken++; state.passOffered = null;
     $("result").textContent = ""; $("passbox").hidden = true; $("pass").value = ""; $("decrypt").textContent = "Decrypt"; $("r-key").textContent = "–"; $("decrypt").disabled = false; $("bar").style.width = "0%"; msg("", "");
     ["r-id", "r-enc", "r-prog", "r-pk"].forEach((id) => ($(id).textContent = "–")); setPhase("idle"); updateStats();
+    $("start").focus();
   }
 
   function disarmReset() { if (state.resetArmed) { clearTimeout(state.resetArmed); state.resetArmed = 0; $("reset").textContent = "Reset"; $("reset").classList.remove("danger"); } }
 
   $("start").addEventListener("click", startCamera);
+  // Drop QR images or a screen recording anywhere on the page to decode them (same path as the file input).
+  let dragDepth = 0;
+  const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+  document.addEventListener("dragenter", (e) => { if (hasFiles(e)) { dragDepth++; document.body.classList.add("dragging"); } });
+  document.addEventListener("dragleave", () => { if (dragDepth && --dragDepth === 0) document.body.classList.remove("dragging"); });
+  document.addEventListener("dragover", (e) => { if (hasFiles(e)) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; } });
+  document.addEventListener("drop", (e) => {
+    if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+    e.preventDefault(); dragDepth = 0; document.body.classList.remove("dragging");
+    const files = Array.from(e.dataTransfer.files).filter((f) => /^(image|video)\//.test(f.type));
+    if (!files.length) { msg("Drop QR code images or a video of the stream here. To send a file, open the sender page.", "warn"); return; }
+    const dt = new DataTransfer(); files.forEach((f) => dt.items.add(f));
+    $("files").files = dt.files; decodeFiles($("files"));
+  });
   $("stop").addEventListener("click", () => {
     state.startToken++; stopCamera(); setPhase(state.session.meta ? "paused" : "idle");
-    msg(hasPartial() ? "Paused. Progress is kept; press Start camera to continue." : "", "warn");
+    msg(hasPartial() ? "Paused. Progress is kept; press Resume scanning to continue." : "", "warn");
   });
   $("files").addEventListener("change", (e) => decodeFiles(e.target));
   $("passbox").addEventListener("submit", (e) => { e.preventDefault(); if (state.session.done) tryOpen(); else earlyCheck(); });
@@ -12856,6 +13322,7 @@ var DEXQR_ZXING_WASM_B64 = "AGFzbQEAAAAB8wM9YAN/f38Bf2ABfwBgAn9/AGABfwF/YAJ/fwF/
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") disarmReset(); });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && state.stream) wake(true); });
   window.addEventListener("beforeunload", (e) => { if (hasPartial()) { e.preventDefault(); e.returnValue = ""; } });
+  setPhase("idle");
 })();
 </script>
 </body>

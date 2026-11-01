@@ -1,75 +1,233 @@
 {
  "axe": "4.14.0",
- "when": "2026-11-01T12:38:16.523Z",
+ "when": "2026-11-01T13:09:13.700Z",
  "report": [
   {
    "page": "index",
    "width": 390,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "sender",
    "width": 390,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "sender prepared",
    "width": 390,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "receiver",
    "width": 390,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "receiver options",
    "width": 390,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "receiver encrypted early-check",
    "width": 390,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "sender playing",
+   "width": 390,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "sender manual-light-theme",
+   "width": 390,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "receiver done",
+   "width": 390,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "sender focus-mode",
    "width": 390,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "index",
    "width": 1280,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "sender",
    "width": 1280,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "sender prepared",
    "width": 1280,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "receiver",
    "width": 1280,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "receiver options",
    "width": 1280,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "receiver encrypted early-check",
    "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "sender playing",
+   "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "sender manual-light-theme",
+   "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "receiver done",
+   "width": 1280,
+   "scheme": "dark",
    "violations": []
   },
   {
    "page": "sender focus-mode",
    "width": 1280,
+   "scheme": "dark",
+   "violations": []
+  },
+  {
+   "page": "index",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender prepared",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver options",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver encrypted early-check",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender playing",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver done",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender focus-mode",
+   "width": 390,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "index",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender prepared",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver options",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver encrypted early-check",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender playing",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "receiver done",
+   "width": 1280,
+   "scheme": "light",
+   "violations": []
+  },
+  {
+   "page": "sender focus-mode",
+   "width": 1280,
+   "scheme": "light",
    "violations": []
   }
  ]

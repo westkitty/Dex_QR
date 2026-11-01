@@ -44,7 +44,7 @@ async function main() {
   {
     const { ctx, p, errors } = await open(browser, "sender.html");
     const dflt = await p.evaluate(() => document.getElementById("kdf") && document.getElementById("kdf").value);
-    await p.setInputFiles("#file", sample); await p.fill("#pass", PASS);
+    await p.setInputFiles("#file", sample); await p.fill("#pass", PASS); await p.evaluate(() => { const d = document.getElementById("tuning"); if (d) d.open = true; });   // cycle 6: settings live in the Tuning disclosure
     const t0 = Date.now(); await p.click("#prepare");
     await waitFor(p, () => /Ready|Could not/.test(document.getElementById("msg").textContent), null, 60000);
     const prepareMs = Date.now() - t0;

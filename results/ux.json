@@ -1,5 +1,5 @@
 {
- "when": "2026-11-01T12:38:05.079Z",
+ "when": "2026-11-01T13:06:22.662Z",
  "results": [
   {
    "name": "sender frame clock matches the set rate (8 and 25 fps, within 3%)",
@@ -20,12 +20,12 @@
    "name": "sender flags stale settings, applies EC level live, Prepare clears the flag",
    "ok": true,
    "stale": {
-    "msg": "Settings changed. The stream on screen still uses the previous file, passphrase, key stretching, compression, key check and density; press Prepare to apply.",
+    "msg": "Settings changed. The stream on screen still uses the previous file, passphrase, key stretching, compression, key check and density; press Prepare (or pause and press Start sending) to apply.",
     "btn": "Prepare (apply changes)"
    },
    "qrInfo": "version 19 (93×93 modules), EC Q, 7 px/module",
    "after": {
-    "msg": "✓ Ready. Press Play and point the receiver's camera at the code.",
+    "msg": "✓ Ready. Press Start sending and point the receiver's camera at the code.",
     "btn": "Prepare",
     "k": "34 × 600 bytes"
    }
@@ -67,7 +67,7 @@
   {
    "name": "receiver: camera permission denied gives a plain explanation and stays usable",
    "ok": true,
-   "msg": "Camera permission was denied. Allow the camera for this page in the browser's site settings and press Start camera again, or decode image or video files instead (under “Camera, decoder and file input”).",
+   "msg": "Camera permission was denied. Allow the camera for this page in the browser's site settings and press Start scanning again, or decode image or video files instead (under “Camera, decoder and file input”).",
    "errors": []
   },
   {
@@ -91,7 +91,7 @@
     "limits": 1
    },
    "msg": "Those files contain QR codes, but none from a Dex_QR stream.",
-   "seconds": 0.141,
+   "seconds": 0.132,
    "framesThenAgain": [
     3,
     5
@@ -141,8 +141,8 @@
   {
    "name": "receiver at 390 px: camera view first, no horizontal overflow, buttons ≥ 44 px tall",
    "ok": true,
-   "videoTop": 110.78125,
-   "startTop": 344.78125,
+   "videoTop": 74,
+   "startTop": 552.25,
    "overflow": false,
    "minTarget": 44
   },
@@ -150,12 +150,12 @@
    "name": "receiver: camera ending mid-scan keeps progress and explains; Start resumes; Stop releases",
    "ok": true,
    "afterEnd": {
-    "msg": "The camera stopped (unplugged, or permission was revoked). Progress is kept; press Start camera to continue.",
+    "msg": "The camera stopped (unplugged, or permission was revoked). Progress is kept; press Resume scanning to continue.",
     "phase": "paused",
     "received": 3
    },
    "resumed": true,
-   "stoppedMsg": "Paused. Progress is kept; press Start camera to continue.",
+   "stoppedMsg": "Paused. Progress is kept; press Resume scanning to continue.",
    "errors": []
   }
  ],

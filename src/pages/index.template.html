@@ -1,10 +1,39 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'">
-<title>Dex_QR</title><style>/*INLINE_CSS*/ main{display:block;max-width:760px}</style></head>
-<body><header><h1>Dex_QR</h1><span class="sub">Offline file transfer over an animated QR fountain stream</span></header>
-<main><div class="card">
-<p>Open the <a style="color:var(--acc)" href="sender.html">sender</a> on the device that has the file, and the <a style="color:var(--acc)" href="receiver.html">receiver</a> on the device with the camera.</p>
-<p>Both pages are single self-contained HTML files. Save them and open them from disk (<code>file://</code>); they make no network requests (a Content-Security-Policy blocks all connections).</p>
-<p class="note">Real phone and laptop camera scanning has not been tested by the author yet. See docs/TEST_CHECKLIST.md in the repository.</p>
-</div></main></body></html>
+<title>Dex_QR — send files through your screen</title><style>/*INLINE_CSS*/</style></head>
+<body>
+<!--HEADER:home-->
+<main class="home">
+<section class="hero">
+  <div>
+    <h1>Send a file <em>through your screen.</em></h1>
+    <p>Dex_QR turns any file into an animated stream of QR codes. Point another device's camera at it and the file rebuilds there. No Wi-Fi, no cables, no accounts, and no network at all.</p>
+    <div class="cta">
+      <a class="send" href="sender.html">Send a file <span>On the device that has it</span></a>
+      <a class="recv" href="receiver.html">Receive a file <span>On the device with the camera</span></a>
+    </div>
+  </div>
+  <div class="hero-art" aria-hidden="true">
+    <svg viewBox="0 0 200 200"><defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5cc8ff"/><stop offset="1" stop-color="#a795ff"/></linearGradient></defs>
+      <rect x="6" y="6" width="188" height="188" rx="34" fill="url(#hg)" opacity=".16"/>
+      <rect x="22" y="22" width="156" height="156" rx="18" fill="#fff"/>
+      <g fill="#0b1118"><path d="M36 36h42v42H36zM46 46v22h22V46z" fill-rule="evenodd"/><rect x="52" y="52" width="10" height="10"/><path d="M122 36h42v42h-42zM132 46v22h22V46z" fill-rule="evenodd"/><rect x="138" y="52" width="10" height="10"/><path d="M36 122h42v42H36zM46 132v22h22v-22z" fill-rule="evenodd"/><rect x="52" y="138" width="10" height="10"/></g>
+      <g fill="#0b1118">
+        <rect class="art-cell" x="90" y="38" width="10" height="10" style="animation-delay:-.2s"/><rect class="art-cell" x="104" y="52" width="10" height="10" style="animation-delay:-1.4s"/><rect class="art-cell" x="90" y="66" width="10" height="10" style="animation-delay:-2.9s"/>
+        <rect class="art-cell" x="38" y="92" width="10" height="10" style="animation-delay:-3.6s"/><rect class="art-cell" x="66" y="92" width="10" height="10" style="animation-delay:-.9s"/><rect class="art-cell" x="90" y="92" width="10" height="10" style="animation-delay:-2.2s"/>
+        <rect class="art-cell" x="118" y="92" width="10" height="10" style="animation-delay:-4.1s"/><rect class="art-cell" x="146" y="92" width="10" height="10" style="animation-delay:-1.7s"/><rect class="art-cell" x="104" y="106" width="10" height="10" style="animation-delay:-3.1s"/>
+        <rect class="art-cell" x="90" y="122" width="10" height="10" style="animation-delay:-.5s"/><rect class="art-cell" x="132" y="122" width="10" height="10" style="animation-delay:-2.6s"/><rect class="art-cell" x="104" y="138" width="10" height="10" style="animation-delay:-4.4s"/>
+        <rect class="art-cell" x="146" y="138" width="10" height="10" style="animation-delay:-1.1s"/><rect class="art-cell" x="118" y="152" width="10" height="10" style="animation-delay:-3.4s"/><rect class="art-cell" x="90" y="152" width="10" height="10" style="animation-delay:-1.9s"/>
+        <rect class="art-cell" x="160" y="152" width="10" height="10" style="animation-delay:-2.4s"/><rect class="art-cell" x="160" y="118" width="10" height="10" style="animation-delay:-.7s"/>
+      </g>
+    </svg>
+  </div>
+</section>
+<section class="how" aria-label="How it works">
+  <div class="card"><h2><span class="num" aria-hidden="true">1</span> Pick a file</h2><p>Open the sender on the device that has the file, and add an optional passphrase to encrypt it.</p></div>
+  <div class="card"><h2><span class="num" aria-hidden="true">2</span> Show the stream</h2><p>The sender plays a fountain of QR codes. The receiver can miss frames or start late: any frames will do.</p></div>
+  <div class="card"><h2><span class="num" aria-hidden="true">3</span> Scan and save</h2><p>Open the receiver on the other device, point its camera, and save the file once it is checked.</p></div>
+</section>
+<p class="fine">Both pages are single self-contained HTML files. Save them and open them from disk (<code>file://</code>); a Content-Security-Policy blocks every network connection. Real phone and laptop camera scanning has not been tested by the author yet; see docs/TEST_CHECKLIST.md in the repository.</p>
+</main></body></html>

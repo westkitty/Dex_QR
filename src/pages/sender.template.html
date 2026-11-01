@@ -5,56 +5,102 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
-<title>Dex_QR — sender</title>
+<title>Dex_QR — send a file</title>
 <style>/*INLINE_CSS*/</style>
+<!--HEADSCRIPT-->
 </head>
 <body>
-<header><h1>Dex_QR sender</h1><span class="sub">Offline file transfer as an animated QR fountain stream. Nothing leaves this page; no network is used.</span></header>
-<main>
+<!--HEADER:send-->
+<main class="send">
+<h1 class="sr-only">Send a file with Dex_QR</h1>
 <section class="card" aria-label="Sender controls">
-  <label for="file">File</label>
-  <input id="file" type="file">
-  <label for="pass">Passphrase (optional: encrypts with AES-256-GCM, key from PBKDF2-SHA-256)</label>
-  <input id="pass" type="password" autocomplete="new-password" spellcheck="false" placeholder="leave empty for no encryption" aria-describedby="strength passnote">
-  <div id="strength" class="strength" aria-live="polite"></div>
-  <div class="note" id="passnote">Anyone who can see or record the screen can collect the encrypted stream and guess passphrases offline as fast as their hardware allows. Use a long random passphrase (e.g. 5+ random words) and share it out of band. Without a passphrase, anyone who sees enough frames gets the file.</div>
-  <label for="kdf">Key stretching (PBKDF2-SHA-256 iterations)</label>
-  <select id="kdf" aria-describedby="kdfnote"><option value="auto" selected>Tuned to this device: about 1 s per key (default)</option><option value="standard">Standard: 600,000 (quickest on a slow receiver)</option></select>
-  <div class="note" id="kdfnote">Every passphrase guess costs an attacker one full key derivation. "Tuned" measures this device and picks the count that takes about one second here (at least 600,000, at most 8,000,000), so each guess costs up to 13× more than the standard count. The receiver derives the key once with the same count; a phone may take a few times longer than this computer. Used only with a passphrase.</div>
-  <label class="check"><input id="kc" type="checkbox" checked aria-describedby="kcnote"> Let the receiver check the passphrase early</label>
-  <div class="note" id="kcnote">With a passphrase, one small key-check frame is shown every 32 frames (about 3% longer stream), so a wrong passphrase is reported within seconds instead of after the whole file. It carries a 2-byte check value, not the key; it lets someone who films a single frame start guessing passphrases offline (they still need the whole stream to confirm one). Untick for the old behaviour.</div>
-  <label class="check"><input id="zip" type="checkbox" checked aria-describedby="zipnote"> Compress when it helps</label>
-  <div class="note" id="zipnote">Packs the file with the browser's built-in deflate before sending, so text, CSV, JSON and source files need far fewer frames. It is skipped automatically for files that do not shrink (JPEG, ZIP, video). With a passphrase, compression happens before encryption, so the stream's length hints at how compressible the file is; untick this if that matters (see the threat note).</div>
-  <div class="row">
-    <div><label for="bs">QR density (bytes per QR)</label>
-      <select id="bs"><option value="200">200 B (sparse)</option><option value="300">300 B</option><option value="400" selected>400 B (default)</option><option value="600">600 B</option><option value="800">800 B</option><option value="1000">1000 B (dense)</option><option value="1400">1400 B (very dense)</option></select></div>
-    <div><label for="ecl">Error correction</label>
-      <select id="ecl"><option value="L">L (~7%)</option><option value="M" selected>M (~15%)</option><option value="Q">Q (~25%)</option><option value="H">H (~30%)</option></select></div>
-  </div>
-  <div class="row">
-    <div><label for="fps">Speed (frames/s, 1–30)</label><input id="fps" type="number" inputmode="numeric" min="1" max="30" step="1" value="8"></div>
-    <div><label for="px">Module size (px, 0 = fit)</label><input id="px" type="number" inputmode="numeric" min="0" max="20" step="1" value="0"></div>
-  </div>
-  <div class="btns"><button id="prepare" type="button">Prepare</button><button id="play" type="button" disabled aria-pressed="false">Play</button><button id="fs" type="button" class="secondary" disabled>Full screen</button></div>
-  <div id="msg" class="msg" role="status" aria-live="polite"></div>
-  <dl class="stats">
-    <dt>File</dt><dd id="s-file">–</dd>
-    <dt>SHA-256</dt><dd id="s-sha" class="mono">–</dd>
-    <dt>Encrypted</dt><dd id="s-enc">–</dd>
-    <dt>Compression</dt><dd id="s-zip">–</dd>
-    <dt>Transfer ID</dt><dd id="s-id" class="mono">–</dd>
-    <dt>Blocks (K)</dt><dd id="s-k">–</dd>
-    <dt>QR</dt><dd id="s-qr">–</dd>
-    <dt>Frames sent</dt><dd id="s-sent">0</dd>
-    <dt>Est. time</dt><dd id="s-eta">–</dd>
-  </dl>
-  <div class="bar" id="barwrap" role="progressbar" aria-label="Frames sent against the estimate a receiver needs" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bar"></div></div>
-  <div class="note">The sender cannot see what the receiver got. The bar shows frames sent against an estimate of what a receiver needs (about K × 1.05 frames if none are missed). Keep playing until the receiver says it is done; the stream never repeats a packet.</div>
-  <div class="note">Keys: <kbd>Space</kbd> or <kbd>K</kbd> play/pause, <kbd>F</kbd> full screen, <kbd>Esc</kbd> leave it. The stream flashes black and white; if flashing light bothers you, look away while it plays or lower the speed.</div>
+  <ol class="steps">
+    <li class="step current" id="step1">
+      <h2><span class="num" aria-hidden="true">1</span> Choose a file</h2>
+      <div class="step-body">
+        <label class="drop" id="drop">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>
+          <span><span class="t1" id="drop-t1">Drop a file here, paste it, or <u>browse</u></span><span class="t2" id="drop-t2">Any type, up to 32 MiB. It never leaves this page.</span></span>
+          <input id="file" type="file" class="sr-only">
+        </label>
+      </div>
+    </li>
+    <li class="step" id="step2">
+      <h2><span class="num" aria-hidden="true">2</span> Lock it <span class="opt">(optional)</span></h2>
+      <div class="step-body">
+        <label for="pass">Passphrase</label>
+        <input id="pass" type="password" autocomplete="new-password" spellcheck="false" placeholder="Leave empty to send without encryption" aria-describedby="strength passnote">
+        <div id="strength" class="strength" aria-live="polite"></div>
+        <div class="note" id="passnote">Encrypts with AES-256-GCM. Tell the receiver by voice or another channel, never on this screen. Use 5 or more random words: anyone who records the stream can guess offline. Without a passphrase, anyone who sees enough frames gets the file.</div>
+      </div>
+    </li>
+    <li class="step" id="step3">
+      <h2><span class="num" aria-hidden="true">3</span> Show the code</h2>
+      <div class="step-body">
+        <div class="btns">
+          <button id="play" type="button" class="big" disabled aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path id="play-icon" fill="currentColor" d="M8 5v14l11-7z"/></svg><span id="play-text">Start sending</span></button>
+        </div>
+        <div class="btns"><button id="fs" type="button" class="secondary" disabled>Full screen</button><button id="prepare" type="button" class="secondary">Prepare</button></div>
+        <div id="msg" class="msg" role="status" aria-live="polite"></div>
+        <div class="summary" id="summary" hidden></div>
+        <div class="bar" id="barwrap" role="progressbar" aria-label="Frames sent against the estimate a receiver needs" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bar"></div></div>
+        <div class="note" id="s-eta-wrap">Time left: <span id="s-eta">–</span></div>
+      </div>
+    </li>
+  </ol>
+  <details class="opts" id="tuning">
+    <summary>Tuning <span class="opt">speed, density, security</span></summary>
+    <div class="dbody">
+    <div class="row">
+      <div><label for="fps">Speed (frames/s, 1–30)</label><input id="fps" type="number" inputmode="numeric" min="1" max="30" step="1" value="8"></div>
+      <div><label for="bs">QR density (bytes per QR)</label>
+        <select id="bs"><option value="200">200 B (sparse)</option><option value="300">300 B</option><option value="400" selected>400 B (default)</option><option value="600">600 B</option><option value="800">800 B</option><option value="1000">1000 B (dense)</option><option value="1400">1400 B (very dense)</option></select></div>
+    </div>
+    <div class="row">
+      <div><label for="ecl">Error correction</label>
+        <select id="ecl"><option value="L">L (~7%)</option><option value="M" selected>M (~15%)</option><option value="Q">Q (~25%)</option><option value="H">H (~30%)</option></select></div>
+      <div><label for="px">Module size (px, 0 = fit)</label><input id="px" type="number" inputmode="numeric" min="0" max="20" step="1" value="0"></div>
+    </div>
+    <div class="note">Slower and sparser codes are easier for weak cameras; faster and denser codes finish sooner. Speed, error correction and module size apply live; density needs Prepare.</div>
+    <label class="check"><input id="zip" type="checkbox" checked aria-describedby="zipnote"> Compress when it helps</label>
+    <div class="note" id="zipnote">Packs the file with the browser's built-in deflate before sending, so text, CSV, JSON and source files need far fewer frames. It is skipped automatically for files that do not shrink (JPEG, ZIP, video). With a passphrase, compression happens before encryption, so the stream's length hints at how compressible the file is; untick this if that matters (see the threat note).</div>
+    <label class="check"><input id="kc" type="checkbox" checked aria-describedby="kcnote"> Let the receiver check the passphrase early</label>
+    <div class="note" id="kcnote">With a passphrase, one small key-check frame is shown every 32 frames (about 3% longer stream), so a wrong passphrase is reported within seconds instead of after the whole file. It carries a 2-byte check value, not the key; it lets someone who films a single frame start guessing passphrases offline (they still need the whole stream to confirm one). Untick for the old behaviour.</div>
+    <label for="kdf">Key stretching (PBKDF2-SHA-256 iterations)</label>
+    <select id="kdf" aria-describedby="kdfnote"><option value="auto" selected>Tuned to this device: about 1 s per key (default)</option><option value="standard">Standard: 600,000 (quickest on a slow receiver)</option></select>
+    <div class="note" id="kdfnote">Every passphrase guess costs an attacker one full key derivation. "Tuned" measures this device and picks the count that takes about one second here (at least 600,000, at most 8,000,000), so each guess costs up to 13× more than the standard count. The receiver derives the key once with the same count; a phone may take a few times longer than this computer. Used only with a passphrase.</div>
+    </div>
+  </details>
+  <details class="more" id="facts">
+    <summary>Transfer details</summary>
+    <div class="dbody">
+    <dl class="stats">
+      <dt>File</dt><dd id="s-file">–</dd>
+      <dt>SHA-256</dt><dd id="s-sha" class="mono">–</dd>
+      <dt>Encrypted</dt><dd id="s-enc">–</dd>
+      <dt>Compression</dt><dd id="s-zip">–</dd>
+      <dt>Transfer ID</dt><dd id="s-id" class="mono">–</dd>
+      <dt>Blocks (K)</dt><dd id="s-k">–</dd>
+      <dt>QR</dt><dd id="s-qr">–</dd>
+      <dt>Frames sent</dt><dd id="s-sent">0</dd>
+    </dl>
+    <div class="note">The sender cannot see what the receiver got. The bar shows frames sent against an estimate of what a receiver needs (about K × 1.05 frames if none are missed). Keep playing until the receiver says it is done; the stream never repeats a packet.</div>
+    </div>
+  </details>
+  <div class="note">Keys: <kbd>Space</kbd> or <kbd>K</kbd> play/pause, <kbd>F</kbd> full screen, <kbd>Esc</kbd> leave it. The code flashes black and white at the chosen speed (8 per second by default); if flashing light bothers you, look away while it plays or lower the speed. The page's own animations are slow fades; turn them off with the motion button at the top.</div>
 </section>
-<section class="stage" id="stage" aria-label="QR stream">
-  <canvas id="qr" class="qr" width="10" height="10" role="img" aria-label="Animated QR code stream (prepare a file first)"></canvas>
-  <div class="stage-bar" id="stagebar" hidden><span id="stage-info" aria-hidden="true"></span><button id="stage-play" type="button" class="secondary">Pause</button><button id="stage-exit" type="button" class="secondary">Exit full screen</button></div>
+<section class="stagewrap" aria-label="QR stream">
+  <div class="ring idle" id="ring">
+    <div class="stage idle" id="stage">
+      <div class="stage-empty" id="stage-empty"><svg viewBox="0 0 120 120" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".55"><path d="M10 34V18a8 8 0 0 1 8-8h16M86 10h16a8 8 0 0 1 8 8v16M110 86v16a8 8 0 0 1-8 8H86M34 110H18a8 8 0 0 1-8-8V86"/></g><g fill="currentColor" opacity=".35"><rect x="30" y="30" width="22" height="22" rx="3"/><rect x="68" y="30" width="22" height="22" rx="3"/><rect x="30" y="68" width="22" height="22" rx="3"/><rect x="70" y="70" width="8" height="8" rx="2"/><rect x="82" y="78" width="8" height="8" rx="2"/><rect x="70" y="84" width="6" height="6" rx="2"/></g></svg><span>Your animated code appears here.<br>Choose a file, then press <b>Start sending</b>.</span></div>
+      <canvas id="qr" class="qr" width="10" height="10" role="img" aria-label="Animated QR code stream (choose a file first)" hidden></canvas>
+      <div class="stage-bar" id="stagebar" hidden><span id="stage-info" aria-hidden="true"></span><button id="stage-play" type="button" class="secondary">Pause</button><button id="stage-exit" type="button" class="secondary">Exit full screen</button></div>
+    </div>
+  </div>
+  <div class="live" id="live"><span class="dot" id="live-dot" aria-hidden="true"></span><span id="live-text">Ready when you are</span></div>
+  <ul class="tips" aria-label="Tips for the receiver">
+    <li>Turn this screen's brightness up</li><li>Hold the camera 20–40 cm away</li><li>Keep the whole code in view</li><li>Missed frames are fine: keep going</li>
+  </ul>
 </section>
 </main>
 <!--INLINE_SCRIPTS-->

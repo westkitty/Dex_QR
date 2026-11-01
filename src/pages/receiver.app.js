@@ -12,13 +12,43 @@
     keyState: "", pendingCheck: false, checking: false, checkToken: 0, passOffered: null,
   };
   window.__dexqrReceiver = state;                 // read-only hook for automated tests
+  const UI = window.DexUI;
+  const map = new window.DexBlockMap($("blockmap"), UI);
+  state.blockMap = map;                           // read-only hook for automated tests
 
   function msg(text, cls) {
     const m = $("msg"); m.textContent = text || ""; m.className = "msg" + (text ? " show " + cls : "");
     // Errors interrupt (alert); progress and success messages are polite.
     m.setAttribute("role", cls === "err" ? "alert" : "status");
   }
-  function setPhase(p) { state.phase = p; $("r-status").textContent = p; }
+  /* Phase drives the three-step strip (Scan, Receive, Save), the big button's label and the camera overlay. */
+  const SCAN_PHASES = ["idle", "scanning", "no camera", "no Dex_QR codes found"];
+  function setPhase(p) {
+    state.phase = p; $("r-status").textContent = p;
+    const step = p === "done" ? 2 : SCAN_PHASES.includes(p) && !state.session.meta ? 0 : 1;
+    ["ph-scan", "ph-recv", "ph-save"].forEach((id, i) => {
+      const el = $(id), done = i < step || (i === 2 && state.saved);
+      el.className = done ? "done" : i === step ? "current" : "";
+      if (i === step && !done) el.setAttribute("aria-current", "step"); else el.removeAttribute("aria-current");
+    });
+    $("start-text").textContent = hasPartial() && !state.running ? "Resume scanning" : "Start scanning";
+    // Once the file is ready, saving it is the one primary action: the scan buttons step aside until Reset.
+    $("scanbtns").hidden = p === "done";
+    syncOverlay();
+  }
+  function syncOverlay() {
+    const live = !!state.running;
+    $("reticle").hidden = !live; $("camtag").hidden = !live;
+    $("reticle").classList.toggle("scanning", live && !state.lockTimer);
+    $("camtag-text").textContent = state.session.meta ? "Receiving" : "Looking for a Dex_QR code";
+  }
+  /* Brief lock-on (corners close in and turn green) each time a frame adds a new packet. */
+  function lockPulse() {
+    const r = $("reticle");
+    r.classList.add("lock"); r.classList.remove("scanning");
+    clearTimeout(state.lockTimer);
+    state.lockTimer = setTimeout(() => { state.lockTimer = 0; r.classList.remove("lock"); syncOverlay(); }, 450);
+  }
   function hasPartial() { return !!(state.session.meta && !state.opened); }
 
   // zxing-cpp compiled to WebAssembly (zxing-wasm), inlined as base64: no file or network fetch.
@@ -82,6 +112,8 @@
     $("r-dec").textContent = state.decoderName || "–";
     const bw = $("barwrap");
     if (!s.meta) {
+      $("pct").textContent = "0%";
+      $("blocks-sub").textContent = state.running ? "Looking for a Dex_QR code…" : "Waiting for the first code";
       bw.setAttribute("aria-valuenow", "0");
       bw.setAttribute("aria-valuetext", "nothing received yet");
       const bad = Object.entries(st.reasons).map(([k, v]) => `${v} ${k}`).join(", ");
@@ -107,6 +139,9 @@
     const ign = st.foreign ? `, ${st.foreign} other QR codes` : "";
     $("r-pk").textContent = `${p.received} unique, ${st.duplicates} duplicate, ${st.rejected} rejected, ${st.otherFile} from other transfers${ign}`;
     $("bar").style.width = pct.toFixed(1) + "%";
+    $("pct").textContent = (have >= p.K ? 100 : Math.min(99, Math.floor(pct))) + "%";
+    $("blocks-sub").textContent = `${have} of ${p.K} pieces · ${fmtBytes(s.meta.length)}${s.meta.encrypted ? " · encrypted" : ""}`;
+    map.update(p.K, have, s.decoder.mode === "peel" ? s.decoder.known : null);
     bw.setAttribute("aria-valuenow", pct.toFixed(0));
     bw.setAttribute("aria-valuetext", `${have} of ${p.K} blocks decoded`);
     const sw = $("switchbox");
@@ -115,6 +150,8 @@
       sw.hidden = false;
     } else sw.hidden = true;
   }
+
+  function fmtBytes(n) { return n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(n < 10240 ? 1 : 0) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
 
   /* Encrypted transfers: offer the passphrase box from the first packet, and say where the early check stands. */
   const fmtIter = (n) => Number(n || 0).toLocaleString("en-US");
@@ -201,7 +238,9 @@
       $("passbox").hidden = true; $("pass").value = "";
       state.result = { name, size: out.data.length, sha256: fileSha, encrypted: out.encrypted, compressed: out.compressed, usedCachedKey: !!out.usedCachedKey };
       state.error = null; state.opened = true; updatePassUi();
+      a.addEventListener("click", () => { state.saved = true; setPhase("done"); });
       setPhase("done");
+      celebrate();
       msg("✓ Transfer complete. The file is verified and ready to save.", "ok");
       a.focus();
     } catch (e) {
@@ -218,11 +257,19 @@
     }
   }
 
+  function celebrate() {
+    map.celebrate();
+    const b = $("burst"); b.hidden = false; b.classList.remove("play");
+    void b.offsetWidth;                                                  // restart the CSS animation
+    b.classList.add("play");
+  }
+
   async function onDecoded(texts) {
     const s = state.session;
     s.stats.frames++;
-    const wasDone = s.done;
+    const wasDone = s.done, before = s.decoder ? s.decoder.received : 0;
     for (const t of texts) s.addText(t);
+    if (s.decoder && s.decoder.received > before && state.running) lockPulse();
     updateStats();
     if (state.pendingCheck && !state.checking && !s.done && (s.keyCheck || s.keyCheckConflict)) earlyCheck();
     if (s.done && !wasDone) { stopCamera(); stopVideoFile(); setPhase("verifying"); await tryOpen(); }
@@ -247,7 +294,7 @@
 
   function cameraErrorText(e) {
     switch (e && e.name) {
-      case "NotAllowedError": case "SecurityError": return "Camera permission was denied. Allow the camera for this page in the browser's site settings and press Start camera again, or decode image or video files instead (under “Camera, decoder and file input”).";
+      case "NotAllowedError": case "SecurityError": return "Camera permission was denied. Allow the camera for this page in the browser's site settings and press Start scanning again, or decode image or video files instead (under “Camera, decoder and file input”).";
       case "NotFoundError": case "OverconstrainedError": return "No camera was found" + ($("cam").value ? " with the selected device; choose “default”." : ". Connect one, or decode image or video files instead.");
       case "NotReadableError": case "AbortError": return "The camera is in use by another app or could not start. Close other apps using it and try again.";
       default: return "Camera error: " + ((e && e.message) || e);
@@ -282,13 +329,14 @@
       stream.getVideoTracks().forEach((t) => t.addEventListener("ended", () => {
         if (state.stream !== stream) return;
         stopCamera(); setPhase(hasPartial() ? "paused" : "idle");
-        msg("The camera stopped (unplugged, or permission was revoked). Progress is kept; press Start camera to continue.", "err");
+        msg("The camera stopped (unplugged, or permission was revoked). Progress is kept; press Resume scanning to continue.", "err");
       }));
       const v = $("video"); v.removeAttribute("src"); v.srcObject = stream; await v.play();
       if (token !== state.startToken) return;                          // the newer start owns the camera now
       $("empty").hidden = true;
       state.running = true; $("start").disabled = true; $("stop").disabled = false;
       setPhase(state.session.meta ? "receiving" : "scanning");
+      updateStats();
       wake(true);
       listCameras();
       scanLoop(++state.scanGen);
@@ -305,6 +353,7 @@
     const v = $("video"); if (v.srcObject) { v.srcObject = null; }
     if (wasStream) { $("empty").hidden = false; wake(false); }
     $("start").disabled = state.busyFiles; $("stop").disabled = true;
+    syncOverlay();
   }
 
   async function listCameras() {
@@ -362,7 +411,7 @@
       const finish = () => {
         if (finished) return; finished = true;
         clearInterval(state.videoPoll); state.videoPoll = null; state.finishVideo = null;
-        state.running = false; state.scanGen++;
+        state.running = false; state.scanGen++; syncOverlay();
         v.onended = v.onerror = null; v.pause(); v.removeAttribute("src"); v.load(); URL.revokeObjectURL(url);
         $("empty").hidden = false;
         resolve();
@@ -370,7 +419,7 @@
       state.finishVideo = finish;
       v.srcObject = null; v.src = url; v.muted = true; v.playbackRate = 0.5;
       $("empty").hidden = true;
-      state.running = true;
+      state.running = true; syncOverlay();
       v.onended = finish; v.onerror = finish;
       v.play().then(() => scanLoop(++state.scanGen)).catch(finish);
       state.videoPoll = setInterval(() => { if (state.session.done) finish(); }, 200);
@@ -379,18 +428,34 @@
 
   function resetAll() {
     stopCamera(); stopVideoFile(); revokeResult();
-    state.session = new DQ.ReceiverSession(); state.result = null; state.error = null; state.opened = false; state.opening = false;
+    state.session = new DQ.ReceiverSession(); state.result = null; state.error = null; state.opened = false; state.opening = false; state.saved = false;
+    map.reset(); $("burst").hidden = true; $("burst").classList.remove("play");
     state.keyState = ""; state.pendingCheck = false; state.checking = false; state.checkToken++; state.passOffered = null;
     $("result").textContent = ""; $("passbox").hidden = true; $("pass").value = ""; $("decrypt").textContent = "Decrypt"; $("r-key").textContent = "–"; $("decrypt").disabled = false; $("bar").style.width = "0%"; msg("", "");
     ["r-id", "r-enc", "r-prog", "r-pk"].forEach((id) => ($(id).textContent = "–")); setPhase("idle"); updateStats();
+    $("start").focus();
   }
 
   function disarmReset() { if (state.resetArmed) { clearTimeout(state.resetArmed); state.resetArmed = 0; $("reset").textContent = "Reset"; $("reset").classList.remove("danger"); } }
 
   $("start").addEventListener("click", startCamera);
+  // Drop QR images or a screen recording anywhere on the page to decode them (same path as the file input).
+  let dragDepth = 0;
+  const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+  document.addEventListener("dragenter", (e) => { if (hasFiles(e)) { dragDepth++; document.body.classList.add("dragging"); } });
+  document.addEventListener("dragleave", () => { if (dragDepth && --dragDepth === 0) document.body.classList.remove("dragging"); });
+  document.addEventListener("dragover", (e) => { if (hasFiles(e)) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; } });
+  document.addEventListener("drop", (e) => {
+    if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+    e.preventDefault(); dragDepth = 0; document.body.classList.remove("dragging");
+    const files = Array.from(e.dataTransfer.files).filter((f) => /^(image|video)\//.test(f.type));
+    if (!files.length) { msg("Drop QR code images or a video of the stream here. To send a file, open the sender page.", "warn"); return; }
+    const dt = new DataTransfer(); files.forEach((f) => dt.items.add(f));
+    $("files").files = dt.files; decodeFiles($("files"));
+  });
   $("stop").addEventListener("click", () => {
     state.startToken++; stopCamera(); setPhase(state.session.meta ? "paused" : "idle");
-    msg(hasPartial() ? "Paused. Progress is kept; press Start camera to continue." : "", "warn");
+    msg(hasPartial() ? "Paused. Progress is kept; press Resume scanning to continue." : "", "warn");
   });
   $("files").addEventListener("change", (e) => decodeFiles(e.target));
   $("passbox").addEventListener("submit", (e) => { e.preventDefault(); if (state.session.done) tryOpen(); else earlyCheck(); });
@@ -425,4 +490,5 @@
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") disarmReset(); });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && state.stream) wake(true); });
   window.addEventListener("beforeunload", (e) => { if (hasPartial()) { e.preventDefault(); e.returnValue = ""; } });
+  setPhase("idle");
 })();

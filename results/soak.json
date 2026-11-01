@@ -1,26 +1,26 @@
 {
- "when": "2026-11-01T10:43:13.020Z",
+ "when": "2026-11-01T13:11:25.671Z",
  "seconds": 60,
  "results": [
   {
    "name": "sender plays 60 s at 30 fps without heap growth",
    "ok": true,
    "heapMB": [
-    2.2,
-    1.8
+    2.4,
+    1.9
    ],
-   "frames": 1800,
-   "fps": 30,
+   "frames": 1802,
+   "fps": 30.03,
    "errors": []
   },
   {
    "name": "receiver scans 60 s without heap growth; Start/Stop churn leaves one stream, Stop releases it",
    "ok": true,
    "heapMB": [
-    2.1,
-    2.2
+    2.2,
+    2.3
    ],
-   "framesScanned": 601,
+   "framesScanned": 600,
    "scanFps": 10,
    "liveTracksAfterChurn": 1,
    "afterStop": {

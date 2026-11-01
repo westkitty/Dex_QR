@@ -29,7 +29,8 @@ async function heapMB(page) {
   const p = await b.newPage(); const errors = []; p.on("pageerror", (e) => errors.push(e.message));
   await p.goto("file://" + path.join(ROOT, "sender.html"));
   const f = path.join(WORK, "big.bin"); fs.writeFileSync(f, testFile(2 * 1024 * 1024, "soak"));
-  await p.setInputFiles("#file", f); await p.fill("#fps", "30"); await p.dispatchEvent("#fps", "change");
+  await p.setInputFiles("#file", f); await p.evaluate(() => { const d = document.getElementById("tuning"); if (d) d.open = true; });   // cycle 6: settings live in the Tuning disclosure
+  await p.fill("#fps", "30"); await p.dispatchEvent("#fps", "change");
   await p.click("#prepare");
   for (let i = 0; i < 100 && !(await p.evaluate(() => !!window.__dexqrSender.session)); i++) await p.waitForTimeout(100);
   await p.click("#play"); await p.waitForTimeout(3000);

@@ -33,6 +33,7 @@ const JPEG = "/usr/local/go/src/image/testdata/video-001.jpeg";
 async function send(browser, name, mime, data, { init, zip = true } = {}) {
   const { ctx, p, errors } = await open(browser, "sender.html", init);
   await p.setInputFiles("#file", { name, mimeType: mime, buffer: data });
+  await p.evaluate(() => { const d = document.getElementById("tuning"); if (d) d.open = true; });   // cycle 6: settings live in the Tuning disclosure
   if (!zip) await p.uncheck("#zip");
   await p.fill("#px", "4");
   await p.click("#prepare");

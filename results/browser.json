@@ -1,6 +1,6 @@
 {
  "chrome": "156.0.8078.47",
- "when": "2026-11-01T12:37:14.680Z",
+ "when": "2026-11-01T13:08:16.779Z",
  "results": [
   {
    "name": "sender page 10240 B -> zbar -> decoder",
@@ -8,7 +8,7 @@
    "K": 26,
    "framesRendered": 50,
    "framesDecodedByZbar": 50,
-   "framesUsed": 30,
+   "framesUsed": 26,
    "qr": "version 16 (81×81 modules), EC M, 4 px/module",
    "err": null,
    "pageErrors": []
@@ -19,7 +19,7 @@
    "K": 257,
    "framesRendered": 420,
    "framesDecodedByZbar": 420,
-   "framesUsed": 258,
+   "framesUsed": 262,
    "qr": "version 16 (81×81 modules), EC M, 4 px/module",
    "err": null,
    "pageErrors": []
@@ -30,7 +30,7 @@
    "K": 51,
    "framesRendered": 90,
    "framesDecodedByZbar": 90,
-   "framesUsed": 53,
+   "framesUsed": 58,
    "qr": "version 16 (81×81 modules), EC M, 4 px/module",
    "err": null,
    "pageErrors": []
@@ -49,7 +49,7 @@
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.182,
+   "seconds": 0.641,
    "pageErrors": []
   },
   {
@@ -66,7 +66,7 @@
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.282,
+   "seconds": 0.683,
    "pageErrors": []
   },
   {
@@ -83,7 +83,7 @@
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.182,
+   "seconds": 0.635,
    "pageErrors": []
   },
   {
@@ -100,7 +100,7 @@
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 1.026,
+   "seconds": 1.918,
    "pageErrors": []
   },
   {
@@ -117,7 +117,7 @@
    "decoder": "jsQR",
    "downloadSha256Matches": true,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.532,
+   "seconds": 0.879,
    "pageErrors": []
   },
   {
@@ -134,7 +134,7 @@
    "decoder": "jsQR",
    "downloadSha256Matches": true,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.533,
+   "seconds": 1.416,
    "pageErrors": []
   },
   {
@@ -151,7 +151,7 @@
    "decoder": "jsQR",
    "downloadSha256Matches": true,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.516,
+   "seconds": 0.881,
    "pageErrors": []
   },
   {
@@ -168,7 +168,7 @@
    "decoder": "jsQR",
    "downloadSha256Matches": true,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 3.314,
+   "seconds": 3.781,
    "pageErrors": []
   },
   {
@@ -185,7 +185,7 @@
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 4.533,
+   "seconds": 4.905,
    "pageErrors": []
   },
   {
@@ -195,14 +195,14 @@
    "drop": 0.3,
    "start": 11,
    "framesGiven": 67,
-   "framesScanned": 45,
-   "packetsUsed": 45,
-   "overhead": 1.184,
+   "framesScanned": 40,
+   "packetsUsed": 40,
+   "overhead": 1.053,
    "phase": "done",
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": true,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
-   "seconds": 0.583,
+   "seconds": 1.546,
    "afterWrong": "wrong passphrase",
    "wrongMsg": "✗ Wrong passphrase (AES-GCM authentication failed). Try again; no need to rescan.",
    "afterRight": "done",
@@ -222,7 +222,7 @@
    "decoder": "zxing-cpp (WebAssembly)",
    "downloadSha256Matches": null,
    "message": "✗ Checksum mismatch: the reconstructed data does not match the sender's SHA-256. Nothing was saved. Press Reset and scan again; if it repeats, the stream on screen is corrupted or forged.",
-   "seconds": 0.135,
+   "seconds": 0.137,
    "pageErrors": []
   },
   {
@@ -238,7 +238,7 @@
    "duplicates": 0,
    "overhead": 1,
    "phase": "done",
-   "seconds": 5.384,
+   "seconds": 5.395,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
    "pageErrors": []
   },
@@ -255,7 +255,7 @@
    "duplicates": 0,
    "overhead": 1,
    "phase": "done",
-   "seconds": 5.307,
+   "seconds": 5.463,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
    "pageErrors": []
   },
@@ -272,7 +272,7 @@
    "duplicates": 0,
    "overhead": 1.023,
    "phase": "done",
-   "seconds": 26.445,
+   "seconds": 26.48,
    "message": "✓ Transfer complete. The file is verified and ready to save.",
    "pageErrors": []
   }
