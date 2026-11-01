@@ -17,3 +17,7 @@
 6. Reverse channel: receiver shows an ACK QR the sender can scan.
 7. Tests: visual-degradation simulation before decode, fuzzing of parseText and the session, offline PWA install. GitHub Pages would let phones that block file:// cameras use the receiver; it needs the owner's go-ahead to publish.
 8. Docs: comparison with TXQR, BBQr, UR and Cimbar, with citations.
+
+## Update 2026-11-01 (cycle 4)
+- Done: PBKDF2 iteration calibration (about 1 s on the sender, 600,000–8,000,000, carried in the stream; receivers bound 100,000–10,000,000) and a pattern-aware passphrase strength meter (src/strength.js). Item 5's cycle-4 plan is complete.
+- Next planned (cycle 5): fuzzing parseText, parseKeyFrame and ReceiverSession with random and mutated frames (item 7). Then: estimate the receiver's derive time from the stream's count and warn on slow devices.

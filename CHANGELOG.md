@@ -96,3 +96,37 @@ Encrypted payloads shrink the same way (+52 bytes each: CSV 76,431 → 13,258). 
 **Tests.** Unit 44/44 (9 new), key-check browser 5/5 (new, 600,000 iterations, frames decoded by the page's zxing-cpp), browser 17/17, ux 17/17, axe 0 serious/critical in 14 page states (one new: receiver mid-scan with a failed early check), compression browser 4/4, soak 2/2, lint 0. Drop-rate trials and the H.264 run were not repeated: data packets and the codec did not change.
 
 **Not tested.** Real cameras (including whether the smaller key-check QR reads at the same distance), Safari and Firefox.
+
+## Cycle 4 (2026-11-01, about 6:45 AM EST): PBKDF2 tuned to the device, and a pattern-aware passphrase strength meter
+
+**What changed.**
+- The sender measures PBKDF2-HMAC-SHA-256 on this device (probes totalling 900,000 iterations, about 0.1 s) and picks the iteration count that takes about 1 s here, rounded down to 100,000, never below 600,000 (the old fixed count) and never above 8,000,000. "Standard: 600,000" stays as an option. The count travels in the existing DQE1 iteration field and key-check frame: no format change.
+- The sender also refuses counts outside 100,000–10,000,000, the range every receiver (old and new) accepts. Receivers still reject streams outside that range before any PBKDF2 runs (DoS guard; a forged 4,294,967,295 is refused in under 200 ms).
+- New `src/strength.js` (original code, no data or code from elsewhere, offline): splits the passphrase into the cheapest pieces an attacker would guess (common passwords with case/leet/reversal, word-like runs, sequences, keyboard runs, repeats, years, separators, random characters) and reports log2(guesses), a label and generic warnings that never quote the passphrase.
+
+**Before → after.**
+
+| Measure | Before (cycle 3) | After (cycle 4) |
+|---|---|---|
+| PBKDF2 iterations, this box (Node 22 / headless Chrome 156) | 600,000 fixed | 7,200,000–8,000,000 (cap) Node, 7,900,000 Chrome |
+| Derive time per key, this box | 73–74 ms Node, ~155 ms Chrome prepare | 871–889 ms at 7.2 M Node; ~1.0 s Chrome (receiver check 1,039 ms) |
+| Cost per attacker guess | 1× | about 12–13× on a sender like this box (1× on a device slower than 600 ns/iteration) |
+| Calibration overhead | none | 111–130 ms Node, once per page load; Chrome prepare 1,250 ms total incl. the 1 s derive |
+
+| Passphrase | Old meter (bits, label) | New meter |
+|---|---|---|
+| `P@ssw0rd` | 53 fair | 11 weak |
+| `Summer2024!` | 72 good | 22 weak |
+| `Tr0ub4dor&3` | 72 good | 42 fair |
+| `Football1234567` | 89 strong | 10 weak |
+| five random words | 200 strong | 62 good |
+| 16 random characters | 105 strong | 105 strong |
+| `x9fq2mzr` | 41 fair | 41 fair |
+
+The estimate takes about 0.2 ms for a seven-word passphrase and runs on each keystroke; it never blocks Prepare.
+
+**Compatibility.** Old encrypted streams open unchanged: the pre-cycle-3 fixtures (100,000 iterations) and new cycle-3 fixtures recorded from commit 8949cb7 at 600,000 iterations, with and without key-check frames (tests/fixtures/cycle3_streams.json). The cycle-3 early check works with calibrated counts (7,900,000 in the browser test). A calibrated payload decrypts with the pre-cycle-4 `deriveKey` code. Receivers from before cycle 4 accept counts up to 10,000,000, so calibrated streams open there too.
+
+**Tests.** Unit 65/65 (21 new in kdf.test.mjs), kdf browser 5/5 (new), browser 17/17, ux 17/17, axe 0 serious/critical, compression browser 4/4, key-check browser 5/5, lint 0. All with 0 network requests.
+
+**Caveats.** A phone receiver deriving a count tuned on a fast laptop may take several seconds (not measured on phones). Calibration was measured on this box only. Real cameras, Safari and Firefox are untested.

@@ -1,5 +1,5 @@
 {
- "when": "2026-11-01T10:39:14.686Z",
+ "when": "2026-11-01T11:31:16.109Z",
  "K": 151,
  "frames": 252,
  "results": [
@@ -9,7 +9,7 @@
    "early": {
     "phase": "incomplete",
     "received": 5,
-    "key": "key-check frame received; enter the passphrase to check it",
+    "key": "key-check frame received (PBKDF2 × 600,000); enter the passphrase to check it",
     "button": "Check passphrase"
    },
    "wrong": {
@@ -17,13 +17,13 @@
     "role": "alert",
     "focus": "pass"
    },
-   "wrongMs": 133,
+   "wrongMs": 134,
    "errors": []
   },
   {
    "name": "receiver: right passphrase accepted early; the file then opens by itself with the cached key (no second PBKDF2)",
    "ok": true,
-   "okMs": 140,
+   "okMs": 142,
    "finPhase": "done",
    "usedCachedKey": true,
    "key": "✓ AES-GCM authentication passed"
@@ -50,7 +50,7 @@
     32,
     64
    ],
-   "enc": "yes (AES-256-GCM, PBKDF2-SHA-256 × 600,000); early passphrase check on (1 key-check frame in 32)",
+   "enc": "yes (AES-256-GCM, PBKDF2-SHA-256 × 8,000,000, tuned to this device: about 1.0 s here, 13.3× the standard 600,000); early passphrase check on (1 key-check frame in 32)",
    "stale": "Prepare (apply changes)",
    "errors": []
   }

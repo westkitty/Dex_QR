@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const ROOT = path.resolve(__dirname, "..", "..");
-const SCRIPTS = ["vendor/qrcodegen.js", "src/base45.js", "src/crc32.js", "src/lt.js", "src/packet.js", "src/container.js", "src/session.js", "src/render.js", "src/scan.js"];
+const SCRIPTS = ["vendor/qrcodegen.js", "src/base45.js", "src/crc32.js", "src/lt.js", "src/packet.js", "src/strength.js", "src/container.js", "src/session.js", "src/render.js", "src/scan.js"];
 let loaded = false;
 function load(extra = []) {
   if (!loaded) {

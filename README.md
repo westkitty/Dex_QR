@@ -11,7 +11,7 @@ Dex_QR moves a file from one device to another as a stream of animated QR codes.
 ## Use
 
 1. **Sender** (the device with the file): open `sender.html`.
-   - Pick the file. Optionally enter a passphrase; read the strength hint and warning.
+   - Pick the file. Optionally enter a passphrase; read the strength estimate and its warnings (it spots common passwords, keyboard runs, years and repeats, and runs entirely in the page). **Key stretching** defaults to "Tuned to this device": the sender measures PBKDF2 and picks the iteration count that takes about 1 s here (600,000–8,000,000), carried in the stream; "Standard: 600,000" is quicker for a slow receiver.
    - **Compress when it helps** is on by default. Text, CSV, JSON, HTML and source files shrink (typically 3–6×, more for very repetitive data); JPEG, ZIP and other already-compressed files are sent as they are, automatically. The page shows the result, e.g. `deflate-raw: 76,379 → 13,206 bytes (−83%)`. With a passphrase, compression happens before encryption; untick it if the stream's size must not hint at the content (see the threat note).
    - Pick a density (bytes per QR, default 400), an error-correction level (default M) and a speed (default 8 fps).
    - Press **Prepare**, then **Play** (or press <kbd>Space</kbd>). **Full screen** (<kbd>F</kbd>) helps; where the browser has no Fullscreen API (iPhone Safari), it fills the page instead, and <kbd>Esc</kbd> leaves it. The page shows the SHA-256 of the file, its block count K, the QR version, the actual frame rate and an estimated time.

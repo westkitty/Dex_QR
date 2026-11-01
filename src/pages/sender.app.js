@@ -29,7 +29,8 @@
     const p = $("pass").value, el = $("strength");
     if (!p) { el.textContent = ""; el.className = "strength"; return; }
     const s = DQ.container.estimateStrength(p);
-    el.textContent = `Rough strength estimate: ${s.label} (~${s.bits} bits). ` + (s.bits < 60 ? "Too weak against an offline guessing attack on a recorded stream." : "OK if it is truly random.");
+    // Warnings never quote the passphrase: this screen may be filmed.
+    el.textContent = `Strength estimate: ${s.label} (about ${s.bits} bits of guessing). ` + (s.warnings[0] ? s.warnings[0] + " " : "") + (s.bits < 60 ? "Too weak against an offline guessing attack on a recorded stream." : "OK if it was chosen at random.");
     el.className = "strength " + s.label;
   });
 
@@ -118,13 +119,13 @@
     } catch (e) { /* best effort: the screen may still dim on browsers without the Wake Lock API */ }
   }
 
-  function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value, $("zip").checked, $("kc").checked].join("\u0000"); }
+  function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value, $("zip").checked, $("kc").checked, $("kdf").value].join("\u0000"); }
   function checkStale() {
     if (!state.session || state.preparing) return;
     const stale = settingsKey() !== state.prepared;
     $("prepare").classList.toggle("attn", stale);
     $("prepare").textContent = stale ? "Prepare (apply changes)" : "Prepare";
-    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase, compression, key check and density; press Prepare to apply.", "warn");
+    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase, key stretching, compression, key check and density; press Prepare to apply.", "warn");
     else if ($("msg").classList.contains("warn") && /Settings changed/.test($("msg").textContent)) msg("", "");
   }
 
@@ -136,26 +137,42 @@
     return "skipped: the file does not shrink (already compressed?)";
   }
 
+  function describeKdf(tuned, n) {
+    if (!tuned) return ", standard";
+    const c = state.calibration;
+    if (!c || !c.measured) return ", standard: this device could not be timed";
+    const x = (n / DQ.container.DEFAULT_ITERATIONS).toFixed(1);
+    return `, tuned to this device: about ${(c.estimatedMs / 1000).toFixed(1)} s here, ${x}× the standard 600,000` + (c.capped ? ", at the 8,000,000 cap" : c.floored ? ", the minimum" : "");
+  }
+
   async function prepare() {
     const f = $("file").files[0];
     if (!f) { msg("Pick a file first.", "warn"); $("file").focus(); return; }
     if (f.size > MAX_FILE) { msg("Files over 32 MiB are not supported (a QR stream that long is impractical).", "err"); return; }
     setPlaying(false);
     state.preparing = true; $("prepare").disabled = true; $("play").disabled = true;
-    msg($("pass").value ? "Deriving key (PBKDF2, 600,000 iterations)…" : "Preparing…", "warn");
+    msg($("pass").value ? "Preparing the key…" : "Preparing…", "warn");
     try {
+      // Key stretching (cycle 4): measure this device once per page load, then derive with that count.
+      let iterations = DQ.container.DEFAULT_ITERATIONS;
+      const tuned = !!$("pass").value && $("kdf").value === "auto";
+      if (tuned) {
+        if (!state.calibration) { msg("Measuring this device's PBKDF2 speed…", "warn"); state.calibration = await DQ.container.calibrateIterations(); }
+        iterations = state.calibration.iterations;
+      }
+      if ($("pass").value) msg(`Deriving key (PBKDF2, ${iterations.toLocaleString("en-US")} iterations)…`, "warn");
       const key = settingsKey();
       const data = new Uint8Array(await f.arrayBuffer());
       const sha = await DQ.container.sha256(data);
       state.ecl = $("ecl").value;
       const startSeed = crypto.getRandomValues(new Uint32Array(1))[0];
-      state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, startSeed, compress: $("zip").checked, keyCheck: $("kc").checked });
+      state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, iterations, startSeed, compress: $("zip").checked, keyCheck: $("kc").checked });
       state.prepared = key;
       state.sent = 0; state.fileSha = hex(sha);
       const s = state.session;
       $("s-file").textContent = `${f.name} (${f.size.toLocaleString()} bytes)`;
       $("s-sha").textContent = state.fileSha;
-      $("s-enc").textContent = s.encrypted ? "yes (AES-256-GCM, PBKDF2-SHA-256 × 600,000)" + (s.keyFrameText ? "; early passphrase check on (1 key-check frame in 32)" : "; early passphrase check off") : "no — anyone who sees the stream can read the file";
+      $("s-enc").textContent = s.encrypted ? `yes (AES-256-GCM, PBKDF2-SHA-256 × ${iterations.toLocaleString("en-US")}${describeKdf(tuned, iterations)})` + (s.keyFrameText ? "; early passphrase check on (1 key-check frame in 32)" : "; early passphrase check off") : "no — anyone who sees the stream can read the file";
       $("s-zip").textContent = describeCompression(s.compression);
       $("s-id").textContent = DQ.packet.hex(s.fileId);
       $("s-k").textContent = `${s.K} × ${s.blockSize} bytes`;
@@ -196,7 +213,7 @@
   $("stage-play").addEventListener("click", () => setPlaying(!state.playing));
   $("fs").addEventListener("click", enterFull);
   $("stage-exit").addEventListener("click", exitFull);
-  ["file", "bs", "zip", "kc"].forEach((id) => $(id).addEventListener("change", checkStale));
+  ["file", "bs", "zip", "kc", "kdf"].forEach((id) => $(id).addEventListener("change", checkStale));
   $("pass").addEventListener("input", checkStale);
   // Rendering-only settings apply live: they change how a packet is drawn, not the stream.
   $("ecl").addEventListener("change", () => { state.ecl = $("ecl").value; redraw(); });

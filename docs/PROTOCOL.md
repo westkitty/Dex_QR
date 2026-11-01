@@ -158,3 +158,7 @@ Only for encrypted transfers, and only if the sender leaves "Let the receiver ch
 - Files up to 32 MiB are accepted by the UI. In practice, a stream of tens of thousands of frames is not useful.
 - K is a uint24, F a uint32 and T a uint16.
 - The receiver holds the whole file in memory. A compressed transfer may never expand beyond 32 MiB + 4 KiB.
+
+## Addendum 2026-11-01 (cycle 4): iteration count
+
+No format change. Since cycle 4 the sender chooses the DQE1 iteration count *i* by measuring the device (about 1 s, rounded down to 100,000, at least 600,000, at most 8,000,000), or 600,000 with "Standard". Senders refuse counts outside 100,000–10,000,000. Receivers (all versions) accept 100,000 ≤ *i* ≤ 10,000,000 in both DQE1 and key-check frames and reject anything else before running PBKDF2 (`BAD_FORMAT` for DQE1, reason `key-limits` for key frames). The upper bound limits a forged stream to about 10 M HMAC-SHA-256 iterations of work per derive.

@@ -175,3 +175,19 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Next:** cycle 4, PBKDF2 iteration calibration and a better strength estimate (or fuzzing of the parsers).
 
 - **Commit:** `1a31435762b240759719afb6c7ad684f8758fc15` on `main` (pushed f89f51b..1a31435; this line added in a docs follow-up commit).
+
+---
+
+## 2026-11-01 — Cycle 4: PBKDF2 calibrated to the device, pattern-aware strength meter (routine cycle 4, finished as "manual resume cycle 4")
+
+- **Lock:** routine cycle 4 took `.dev-state/cycle.lock` at 06:07 EST and stopped midway at an Auto-review card, leaving uncommitted work. Resumed 06:29 EST by "manual resume cycle 4" from 8949cb7 (in sync with origin/main). The previous worker's diff was reviewed and kept; nothing stashed, reset, cleaned or deleted.
+- **What:** `DQ.container.calibrateIterations()` times PBKDF2 probes (start 100,000, ×4 while under 40 ms, budget 1.5 M) and returns the count for about 1 s, rounded down to 100,000, clamped to [600,000, 8,000,000]; fails safe to 600,000. Sender "Key stretching" select: Tuned (default) or Standard 600,000; part of the stale-settings check. Sender refuses counts outside [100,000, 10,000,000]. Receiver messages show the stream's count and the measured check time. No wire-format change.
+- **DoS bound:** receivers accept 100,000–10,000,000 iterations in DQE1 and key frames and reject others before PBKDF2 (unchanged bound since v1, now tested against 10,000,001 and 4,294,967,295 in unit and browser tests).
+- **Strength meter:** `src/strength.js`, original, no dependencies, offline: minimum-cost segmentation (dynamic programming) over common-password list (case/leet/reversed), word-like runs (~13 bits each), sequences, keyboard rows, repeats, years, separators, random characters. Output: bits, label (weak < 40 ≤ fair < 60 ≤ good < 80 ≤ strong), generic warnings that never quote the passphrase. `aria-live="polite"`; ~0.2 ms per call.
+- **Numbers (this box):** Node calibration 111–130 ms → 7.2–8.0 M iterations; derive 600,000 = 73–74 ms vs 7.2 M = 871–889 ms. Headless Chrome 156: 7,900,000 iterations, prepare 1,250 ms, receiver early check 1,039 ms, standard prepare 155 ms. Old → new meter: `Summer2024!` 72 good → 22 weak, `Football1234567` 89 strong → 10 weak, `P@ssw0rd` 53 fair → 11 weak, five random words 200 → 62 good, 16 random characters 105 → 105 strong. Data: results/kdf_measure.json, results/kdf_browser.json.
+- **Compatibility:** recorded pre-cycle-3 (100,000) and cycle-3 (600,000, key-check on and off, from 8949cb7) streams open; cycle-3 key-check works with calibrated counts; a calibrated payload opens with the old `deriveKey` code.
+- **Tests:** unit 65/65, kdf browser 5/5 (new), browser 17/17, ux 17/17, a11y 0 serious/critical, compression 4/4, keycheck 5/5, lint 0 (41 files), 0 network requests. Drop trials and H.264 not rerun (codec and data packets unchanged).
+- **Files:** src/strength.js (new), src/container.js, src/pages/{sender.app.js,sender.template.html,receiver.app.js}, sender.html, receiver.html, tools/build.mjs, tests/lib/load.cjs, tests/unit/kdf.test.mjs, tests/browser/kdf.mjs, tests/bench/kdf.mjs, tests/fixtures/{make-cycle3-streams.mjs,cycle3_streams.json}, package.json, results/*.json, README.md, CHANGELOG.md, docs/{PROTOCOL,THREAT_NOTE,TEST_CHECKLIST,ROADMAP,DEVELOPMENT_LOG}.md.
+- **Fragile:** keep `CALIBRATION.cap` ≤ `MAX_ITERATIONS` (older receivers); keep `packet.js` ITER_MIN/ITER_MAX equal to container MIN/MAX.
+- **Untested:** real phone/laptop cameras, derive time on phones (a count tuned on a fast laptop may take several seconds there), Safari, Firefox, screen readers.
+- **Next:** cycle 5, fuzzing parseText / parseKeyFrame / ReceiverSession.

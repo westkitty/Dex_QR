@@ -162,6 +162,7 @@
     let payload = inner, encrypted = false, check = null;
     if (passphrase) {
       iterations = iterations || DEFAULT_ITERATIONS;
+      if (!Number.isInteger(iterations) || iterations < MIN_ITERATIONS || iterations > MAX_ITERATIONS) throw new DexQRError("BAD_ITERATIONS", `PBKDF2 iteration count ${iterations} is outside ${MIN_ITERATIONS}–${MAX_ITERATIONS}, the range receivers accept`);
       const salt = root.crypto.getRandomValues(new Uint8Array(16));
       const iv = root.crypto.getRandomValues(new Uint8Array(12));
       const head = new Uint8Array(36);
@@ -225,24 +226,49 @@
     return { ...(await openInner(inner)), sha256: digest, encrypted: true, usedCachedKey };
   }
 
-  /* Rough passphrase strength estimate (bits). Deliberately conservative and simple; it is a hint, not a guarantee. */
+  /* Passphrase strength estimate (bits of guessing, label). Since cycle 4 this is the pattern-aware estimate in
+   * strength.js; kept here so older callers keep working. A hint, not a guarantee. */
   function estimateStrength(p) {
-    if (!p) return { bits: 0, label: "none" };
-    let pool = 0;
-    if (/[a-z]/.test(p)) pool += 26;
-    if (/[A-Z]/.test(p)) pool += 26;
-    if (/[0-9]/.test(p)) pool += 10;
-    if (/[^a-zA-Z0-9]/.test(p)) pool += 33;
-    const uniq = new Set(p).size;
-    let bits = Math.log2(Math.max(pool, 2)) * Math.min(p.length, uniq * 2);
-    const words = p.trim().split(/[\s\-_.]+/).filter((w) => w.length >= 3);
-    if (words.length >= 4) bits = Math.max(bits, words.length * 11); // diceware-style: count ~11 bits/word, conservative
-    if (/^(password|qwerty|letmein|123456|admin|welcome)/i.test(p)) bits = Math.min(bits, 10);
-    if (/(.)\1{3,}/.test(p)) bits *= 0.7;
-    bits = Math.round(bits);
-    const label = bits < 40 ? "weak" : bits < 60 ? "fair" : bits < 80 ? "good" : "strong";
-    return { bits, label };
+    const r = DQ.strength.estimate(p);
+    return { bits: r.bits, label: r.label, warnings: r.warnings };
   }
 
-  DQ.container = { DEFAULT_ITERATIONS, MIN_ITERATIONS, MAX_ITERATIONS, KCV_LEN, deriveKeys, sameBytes, encryptedParams, MAX_DECOMPRESSED, MIN_GAIN, ALGORITHMS, DexQRError, buildInner, parseInner, buildPayload, openPayload, isEncryptedPayload, isCompressedPayload, inflateCapped, estimateStrength, sha256 };
+  /* PBKDF2 iteration calibration (cycle 4). Measures PBKDF2-HMAC-SHA-256 on this device with small probes and
+   * returns the count that takes about CALIBRATION.targetMs here, rounded down to a multiple of step and kept
+   * within [floor, cap]. floor is the pre-cycle-4 fixed count, so calibration never weakens a stream; cap stays
+   * below MAX_ITERATIONS, the most every receiver (including pre-cycle-4 ones) accepts, so calibrated streams
+   * open everywhere. The count travels in the existing DQE1 iteration field and in key-check frames: no format
+   * change. opts.measure(n) -> ms is injectable for tests. If nothing can be measured, the floor is used.
+   * Returns {iterations, measured, estimatedMs, msPerMillion, probeIterations, capped, floored}. */
+  const CALIBRATION = { targetMs: 1000, floor: DEFAULT_ITERATIONS, cap: 8000000, step: 100000, probe: 100000, minProbeMs: 40, budget: 1500000 };
+  const now = () => (root.performance && typeof root.performance.now === "function" ? root.performance.now() : Date.now());
+  async function measurePbkdf2(n) {
+    const pw = root.crypto.getRandomValues(new Uint8Array(16)), salt = root.crypto.getRandomValues(new Uint8Array(16));
+    const base = await subtle().importKey("raw", pw, "PBKDF2", false, ["deriveBits"]);
+    const t0 = now();
+    await subtle().deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: n }, base, 256);
+    return now() - t0;
+  }
+  async function calibrateIterations(opts = {}) {
+    const cfg = { ...CALIBRATION, ...(opts.config || {}) };
+    const measure = opts.measure || measurePbkdf2;
+    const fallback = { iterations: cfg.floor, measured: false, estimatedMs: null, msPerMillion: null, probeIterations: 0, capped: false, floored: true };
+    let probe = cfg.probe, spent = 0, ms = 0;
+    try {
+      for (;;) {
+        ms = await measure(probe); spent += probe;
+        if (ms >= cfg.minProbeMs || spent + probe * 4 > cfg.budget) break;
+        probe *= 4;                                   // too quick to time reliably (coarse timers): try a bigger probe
+      }
+      if (ms > 0 && ms < 5 * cfg.minProbeMs && spent + probe <= cfg.budget) { ms = Math.min(ms, await measure(probe)); spent += probe; }   // second run, keep the faster
+    } catch (e) { return fallback; }
+    if (!(ms > 0) || !Number.isFinite(ms)) return fallback;
+    const perIter = ms / probe;
+    let iterations = Math.floor(cfg.targetMs / perIter / cfg.step) * cfg.step;
+    const capped = iterations > cfg.cap, floored = iterations < cfg.floor;
+    iterations = Math.max(cfg.floor, Math.min(cfg.cap, iterations));
+    return { iterations, measured: true, estimatedMs: iterations * perIter, msPerMillion: perIter * 1e6, probeIterations: spent, capped, floored };
+  }
+
+  DQ.container = { CALIBRATION, calibrateIterations, measurePbkdf2, DEFAULT_ITERATIONS, MIN_ITERATIONS, MAX_ITERATIONS, KCV_LEN, deriveKeys, sameBytes, encryptedParams, MAX_DECOMPRESSED, MIN_GAIN, ALGORITHMS, DexQRError, buildInner, parseInner, buildPayload, openPayload, isEncryptedPayload, isCompressedPayload, inflateCapped, estimateStrength, sha256 };
 })(typeof globalThis !== "undefined" ? globalThis : this);

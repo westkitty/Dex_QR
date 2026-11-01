@@ -21,6 +21,7 @@
     "compress-bench": "node tests/bench/compression.mjs",
     "keycheck": "node tests/browser/keycheck.mjs",
     "keycheck-bench": "node tests/bench/keycheck.mjs 100",
+    "kdf": "node tests/browser/kdf.mjs",
     "report": "node tools/report.mjs"
   },
   "devDependencies": {

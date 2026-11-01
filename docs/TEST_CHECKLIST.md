@@ -60,3 +60,8 @@
 - [ ] Auto (BarcodeDetector if the browser has it, which Android Chrome and macOS browsers usually do), compared with zxing-cpp and with jsQR. Note which is fastest and most reliable for you. jsQR was much weaker on noisy frames in the synthetic tests.
 
 **Record your results** as a small table: device, browser, decoder, block size, EC level, fps, distance, light, seconds to complete, and OK or FAIL.
+
+**Key stretching and strength meter (cycle 4)**
+- [ ] On the sender laptop, prepare with a passphrase and "Tuned to this device": note the iteration count and the "about X s here" figure on the Encrypted line.
+- [ ] On the phone receiver, note how long "Check passphrase" (or the final decrypt) takes with that count. If it is much more than a few seconds, repeat with "Standard: 600,000" and record both.
+- [ ] Type a few passphrases into the sender (e.g. `Summer2024!`, five random words) and confirm the meter text is announced by a screen reader and never repeats the passphrase.

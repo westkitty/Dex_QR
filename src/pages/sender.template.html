@@ -18,6 +18,9 @@
   <input id="pass" type="password" autocomplete="new-password" spellcheck="false" placeholder="leave empty for no encryption" aria-describedby="strength passnote">
   <div id="strength" class="strength" aria-live="polite"></div>
   <div class="note" id="passnote">Anyone who can see or record the screen can collect the encrypted stream and guess passphrases offline as fast as their hardware allows. Use a long random passphrase (e.g. 5+ random words) and share it out of band. Without a passphrase, anyone who sees enough frames gets the file.</div>
+  <label for="kdf">Key stretching (PBKDF2-SHA-256 iterations)</label>
+  <select id="kdf" aria-describedby="kdfnote"><option value="auto" selected>Tuned to this device: about 1 s per key (default)</option><option value="standard">Standard: 600,000 (quickest on a slow receiver)</option></select>
+  <div class="note" id="kdfnote">Every passphrase guess costs an attacker one full key derivation. "Tuned" measures this device and picks the count that takes about one second here (at least 600,000, at most 8,000,000), so each guess costs up to 13× more than the standard count. The receiver derives the key once with the same count; a phone may take a few times longer than this computer. Used only with a passphrase.</div>
   <label class="check"><input id="kc" type="checkbox" checked aria-describedby="kcnote"> Let the receiver check the passphrase early</label>
   <div class="note" id="kcnote">With a passphrase, one small key-check frame is shown every 32 frames (about 3% longer stream), so a wrong passphrase is reported within seconds instead of after the whole file. It carries a 2-byte check value, not the key; it lets someone who films a single frame start guessing passphrases offline (they still need the whole stream to confirm one). Untick for the old behaviour.</div>
   <label class="check"><input id="zip" type="checkbox" checked aria-describedby="zipnote"> Compress when it helps</label>

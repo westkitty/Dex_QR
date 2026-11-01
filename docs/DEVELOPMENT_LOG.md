@@ -41,3 +41,13 @@ Append-only record of each improvement cycle: what was tried, measured and decid
 - The browser suite needs PY=/workspace/toolchain/venv-qr/bin/python and LD_LIBRARY_PATH=/workspace/toolchain/mamba/zbar/lib on this box (the first attempt without them failed to find zbar output; environment, not code).
 - Measured: mean time to a wrong-passphrase verdict 31.6 s → 2.1 s for 100 KB at 0% loss, 314 s → 6.7 s for 500 KB at 50% loss; +2.6% to +3.9% frames to the file. Table in CHANGELOG.md.
 - Next: PBKDF2 iteration calibration and a better strength estimate, or fuzzing parseText / parseKeyFrame / ReceiverSession.
+
+## 2026-11-01, cycle 4 (routine cycle 4 stopped midway; finished as "manual resume cycle 4")
+
+- The routine's run took .dev-state/cycle.lock at 06:07 EST and stopped at an Auto-review card with uncommitted work. Resumed at 06:29 EST: lock owner rewritten, the diff reviewed and kept (calibration in container.js, strength.js, sender "Key stretching" select, receiver messages showing the stream's count, tests). Nothing was stashed, reset or discarded.
+- Review fixes: removed an unreachable branch in receiver.app.js keyText(); added the `kdf` npm script; added cycle-3 fixtures at 600,000 iterations (with and without key-check frames), generated from `git archive 8949cb7` by tests/fixtures/make-cycle3-streams.mjs, plus two unit tests; added tests/bench/kdf.mjs (results/kdf_measure.json).
+- Design: floor 600,000 so calibration never weakens a stream; cap 8,000,000 so it stays inside every receiver's existing 10,000,000 bound with no protocol change; probes grow ×4 when the timer is coarse, total probe budget 1.5 M iterations; any failure falls back to 600,000.
+- Considered and rejected: a cap above 10,000,000 (would break older receivers), calibrating on the receiver (the count is fixed by the sender), a word-list dependency such as zxcvbn (third-party data; the brief asks for original code).
+- Measured on this box: Node calibration 111–130 ms → 7.2–8.0 M iterations (est. 974–997 ms); derive 600,000 = 73–74 ms, 7.2 M = 871–889 ms. Headless Chrome: 7.9 M, prepare 1,250 ms, receiver early check 1,039 ms, standard prepare 155 ms.
+- Verified: unit 65/65, kdf browser 5/5, browser 17/17, ux 17/17, a11y 0, compression 4/4, keycheck 5/5, lint 0.
+- Next: fuzz parseText / parseKeyFrame / ReceiverSession, or a receiver-side warning when a stream's count will be slow on the current device.

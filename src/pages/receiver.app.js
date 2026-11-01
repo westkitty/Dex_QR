@@ -117,15 +117,16 @@
   }
 
   /* Encrypted transfers: offer the passphrase box from the first packet, and say where the early check stands. */
+  const fmtIter = (n) => Number(n || 0).toLocaleString("en-US");
   function keyText() {
     const s = state.session;
     if (!s.meta || !s.meta.encrypted) return "–";
     if (state.checking) return "checking…";
     if (s.keyCheckConflict) return "off: two different key-check frames seen (checked at the end instead)";
-    if (state.keyState === "ok") return "✓ matches the sender's key check (final AES-GCM check at the end)";
+    if (state.keyState === "ok") return `✓ matches the sender's key check (PBKDF2 × ${fmtIter(state.checkIter)}, ${(state.checkMs / 1000).toFixed(1)} s here; final AES-GCM check at the end)`;
     if (state.keyState === "wrong") return "✗ does not match: wrong passphrase";
     if (state.pendingCheck) return "waiting for the sender's key-check frame";
-    return s.keyCheck ? "key-check frame received; enter the passphrase to check it" : "no key-check frame yet (older senders do not send one; then it is checked at the end)";
+    return s.keyCheck ? `key-check frame received (PBKDF2 × ${fmtIter(s.keyCheck.iterations)}); enter the passphrase to check it` : "no key-check frame yet (older senders do not send one; then it is checked at the end)";
   }
   function updatePassUi() {
     const s = state.session;
@@ -156,13 +157,14 @@
       return;
     }
     state.checking = true; updatePassUi();
-    msg("Checking the passphrase (PBKDF2, several hundred thousand iterations)…", "warn");
+    msg(`Checking the passphrase (PBKDF2, ${fmtIter(sess.keyCheck ? sess.keyCheck.iterations : 0)} iterations, as the sender chose)…`, "warn");
     let r;
     try { r = await sess.checkPassphrase(pass); }
     catch (e) { r = { result: "error", error: e }; }
     if (token !== state.checkToken || state.session !== sess) return;    // a newer check or a reset took over
     state.checking = false;
     if (sess.done && !state.opened) { updatePassUi(); return; }          // the scan finished meanwhile: tryOpen decides
+    state.checkMs = r.ms || 0; state.checkIter = sess.derived ? sess.derived.iterations : 0;
     if (r.result === "ok") { state.keyState = "ok"; msg("✓ Passphrase matches the sender's key check. Keep scanning; the file opens by itself when the scan completes.", "ok"); }
     else if (r.result === "wrong") { state.keyState = "wrong"; msg("✗ Wrong passphrase: it does not match the sender's key check. Type it again; scanning continues and nothing received is lost.", "err"); $("pass").select(); $("pass").focus(); }
     else if (r.result === "conflict") msg("Two different key-check frames were seen for this transfer, so the early check is off. The passphrase will be checked when the scan completes.", "warn");
@@ -180,7 +182,7 @@
     const pass = $("pass").value || undefined;
     state.opening = true; $("decrypt").disabled = true;
     setPhase(pass ? "decrypting" : "verifying");
-    if (pass) msg(sess.derived && sess.derived.passphrase === pass ? "Decrypting with the key from the early check…" : "Deriving key (PBKDF2, several hundred thousand iterations) and decrypting…", "warn");
+    if (pass) msg(sess.derived && sess.derived.passphrase === pass ? "Decrypting with the key from the early check…" : `Deriving key (PBKDF2, ${sess.keyCheck ? fmtIter(sess.keyCheck.iterations) + " iterations" : "the sender's iteration count"}) and decrypting…`, "warn");
     try {
       const out = await sess.open(pass);
       if (state.session !== sess) return;                                // reset while we were working
