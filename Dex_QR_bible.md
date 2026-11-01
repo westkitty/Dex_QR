@@ -255,3 +255,5 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Fragile:** the finished card's position depends on the 860 px breakpoint and the control column's height at 1280×800 (it ends at 762 px of 800); a longer step-2 note would push it off screen (look test catches it). The IDs above are the test contract.
 - **Untested:** real cameras, screen readers, Safari, Firefox. "Likely done" is an estimate; the sender cannot see the receiver.
 - **Next:** reverse-channel ACK design (item 6).
+
+- **Commit:** `19d358130500ea80e7206ae877eab6837dcb21ac` on `main` (pushed 044bb59..19d3581; this line added in a docs follow-up commit).
