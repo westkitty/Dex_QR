@@ -208,3 +208,5 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Fragile:** keep `CDF_CACHE_MAX` ≥ the number of K values in use at once (sender + receiver + a pending switch); the fuzzer's `--root` loads only src/*.js listed in its SCRIPTS array.
 - **Untested:** real cameras, Safari, Firefox, phones.
 - **Next:** cycle 6, receiver-side PBKDF2 time estimate and slow-device warning.
+
+- **Commit:** `51b0b42332b17a58cf7f0f1aac8d062de0ca5fc6` on `main` (pushed 2f907a9..51b0b42; this line added in a docs follow-up commit).
