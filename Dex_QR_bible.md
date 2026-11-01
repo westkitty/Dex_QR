@@ -142,3 +142,17 @@ Find and rank the most important remaining improvements across mechanics, assets
 
 - Main commit: `06ca31167fbe5e2725795b06847888a2f602f13d` ("Full improvement and bug-sweep pass…") on `main`.
 - This line was added in a small docs follow-up commit, which also records the pass in `.dev-state/cycles.log` (not tracked).
+
+---
+
+## 2026-11-01 — Cycle 2 of 12 (hourly routine): transparent compression
+
+- **Lock:** `.dev-state/cycle.lock` held by the routine from 05:12 EST, starting at commit 79094f4 (clean, in sync with origin/main).
+- **What:** payload compression with the browser's built-in CompressionStream before fountain coding (and before encryption). New inner container `DQZ1` = magic | algorithm u8 (1 deflate-raw, 2 gzip) | uncompressed length u32 | data. Used only if it saves ≥ 2%; otherwise the payload is the unchanged `DQF1`. Packet flag bit 1 marks unencrypted compressed streams (informational; never set with encryption). Protocol version byte stays 2.
+- **Receiver safety:** declared size > 32 MiB + 4 KiB refused before inflating; output counted and aborted past the declared size (`TOO_LARGE`); `BAD_FORMAT` for short output, corrupt data, unknown algorithm or nesting; `NO_DECOMPRESSION` without DecompressionStream, with an early warning on the page.
+- **Compatibility:** every stream older senders produce still decodes (recorded fixtures from 79094f4, v1/v2, plain/encrypted). A compressed stream needs a receiver from this cycle or later; an older receiver fails at the end with a format error. Senders can untick compression.
+- **Numbers (mean frames at 400 B / EC M, 0% loss, simulated):** CSV 76 KB 192.4 → 35.5; JSON 68 KB 173.6 → 11.7; HTML 102 KB 258.7 → 79.2; JS 21 KB 53.9 → 19.6; JPEG 21 KB 55.4 → 55.5 (skipped); random 100 KiB 258.7 → 258.8 (skipped). Files and method in CHANGELOG.md; data in results/compression_before.json and compression_after.json.
+- **Tests:** unit 35/35 (24 before), compression browser 4/4, browser 17/17, ux 17/17, axe 0, soak 2/2, lint 0, trials 1,800/1,800, H.264 27/27. `make` is missing on the box; the targets' commands were run directly.
+- **Files touched:** src/container.js, src/packet.js, src/session.js, src/pages/{sender,receiver}.{app.js,template.html}, src/pages/common.css, built pages, tests/unit/compression.test.mjs, tests/unit/robustness.test.mjs (one test now passes compress:false), tests/fixtures/*, tests/bench/compression.mjs, tests/browser/compression.mjs, Makefile, package.json, docs, results.
+- **Untested:** real cameras; Safari/Firefox CompressionStream behaviour.
+- **Next:** cycle 3, early wrong-passphrase detection via a key check value.

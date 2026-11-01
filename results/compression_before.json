@@ -1,0 +1,233 @@
+{
+ "when": "2026-11-01T10:16:19.490Z",
+ "codeRoot": "work/base-79094f4",
+ "settings": {
+  "blockSize": 400,
+  "ecl": "M",
+  "fps": 8,
+  "trials": 100,
+  "losses": [
+   0,
+   0.3
+  ]
+ },
+ "note": "Simulated reception (no camera). Frames = QR frames shown until the receiver finished; seconds = mean frames / fps.",
+ "rows": [
+  {
+   "file": "sensor-log.csv",
+   "kind": "CSV (generated, deterministic)",
+   "sha256": "9d01d5eb22cc82d8",
+   "fileBytes": 76350,
+   "encrypted": false,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 76379,
+   "K": 191,
+   "prepareMs": 5.1,
+   "openMs": 0.7,
+   "frames_loss0": {
+    "mean": 192.4,
+    "p95": 195,
+    "max": 198
+   },
+   "seconds_loss0_at8fps": 24.1,
+   "frames_loss30": {
+    "mean": 276.5,
+    "p95": 295,
+    "max": 305
+   },
+   "seconds_loss30_at8fps": 34.6
+  },
+  {
+   "file": "sensor-log.csv",
+   "kind": "CSV (generated, deterministic)",
+   "sha256": "9d01d5eb22cc82d8",
+   "fileBytes": 76350,
+   "encrypted": true,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 76431,
+   "K": 192,
+   "prepareMs": 20.4,
+   "openMs": 17.1
+  },
+  {
+   "file": "trials_102400_zxing.json",
+   "kind": "JSON (79094f4:results/trials_102400_zxing.json)",
+   "sha256": "368b4602711bffbb",
+   "fileBytes": 68378,
+   "encrypted": false,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 68425,
+   "K": 172,
+   "prepareMs": 1,
+   "openMs": 0.6,
+   "frames_loss0": {
+    "mean": 173.6,
+    "p95": 177,
+    "max": 179
+   },
+   "seconds_loss0_at8fps": 21.7,
+   "frames_loss30": {
+    "mean": 247.2,
+    "p95": 264,
+    "max": 278
+   },
+   "seconds_loss30_at8fps": 30.9
+  },
+  {
+   "file": "trials_102400_zxing.json",
+   "kind": "JSON (79094f4:results/trials_102400_zxing.json)",
+   "sha256": "368b4602711bffbb",
+   "fileBytes": 68378,
+   "encrypted": true,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 68477,
+   "K": 172,
+   "prepareMs": 15.2,
+   "openMs": 14.1
+  },
+  {
+   "file": "sender.html",
+   "kind": "HTML + inlined JS (79094f4:sender.html)",
+   "sha256": "c8fe81fb6f5b2f85",
+   "fileBytes": 102485,
+   "encrypted": false,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 102512,
+   "K": 257,
+   "prepareMs": 0.4,
+   "openMs": 0.6,
+   "frames_loss0": {
+    "mean": 258.7,
+    "p95": 262,
+    "max": 266
+   },
+   "seconds_loss0_at8fps": 32.3,
+   "frames_loss30": {
+    "mean": 367.9,
+    "p95": 388,
+    "max": 399
+   },
+   "seconds_loss30_at8fps": 46
+  },
+  {
+   "file": "sender.html",
+   "kind": "HTML + inlined JS (79094f4:sender.html)",
+   "sha256": "c8fe81fb6f5b2f85",
+   "fileBytes": 102485,
+   "encrypted": true,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 102564,
+   "K": 257,
+   "prepareMs": 19.5,
+   "openMs": 19.1
+  },
+  {
+   "file": "receiver.app.js",
+   "kind": "JS source (79094f4:src/pages/receiver.app.js)",
+   "sha256": "f288713822b9c9e4",
+   "fileBytes": 20693,
+   "encrypted": false,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 20730,
+   "K": 52,
+   "prepareMs": 0.6,
+   "openMs": 0.2,
+   "frames_loss0": {
+    "mean": 53.9,
+    "p95": 57,
+    "max": 61
+   },
+   "seconds_loss0_at8fps": 6.7,
+   "frames_loss30": {
+    "mean": 76.1,
+    "p95": 87,
+    "max": 104
+   },
+   "seconds_loss30_at8fps": 9.5
+  },
+  {
+   "file": "receiver.app.js",
+   "kind": "JS source (79094f4:src/pages/receiver.app.js)",
+   "sha256": "f288713822b9c9e4",
+   "fileBytes": 20693,
+   "encrypted": true,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 20782,
+   "K": 52,
+   "prepareMs": 14.3,
+   "openMs": 13.1
+  },
+  {
+   "file": "video-001.jpeg",
+   "kind": "JPEG photo (Go testdata video-001.jpeg)",
+   "sha256": "cf03dbf986e29acf",
+   "fileBytes": 21459,
+   "encrypted": false,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 21490,
+   "K": 54,
+   "prepareMs": 0.4,
+   "openMs": 0.5,
+   "frames_loss0": {
+    "mean": 55.4,
+    "p95": 58,
+    "max": 64
+   },
+   "seconds_loss0_at8fps": 6.9,
+   "frames_loss30": {
+    "mean": 78.8,
+    "p95": 88,
+    "max": 94
+   },
+   "seconds_loss30_at8fps": 9.8
+  },
+  {
+   "file": "video-001.jpeg",
+   "kind": "JPEG photo (Go testdata video-001.jpeg)",
+   "sha256": "cf03dbf986e29acf",
+   "fileBytes": 21459,
+   "encrypted": true,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 21542,
+   "K": 54,
+   "prepareMs": 13.9,
+   "openMs": 13.6
+  },
+  {
+   "file": "random.bin",
+   "kind": "pseudo-random 100 KiB (tests/lib/testfile.cjs)",
+   "sha256": "4d5448fb24b58837",
+   "fileBytes": 102400,
+   "encrypted": false,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 102441,
+   "K": 257,
+   "prepareMs": 0.4,
+   "openMs": 0.8,
+   "frames_loss0": {
+    "mean": 258.7,
+    "p95": 261,
+    "max": 264
+   },
+   "seconds_loss0_at8fps": 32.3,
+   "frames_loss30": {
+    "mean": 371.4,
+    "p95": 393,
+    "max": 409
+   },
+   "seconds_loss30_at8fps": 46.4
+  },
+  {
+   "file": "random.bin",
+   "kind": "pseudo-random 100 KiB (tests/lib/testfile.cjs)",
+   "sha256": "4d5448fb24b58837",
+   "fileBytes": 102400,
+   "encrypted": true,
+   "compression": "n/a (pre-compression code)",
+   "payloadBytes": 102493,
+   "K": 257,
+   "prepareMs": 14.3,
+   "openMs": 13.5
+  }
+ ]
+}

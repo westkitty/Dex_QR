@@ -18,6 +18,8 @@
   <input id="pass" type="password" autocomplete="new-password" spellcheck="false" placeholder="leave empty for no encryption" aria-describedby="strength passnote">
   <div id="strength" class="strength" aria-live="polite"></div>
   <div class="note" id="passnote">Anyone who can see or record the screen can collect the encrypted stream and guess passphrases offline as fast as their hardware allows. Use a long random passphrase (e.g. 5+ random words) and share it out of band. Without a passphrase, anyone who sees enough frames gets the file.</div>
+  <label class="check"><input id="zip" type="checkbox" checked aria-describedby="zipnote"> Compress when it helps</label>
+  <div class="note" id="zipnote">Packs the file with the browser's built-in deflate before sending, so text, CSV, JSON and source files need far fewer frames. It is skipped automatically for files that do not shrink (JPEG, ZIP, video). With a passphrase, compression happens before encryption, so the stream's length hints at how compressible the file is; untick this if that matters (see the threat note).</div>
   <div class="row">
     <div><label for="bs">QR density (bytes per QR)</label>
       <select id="bs"><option value="200">200 B (sparse)</option><option value="300">300 B</option><option value="400" selected>400 B (default)</option><option value="600">600 B</option><option value="800">800 B</option><option value="1000">1000 B (dense)</option><option value="1400">1400 B (very dense)</option></select></div>
@@ -34,6 +36,7 @@
     <dt>File</dt><dd id="s-file">–</dd>
     <dt>SHA-256</dt><dd id="s-sha" class="mono">–</dd>
     <dt>Encrypted</dt><dd id="s-enc">–</dd>
+    <dt>Compression</dt><dd id="s-zip">–</dd>
     <dt>Transfer ID</dt><dd id="s-id" class="mono">–</dd>
     <dt>Blocks (K)</dt><dd id="s-k">–</dd>
     <dt>QR</dt><dd id="s-qr">–</dd>

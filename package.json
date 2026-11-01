@@ -17,6 +17,8 @@
     "ux": "node tests/browser/ux.mjs",
     "a11y": "node tests/browser/a11y.mjs",
     "soak": "node tests/browser/soak.mjs",
+    "compress": "node tests/browser/compression.mjs",
+    "compress-bench": "node tests/bench/compression.mjs",
     "report": "node tools/report.mjs"
   },
   "devDependencies": {

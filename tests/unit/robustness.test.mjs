@@ -30,7 +30,8 @@ test("oversized headers are rejected before any decoder allocation", () => {
 });
 
 test("sender refuses streams a receiver would reject", async () => {
-  await assert.rejects(DQ.SenderSession.create({ name: "big", data: new Uint8Array(300000), blockSize: 1 }), /Too large/);
+  // compress:false: 300 kB of zeros would otherwise deflate to a few hundred bytes and fit (since cycle 2).
+  await assert.rejects(DQ.SenderSession.create({ name: "big", data: new Uint8Array(300000), blockSize: 1, compress: false }), /Too large/);
 });
 
 test("rejection reasons are counted per kind (version, crc, length, base45, foreign)", async () => {

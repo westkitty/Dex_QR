@@ -1,6 +1,6 @@
 # Dex_QR
 
-Dex_QR moves a file from one device to another as a stream of animated QR codes. It needs no network, no server, no pairing and no app install. The sender page shows an endless **LT fountain code** stream (robust soliton distribution). The receiver page scans it with the camera and rebuilds the file once it has enough independent frames. Any frames will do, in any order, starting anywhere in the stream. A passphrase optionally encrypts the file with AES-256-GCM (key from PBKDF2-SHA-256).
+Dex_QR moves a file from one device to another as a stream of animated QR codes. It needs no network, no server, no pairing and no app install. The sender page shows an endless **LT fountain code** stream (robust soliton distribution). The receiver page scans it with the camera and rebuilds the file once it has enough independent frames. Any frames will do, in any order, starting anywhere in the stream. Text-like files are compressed first with the browser's built-in deflate, so they need far fewer frames (a 76 KB CSV log: 192 → 36 frames on average). A passphrase optionally encrypts the file with AES-256-GCM (key from PBKDF2-SHA-256).
 
 - **`sender.html`** and **`receiver.html`** are single self-contained files. Download them and open them from disk (`file://`).
 - **No network at runtime:** each page has a Content-Security-Policy with `connect-src 'none'`, and the automated tests check that no request leaves `file:`, `data:` or `blob:`.
@@ -12,9 +12,10 @@ Dex_QR moves a file from one device to another as a stream of animated QR codes.
 
 1. **Sender** (the device with the file): open `sender.html`.
    - Pick the file. Optionally enter a passphrase; read the strength hint and warning.
+   - **Compress when it helps** is on by default. Text, CSV, JSON, HTML and source files shrink (typically 3–6×, more for very repetitive data); JPEG, ZIP and other already-compressed files are sent as they are, automatically. The page shows the result, e.g. `deflate-raw: 76,379 → 13,206 bytes (−83%)`. With a passphrase, compression happens before encryption; untick it if the stream's size must not hint at the content (see the threat note).
    - Pick a density (bytes per QR, default 400), an error-correction level (default M) and a speed (default 8 fps).
    - Press **Prepare**, then **Play** (or press <kbd>Space</kbd>). **Full screen** (<kbd>F</kbd>) helps; where the browser has no Fullscreen API (iPhone Safari), it fills the page instead, and <kbd>Esc</kbd> leaves it. The page shows the SHA-256 of the file, its block count K, the QR version, the actual frame rate and an estimated time.
-   - Changing the file, passphrase or density after Prepare is flagged until you press Prepare again. The error-correction level, module size and speed apply immediately.
+   - Changing the file, passphrase, compression or density after Prepare is flagged until you press Prepare again. The error-correction level, module size and speed apply immediately.
    - While playing, the page asks the browser to keep the screen awake (Wake Lock API, where available).
 2. **Receiver** (the device with the camera): open `receiver.html` and press **Start camera**.
    - Point it at the code. The bar shows decoded packets out of K. **Stop** pauses and keeps progress; **Reset** discards it and asks first.
@@ -27,6 +28,9 @@ Dex_QR moves a file from one device to another as a stream of animated QR codes.
 **Error messages on the receiver:**
 - *Checksum mismatch:* the rebuilt data does not match the sender's SHA-256. Nothing is saved.
 - *Wrong passphrase:* AES-GCM authentication failed. Retype the passphrase; there is no need to rescan.
+- *Refused (too large when unpacked):* a compressed transfer claimed, or tried, to expand past its declared size or the 32 MiB limit. Nothing is saved; it is a corrupt or hostile stream.
+- *Cannot unpack:* the transfer is compressed and this browser has no `DecompressionStream` (very old browsers). The page says so at the first frame. Use a current browser, or have the sender untick **Compress** and prepare again.
+- A compressed stream needs a receiver page from 2026-11-01 (cycle 2) or later; an older receiver reports a format error at the end. Every older stream still opens in the new receiver.
 
 **Opening from `file://`:**
 - Desktop Chrome, Edge and Firefox allow the camera on `file://` pages.
@@ -55,7 +59,7 @@ The receiver decodes by incremental Gaussian elimination over GF(2) when K ≤ 3
 ## Honest limits
 
 - **Real cameras are untested** (see above). Real-world throughput depends on the camera, the screen, lighting and steadiness.
-- **Speed:** 400-byte frames at 8 fps carry about 3 KB/s. That is fine for keys, documents and small images, and slow for anything over a few MB. Tools with custom symbologies, such as libcimbar, are much faster than any QR-based approach.
+- **Speed:** 400-byte frames at 8 fps carry about 3 KB/s of payload; compression multiplies the effective rate for text-like files (measured 2.7–14.8× fewer frames, results/compression_after.json) and does nothing for JPEG, ZIP or random data. That is fine for keys, documents and small images, and slow for anything over a few MB. Tools with custom symbologies, such as libcimbar, are much faster than any QR-based approach.
 - **Overhead on small files:** about 7–8% extra packets with protocol v2 (worst trial 1.31×); about 0.1–0.7% from 100 KiB up.
 - **Encryption** protects the contents and the file name, but not the fact of the transfer, its size or its timing. Anyone who records the screen can brute-force a weak passphrase offline. See [docs/THREAT_NOTE.md](docs/THREAT_NOTE.md).
 - **Memory and size:** the whole file is held in memory, and the UI accepts up to 32 MiB.

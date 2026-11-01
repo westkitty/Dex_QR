@@ -66,6 +66,8 @@ video { display:block; width: 100%; max-height: 70vh; background: #000; border-r
 a.dl { display:inline-block; margin-top:10px; padding: 11px 16px; background: var(--ok); color:#00210f; border-radius: 7px; font-weight:700; text-decoration:none; }
 code { font-size: 12px; }
 @media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } button:active:not(:disabled) { transform: none; } }
+label.check { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 8px; cursor: pointer; color: var(--fg); }
+label.check input { width: 22px; height: 22px; margin: 0; accent-color: #4aa3ff; }
 </style>
 </head>
 <body>
@@ -78,6 +80,8 @@ code { font-size: 12px; }
   <input id="pass" type="password" autocomplete="new-password" spellcheck="false" placeholder="leave empty for no encryption" aria-describedby="strength passnote">
   <div id="strength" class="strength" aria-live="polite"></div>
   <div class="note" id="passnote">Anyone who can see or record the screen can collect the encrypted stream and guess passphrases offline as fast as their hardware allows. Use a long random passphrase (e.g. 5+ random words) and share it out of band. Without a passphrase, anyone who sees enough frames gets the file.</div>
+  <label class="check"><input id="zip" type="checkbox" checked aria-describedby="zipnote"> Compress when it helps</label>
+  <div class="note" id="zipnote">Packs the file with the browser's built-in deflate before sending, so text, CSV, JSON and source files need far fewer frames. It is skipped automatically for files that do not shrink (JPEG, ZIP, video). With a passphrase, compression happens before encryption, so the stream's length hints at how compressible the file is; untick this if that matters (see the threat note).</div>
   <div class="row">
     <div><label for="bs">QR density (bytes per QR)</label>
       <select id="bs"><option value="200">200 B (sparse)</option><option value="300">300 B</option><option value="400" selected>400 B (default)</option><option value="600">600 B</option><option value="800">800 B</option><option value="1000">1000 B (dense)</option><option value="1400">1400 B (very dense)</option></select></div>
@@ -94,6 +98,7 @@ code { font-size: 12px; }
     <dt>File</dt><dd id="s-file">–</dd>
     <dt>SHA-256</dt><dd id="s-sha" class="mono">–</dd>
     <dt>Encrypted</dt><dd id="s-enc">–</dd>
+    <dt>Compression</dt><dd id="s-zip">–</dd>
     <dt>Transfer ID</dt><dd id="s-id" class="mono">–</dd>
     <dt>Blocks (K)</dt><dd id="s-k">–</dd>
     <dt>QR</dt><dd id="s-qr">–</dd>
@@ -1383,7 +1388,8 @@ var qrcodegen;
  *   off size field
  *    0   1   version (=2 when sending; 1 and 2 are accepted. v2 changes only the LT degree
  *                rule, see lt.extraDegreeFor; the byte layout is identical)
- *    1   1   flags   (bit0 = payload is encrypted)
+ *    1   1   flags   (bit0 = payload is encrypted; bit1 = plaintext payload is a compressed DQZ1 container,
+ *                informational only and never set for encrypted payloads; receivers ignore other bits)
  *    2   8   fileId  = first 8 bytes of SHA-256(payload)  (also the whole-file checksum)
  *   10   3   K       = number of source blocks (uint24)
  *   13   2   T       = block size in bytes (uint16)
@@ -1401,6 +1407,7 @@ var qrcodegen;
   const TRAILER_LEN = 4;
   const PREFIX = "DQ";
   const FLAG_ENCRYPTED = 1;
+  const FLAG_COMPRESSED = 2;
   // Receiver-side resource guards (not a wire-format change). A CRC-valid packet can still claim any
   // K up to 2^24 and any F up to 2^32; without a cap one such frame (garbage or hostile) makes the
   // decoder allocate per-block state for millions of blocks and freezes the tab. The sender UI accepts
@@ -1415,7 +1422,7 @@ var qrcodegen;
     const buf = new Uint8Array(HEADER_LEN + T + TRAILER_LEN);
     const dv = new DataView(buf.buffer);
     buf[0] = meta.version ?? VERSION;
-    buf[1] = meta.encrypted ? FLAG_ENCRYPTED : 0;
+    buf[1] = (meta.encrypted ? FLAG_ENCRYPTED : 0) | (meta.compressed && !meta.encrypted ? FLAG_COMPRESSED : 0);
     buf.set(meta.fileId, 2);
     buf[10] = (meta.K >>> 16) & 0xff; buf[11] = (meta.K >>> 8) & 0xff; buf[12] = meta.K & 0xff;
     dv.setUint16(13, T);
@@ -1452,7 +1459,7 @@ var qrcodegen;
     const fileId = bytes.slice(2, 10);
     return {
       ok: true,
-      meta: { version, encrypted: (bytes[1] & FLAG_ENCRYPTED) !== 0, fileId, fileIdHex: hex(fileId), K, blockSize: T, length },
+      meta: { version, encrypted: (bytes[1] & FLAG_ENCRYPTED) !== 0, compressed: (bytes[1] & (FLAG_ENCRYPTED | FLAG_COMPRESSED)) === FLAG_COMPRESSED, fileId, fileIdHex: hex(fileId), K, blockSize: T, length },
       seed: dv.getUint32(19),
       block: bytes.subarray(HEADER_LEN, HEADER_LEN + T),
     };
@@ -1467,7 +1474,7 @@ var qrcodegen;
     return PREFIX.length + Math.floor(n / 2) * 3 + (n % 2 ? 2 : 0);
   }
 
-  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, MAX_LENGTH, MAX_K, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
+  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, FLAG_COMPRESSED, MAX_LENGTH, MAX_K, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
 })(typeof globalThis !== "undefined" ? globalThis : this);
 
 </script>
@@ -1475,8 +1482,12 @@ var qrcodegen;
 /* Dex_QR — file container and optional passphrase encryption (WebCrypto). Original code, MIT License.
  *
  * Inner container ("DQF1"):  magic(4) | nameLen u16 | name (UTF-8) | mimeLen u8 | mime | data
- * Plain payload     = inner container
+ * Compressed inner  ("DQZ1"): magic(4) | algorithm u8 (1 = deflate-raw, 2 = gzip) | inner length u32 | compressed DQF1
+ *   Added in cycle 2. The sender compresses the DQF1 container with the browser's built-in CompressionStream
+ *   and uses the result only when it saves at least MIN_GAIN (2%) of the bytes; otherwise it sends DQF1 as before.
+ * Plain payload     = inner container (DQF1 or DQZ1)
  * Encrypted payload = "DQE1"(4) | iterations u32 | salt(16) | iv(12) | AES-256-GCM(inner, aad = first 24 bytes)
+ *   (compress-then-encrypt: the encrypted inner may be DQZ1; see THREAT_NOTE.md on what the size reveals)
  *   key = PBKDF2-HMAC-SHA-256(passphrase UTF-8, salt, iterations) -> 256-bit AES-GCM key
  * The payload (plain or encrypted) is what gets LT fountain-coded, so with encryption every
  * packet carries fountain-coded ciphertext. File name and MIME type are inside the encrypted part.
@@ -1492,6 +1503,13 @@ var qrcodegen;
   const MAX_ITERATIONS = 10000000;     // receiver refuses more (CPU DoS guard)
   const MAGIC_PLAIN = [0x44, 0x51, 0x46, 0x31];   // "DQF1"
   const MAGIC_ENC = [0x44, 0x51, 0x45, 0x31];     // "DQE1"
+  const MAGIC_ZIP = [0x44, 0x51, 0x5a, 0x31];     // "DQZ1"
+  const ZIP_HEADER = 9;
+  const ALGORITHMS = { 1: "deflate-raw", 2: "gzip" };   // algorithm byte -> CompressionStream format
+  const MIN_GAIN = 0.02;               // use compression only if it saves at least 2% (fewer frames, worth the dependency)
+  // Zip-bomb guard: the receiver never inflates more than this (the packet-level payload limit, 32 MiB + 4 KiB,
+  // which is more than the largest inner container the sender accepts: a 32 MiB file + name + MIME).
+  const MAX_DECOMPRESSED = (DQ.packet && DQ.packet.MAX_LENGTH) || (32 * 1024 * 1024 + 4096);
 
   class DexQRError extends Error { constructor(code, msg) { super(msg); this.code = code; } }
 
@@ -1524,9 +1542,89 @@ var qrcodegen;
 
   async function sha256(bytes) { return new Uint8Array(await subtle().digest("SHA-256", bytes)); }
 
-  /* Build the payload to be fountain-coded. Returns {payload, encrypted, fileId}. */
-  async function buildPayload({ name, mime, data, passphrase, iterations }) {
-    const inner = buildInner(name, mime, data);
+  function hasMagic(buf, m) { if (buf.length < 4) return false; for (let i = 0; i < 4; i++) if (buf[i] !== m[i]) return false; return true; }
+
+  /* Pipe bytes through a (De)CompressionStream and collect the output, aborting once it exceeds maxOut bytes. */
+  async function pipeCapped(stream, bytes, maxOut) {
+    const writer = stream.writable.getWriter();
+    writer.write(bytes).catch(() => {});
+    writer.close().catch(() => {});
+    const reader = stream.readable.getReader();
+    const chunks = []; let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      if (total > maxOut) { reader.cancel().catch(() => {}); writer.abort().catch(() => {}); return null; }
+      chunks.push(value);
+    }
+    const out = new Uint8Array(total); let o = 0;
+    for (const c of chunks) { out.set(c, o); o += c.length; }
+    return out;
+  }
+
+  /* Compress with the browser's CompressionStream. Returns {bytes, algorithmByte} or null if unavailable. */
+  async function compressBytes(bytes) {
+    const CS = root.CompressionStream;
+    if (typeof CS !== "function") return null;
+    for (const id of [1, 2]) {
+      let cs;
+      try { cs = new CS(ALGORITHMS[id]); } catch (e) { continue; }   // e.g. deflate-raw missing in Chrome < 103
+      const out = await pipeCapped(cs, bytes, bytes.length + 1024);
+      if (out) return { bytes: out, algorithmByte: id };
+      return { bytes: null, algorithmByte: id };
+    }
+    return null;
+  }
+
+  /* Inflate with a hard output cap. Throws TOO_LARGE past maxOut, NO_DECOMPRESSION without DecompressionStream,
+   * BAD_FORMAT on corrupt data. */
+  async function inflateCapped(bytes, algorithm, maxOut) {
+    const DS = root.DecompressionStream;
+    if (typeof DS !== "function") throw new DexQRError("NO_DECOMPRESSION", "This transfer is compressed, but this browser has no DecompressionStream, so it cannot be unpacked here. Open the receiver in a current Chrome, Edge, Firefox or Safari (16.4+), or ask the sender to untick \"Compress\" and send again.");
+    let ds;
+    try { ds = new DS(algorithm); } catch (e) { throw new DexQRError("NO_DECOMPRESSION", `This browser's DecompressionStream does not support "${algorithm}". Use a current browser, or ask the sender to untick "Compress".`); }
+    let out;
+    try { out = await pipeCapped(ds, bytes, maxOut); }
+    catch (e) { throw new DexQRError("BAD_FORMAT", "The compressed data is corrupt (" + (e && e.message || e) + ")"); }
+    if (!out) throw new DexQRError("TOO_LARGE", `Refused: the compressed data expands to more than ${maxOut.toLocaleString("en-US")} bytes (the declared size or the receiver's limit). Nothing was saved. This looks like a corrupt or hostile stream.`);
+    return out;
+  }
+
+  /* Open a DQZ1 container: checks the declared size against the limit before inflating anything. */
+  async function openCompressed(buf) {
+    if (buf.length < ZIP_HEADER) throw new DexQRError("BAD_FORMAT", "Truncated compressed container");
+    const algorithm = ALGORITHMS[buf[4]];
+    if (!algorithm) throw new DexQRError("BAD_FORMAT", "Unknown compression algorithm " + buf[4]);
+    const declared = new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getUint32(5);
+    if (declared > MAX_DECOMPRESSED) throw new DexQRError("TOO_LARGE", `Refused: the transfer says it expands to ${declared.toLocaleString("en-US")} bytes, over the receiver's limit of ${MAX_DECOMPRESSED.toLocaleString("en-US")} bytes. Nothing was decompressed.`);
+    const inner = await inflateCapped(buf.subarray(ZIP_HEADER), algorithm, declared);
+    if (inner.length !== declared) throw new DexQRError("BAD_FORMAT", `Compressed data expands to ${inner.length} bytes, not the declared ${declared}`);
+    if (!hasMagic(inner, MAGIC_PLAIN)) throw new DexQRError("BAD_FORMAT", "Not a Dex_QR file container inside the compressed data");
+    return { inner, algorithm, compressedLength: buf.length };
+  }
+
+  /* Build the payload to be fountain-coded. Returns {payload, encrypted, fileId, compression}.
+   * compression = {used, algorithm, innerLength, compressedLength, reason}; reason is "off", "unavailable",
+   * "no-gain" or "" when used. Pass compress:false to disable. */
+  async function buildPayload({ name, mime, data, passphrase, iterations, compress }) {
+    let inner = buildInner(name, mime, data);
+    const compression = { used: false, algorithm: null, innerLength: inner.length, compressedLength: null, reason: "off" };
+    if (compress !== false) {
+      const z = await compressBytes(inner);
+      if (!z) compression.reason = "unavailable";
+      else {
+        compression.algorithm = ALGORITHMS[z.algorithmByte];
+        if (z.bytes) compression.compressedLength = ZIP_HEADER + z.bytes.length;
+        if (z.bytes && ZIP_HEADER + z.bytes.length <= inner.length * (1 - MIN_GAIN)) {
+          const zc = new Uint8Array(ZIP_HEADER + z.bytes.length);
+          zc.set(MAGIC_ZIP, 0); zc[4] = z.algorithmByte;
+          new DataView(zc.buffer).setUint32(5, inner.length);
+          zc.set(z.bytes, ZIP_HEADER);
+          inner = zc; compression.used = true; compression.reason = "";
+        } else { compression.reason = "no-gain"; compression.algorithm = null; }
+      }
+    }
     let payload = inner, encrypted = false;
     if (passphrase) {
       iterations = iterations || DEFAULT_ITERATIONS;
@@ -1543,7 +1641,19 @@ var qrcodegen;
       encrypted = true;
     }
     const fileId = (await sha256(payload)).slice(0, 8);
-    return { payload, encrypted, fileId };
+    return { payload, encrypted, fileId, compression };
+  }
+
+  /* True for a plaintext DQZ1 payload (drives the informational header flag; never set for encrypted payloads). */
+  function isCompressedPayload(payload) { return hasMagic(payload, MAGIC_ZIP); }
+
+  /* DQF1 or DQZ1 -> {name, mime, data, compressed, compressedLength} */
+  async function openInner(buf) {
+    if (hasMagic(buf, MAGIC_ZIP)) {
+      const z = await openCompressed(buf);
+      return { ...parseInner(z.inner), compressed: true, compression: z.algorithm, compressedLength: z.compressedLength };
+    }
+    return { ...parseInner(buf), compressed: false, compression: null, compressedLength: null };
   }
 
   function isEncryptedPayload(payload) {
@@ -1552,11 +1662,11 @@ var qrcodegen;
   }
 
   /* Verify and open a reconstructed payload. Throws DexQRError with code
-   * CHECKSUM_MISMATCH | NEED_PASSPHRASE | WRONG_PASSPHRASE | BAD_FORMAT. */
+   * CHECKSUM_MISMATCH | NEED_PASSPHRASE | WRONG_PASSPHRASE | BAD_FORMAT | TOO_LARGE | NO_DECOMPRESSION. */
   async function openPayload(payload, expectedFileId, passphrase) {
     const digest = await sha256(payload);
     for (let i = 0; i < 8; i++) if (digest[i] !== expectedFileId[i]) throw new DexQRError("CHECKSUM_MISMATCH", "Checksum mismatch: the reconstructed data does not match the sender's SHA-256");
-    if (!isEncryptedPayload(payload)) return { ...parseInner(payload), sha256: digest, encrypted: false };
+    if (!isEncryptedPayload(payload)) return { ...(await openInner(payload)), sha256: digest, encrypted: false };
     if (!passphrase) throw new DexQRError("NEED_PASSPHRASE", "This transfer is encrypted. Enter the passphrase.");
     const iterations = new DataView(payload.buffer, payload.byteOffset).getUint32(4);
     if (iterations < MIN_ITERATIONS || iterations > MAX_ITERATIONS) throw new DexQRError("BAD_FORMAT", "Unsupported PBKDF2 iteration count " + iterations);
@@ -1568,7 +1678,7 @@ var qrcodegen;
     } catch (e) {
       throw new DexQRError("WRONG_PASSPHRASE", "Wrong passphrase (or the data was tampered with): AES-GCM authentication failed");
     }
-    return { ...parseInner(inner), sha256: digest, encrypted: true };
+    return { ...(await openInner(inner)), sha256: digest, encrypted: true };
   }
 
   /* Rough passphrase strength estimate (bits). Deliberately conservative and simple; it is a hint, not a guarantee. */
@@ -1590,7 +1700,7 @@ var qrcodegen;
     return { bits, label };
   }
 
-  DQ.container = { DEFAULT_ITERATIONS, MIN_ITERATIONS, MAX_ITERATIONS, DexQRError, buildInner, parseInner, buildPayload, openPayload, isEncryptedPayload, estimateStrength, sha256 };
+  DQ.container = { DEFAULT_ITERATIONS, MIN_ITERATIONS, MAX_ITERATIONS, MAX_DECOMPRESSED, MIN_GAIN, ALGORITHMS, DexQRError, buildInner, parseInner, buildPayload, openPayload, isEncryptedPayload, isCompressedPayload, inflateCapped, estimateStrength, sha256 };
 })(typeof globalThis !== "undefined" ? globalThis : this);
 
 </script>
@@ -1601,11 +1711,11 @@ var qrcodegen;
   const DQ = root.DexQR;
 
   class SenderSession {
-    /* opts: {name, mime, data:Uint8Array, blockSize, passphrase?, iterations?, startSeed?} */
+    /* opts: {name, mime, data:Uint8Array, blockSize, passphrase?, iterations?, startSeed?, compress? (default true)} */
     static async create(opts) {
       const s = new SenderSession();
       const built = await DQ.container.buildPayload(opts);
-      s.payload = built.payload; s.encrypted = built.encrypted; s.fileId = built.fileId;
+      s.payload = built.payload; s.encrypted = built.encrypted; s.fileId = built.fileId; s.compression = built.compression;
       s.blockSize = opts.blockSize;
       s.version = opts.version ?? DQ.packet.VERSION;
       const K = Math.max(1, Math.ceil(s.payload.length / s.blockSize));
@@ -1613,7 +1723,7 @@ var qrcodegen;
       if (K > DQ.packet.MAX_K || s.payload.length > DQ.packet.MAX_LENGTH) throw new Error(`Too large for one transfer: ${K} blocks, ${s.payload.length} bytes (limits ${DQ.packet.MAX_K} blocks, ${DQ.packet.MAX_LENGTH} bytes). Use a larger QR density or a smaller file.`);
       s.encoder = new DQ.lt.LTEncoder(s.payload, s.blockSize, DQ.packet.fileKey32(s.fileId), { extra: DQ.lt.extraDegreeFor(s.version, K) });
       s.K = s.encoder.K;
-      s.meta = { version: s.version, encrypted: s.encrypted, fileId: s.fileId, K: s.K, blockSize: s.blockSize, length: s.payload.length };
+      s.meta = { version: s.version, encrypted: s.encrypted, compressed: !s.encrypted && DQ.container.isCompressedPayload(s.payload), fileId: s.fileId, K: s.K, blockSize: s.blockSize, length: s.payload.length };
       s.nextSeed = (opts.startSeed ?? 0) >>> 0;
       return s;
     }
@@ -1848,14 +1958,22 @@ var qrcodegen;
     } catch (e) { /* best effort: the screen may still dim on browsers without the Wake Lock API */ }
   }
 
-  function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value].join("\u0000"); }
+  function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value, $("zip").checked].join("\u0000"); }
   function checkStale() {
     if (!state.session || state.preparing) return;
     const stale = settingsKey() !== state.prepared;
     $("prepare").classList.toggle("attn", stale);
     $("prepare").textContent = stale ? "Prepare (apply changes)" : "Prepare";
-    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase and density; press Prepare to apply.", "warn");
+    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase, compression and density; press Prepare to apply.", "warn");
     else if ($("msg").classList.contains("warn") && /Settings changed/.test($("msg").textContent)) msg("", "");
+  }
+
+  function describeCompression(c) {
+    if (!c) return "–";
+    if (c.used) return `${c.algorithm}: ${c.innerLength.toLocaleString()} → ${c.compressedLength.toLocaleString()} bytes (−${(100 * (1 - c.compressedLength / c.innerLength)).toFixed(0)}%)`;
+    if (c.reason === "off") return "off";
+    if (c.reason === "unavailable") return "not available in this browser (no CompressionStream); sent uncompressed";
+    return "skipped: the file does not shrink (already compressed?)";
   }
 
   async function prepare() {
@@ -1871,13 +1989,14 @@ var qrcodegen;
       const sha = await DQ.container.sha256(data);
       state.ecl = $("ecl").value;
       const startSeed = crypto.getRandomValues(new Uint32Array(1))[0];
-      state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, startSeed });
+      state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, startSeed, compress: $("zip").checked });
       state.prepared = key;
       state.sent = 0; state.fileSha = hex(sha);
       const s = state.session;
       $("s-file").textContent = `${f.name} (${f.size.toLocaleString()} bytes)`;
       $("s-sha").textContent = state.fileSha;
       $("s-enc").textContent = s.encrypted ? "yes (AES-256-GCM, PBKDF2-SHA-256 × 600,000)" : "no — anyone who sees the stream can read the file";
+      $("s-zip").textContent = describeCompression(s.compression);
       $("s-id").textContent = DQ.packet.hex(s.fileId);
       $("s-k").textContent = `${s.K} × ${s.blockSize} bytes`;
       drawText(s.textForSeed(s.nextSeed));
@@ -1917,7 +2036,7 @@ var qrcodegen;
   $("stage-play").addEventListener("click", () => setPlaying(!state.playing));
   $("fs").addEventListener("click", enterFull);
   $("stage-exit").addEventListener("click", exitFull);
-  ["file", "bs"].forEach((id) => $(id).addEventListener("change", checkStale));
+  ["file", "bs", "zip"].forEach((id) => $(id).addEventListener("change", checkStale));
   $("pass").addEventListener("input", checkStale);
   // Rendering-only settings apply live: they change how a packet is drawn, not the stream.
   $("ecl").addEventListener("change", () => { state.ecl = $("ecl").value; redraw(); });

@@ -2,12 +2,14 @@
 
 **Versioning.** Byte 0 of every packet is the protocol version. Senders write 2. Receivers accept 1 and 2 and lock onto the version of the first valid packet, so a v1 sender still works with a current receiver. v2 differs from v1 only in the LT degree rule (§3, "Degree boost"); the payload container, packet layout, Base45 text and QR framing are unchanged. A v1-only receiver rejects v2 packets with reason "version".
 
+**Compression (added in cycle 2, 2026-11-01; protocol version byte still 2).** The sender may wrap the inner container in a compressed container `DQZ1` (§2) and, for unencrypted payloads only, sets flag bit 1 in every packet (§4). Receivers from before cycle 2 ignore that bit and would report "Not a Dex_QR file container" after the full scan, so a compressed stream needs a receiver from this release or later; any stream an older sender produced (v1 or v2, `DQF1` or `DQE1`) still decodes byte for byte (tested against recorded streams in `tests/fixtures/legacy_streams.json`). Senders can turn compression off, and they skip it automatically when it does not help, in which case the payload is exactly the pre-cycle-2 format.
+
 This note is detailed enough for an independent re-implementation. The reference code is `src/*.js`.
 
 ## 1. Overview
 
 ```
-file ──► container (name, MIME, data) ──► [optional AES-256-GCM] ──► payload P (F bytes)
+file ──► container (name, MIME, data) ──► [deflate if it saves ≥ 2%] ──► [optional AES-256-GCM] ──► payload P (F bytes)
 P ──► K = ceil(F / T) source blocks of T bytes (last block zero-padded)
      ──► LT encoder: packet(seed) = XOR of d blocks chosen by PRNG(seed, file ID)
      ──► 23-byte header + T-byte block + CRC-32 ──► Base45 ──► "DQ" + text ──► QR (alphanumeric mode)
@@ -28,7 +30,19 @@ The sender shows an endless stream of QR codes, one packet per frame, with seeds
 | *m* | MIME type, UTF-8 |
 | rest | file data |
 
-**Plain payload** = inner container.
+**Compressed inner container** (cycle 2):
+
+| bytes | field |
+|---|---|
+| 4 | magic `DQZ1` |
+| 1 | algorithm: 1 = `deflate-raw` (RFC 1951), 2 = `gzip` (RFC 1952); anything else is rejected |
+| 4 | *L*, the length of the uncompressed `DQF1` container (uint32) |
+| rest | the `DQF1` container compressed with that algorithm |
+
+- **Sender rule.** Compress the `DQF1` container with the browser's built-in `CompressionStream` (`deflate-raw`; `gzip` only where `deflate-raw` is missing, as in Chrome 80–102). Use the result only if `9 + compressed length ≤ 0.98 × L` (at least 2% saved); otherwise send `DQF1` unchanged. Already-compressed files (JPEG, PNG, ZIP, video) therefore go out exactly as before. If `CompressionStream` is missing, send `DQF1`. No third-party code is involved.
+- **Receiver rule.** Refuse *L* above 32 MiB + 4 KiB (the payload limit of §4) before inflating anything (error `TOO_LARGE`). Inflate with `DecompressionStream`, counting output bytes, and abort as soon as the output exceeds *L* (error `TOO_LARGE`; measured: a 1 MB stream of deflated zeros that would expand to 1 GiB is stopped after 32 MiB in about 0.1 s, about 64 MB of memory, in Node). Output shorter than *L*, corrupt deflate data, an unknown algorithm byte, or anything but `DQF1` inside (no nesting) is `BAD_FORMAT`. Without `DecompressionStream` the receiver reports `NO_DECOMPRESSION` with instructions, and the receiver page warns at the first frame when flag bit 1 is set.
+
+**Plain payload** = inner container (`DQF1` or `DQZ1`).
 
 **Encrypted payload**:
 
@@ -38,7 +52,7 @@ The sender shows an endless stream of QR codes, one packet per frame, with seeds
 | 4 | PBKDF2 iteration count *i* (sender default 600,000; receiver accepts 100,000–10,000,000) |
 | 16 | salt (random) |
 | 12 | AES-GCM IV (random) |
-| rest | AES-256-GCM ciphertext of the inner container, with a 16-byte tag. The additional authenticated data is the first 24 bytes (magic, *i*, salt). |
+| rest | AES-256-GCM ciphertext of the inner container (`DQF1` or `DQZ1`: compress-then-encrypt), with a 16-byte tag. The additional authenticated data is the first 24 bytes (magic, *i*, salt). |
 
 The key is `PBKDF2(HMAC-SHA-256, UTF-8(passphrase), salt, i)` → 256-bit AES-GCM key, via WebCrypto `deriveKey`.
 
@@ -80,7 +94,7 @@ All integers are big-endian.
 | offset | size | field |
 |---|---|---|
 | 0 | 1 | version (2; receivers also accept 1) |
-| 1 | 1 | flags (bit 0 = encrypted payload) |
+| 1 | 1 | flags (bit 0 = encrypted payload; bit 1 = unencrypted `DQZ1` payload, informational, never set together with bit 0; other bits are ignored) |
 | 2 | 8 | file ID (SHA-256(payload)[0..8]) |
 | 10 | 3 | K, the number of blocks |
 | 13 | 2 | T, the block size |
@@ -109,7 +123,7 @@ All integers are big-endian.
 - **Verification:**
   1. Truncate the result to F bytes and check `SHA-256(payload)[0..8] == file ID`. On failure, report **"checksum mismatch"** and save nothing.
   2. If the payload is encrypted, ask for the passphrase. A failed AES-GCM tag check reports **"wrong passphrase"**, and the user can retry without rescanning.
-  3. Unwrap the container and offer the file for download, with the SHA-256 of the file shown for comparison with the sender page.
+  3. Unwrap the container (inflating `DQZ1` under the limits in §2) and offer the file for download, with the SHA-256 of the file shown for comparison with the sender page.
 
 ## 6. Rendering
 
@@ -121,4 +135,4 @@ All integers are big-endian.
 
 - Files up to 32 MiB are accepted by the UI. In practice, a stream of tens of thousands of frames is not useful.
 - K is a uint24, F a uint32 and T a uint16.
-- The receiver holds the whole file in memory.
+- The receiver holds the whole file in memory. A compressed transfer may never expand beyond 32 MiB + 4 KiB.

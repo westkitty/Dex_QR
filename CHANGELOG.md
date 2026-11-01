@@ -45,3 +45,26 @@ Not one of the hourly routine's 12 counted cycles. No wire-format change: protoc
 **Tests:** unit tests 17 → 24; new `tests/browser/ux.mjs` (17 checks), `tests/browser/a11y.mjs` (axe-core, 12 page states, 0 violations), `tests/browser/soak.mjs` (60 s per page, no heap growth, one camera stream after churn), `tools/lint.mjs` (syntax, debug leftovers, innerHTML, stale build, CSP). Existing browser suite 17/17 (now opens the options disclosure like a user). Drop-rate trials re-rendered and re-decoded: 1,800/1,800, identical to cycle 1 in all 18 cells. H.264 end-to-end 27/27.
 
 **Not tested:** real phone and laptop cameras, Safari, Firefox, screen readers used by a person, and Wake Lock on a real device.
+
+## Cycle 2 (2026-11-01, about 5:40 AM EST): transparent compression before fountain coding
+
+**What changed.** The sender wraps the file container in a new compressed container `DQZ1` (magic, algorithm byte, uncompressed length, deflate data) made with the browser's built-in `CompressionStream("deflate-raw")` (gzip where deflate-raw is missing), and uses it only when it saves at least 2%; otherwise the payload is byte-identical to the old `DQF1` format. With a passphrase it compresses first, then encrypts. Unencrypted compressed streams set flag bit 1 in the packet header (never on encrypted streams, so the ciphertext does not reveal it). Protocol version byte stays 2. A "Compress when it helps" checkbox (on by default) and a Compression line on the sender; a Compressed line, result note and two new errors on the receiver. No new dependency, no network, works from `file://`. See docs/PROTOCOL.md §2 and §4 and the new length-leak paragraph in docs/THREAT_NOTE.md.
+
+**Receiver guards.** A declared uncompressed size over 32 MiB + 4 KiB is refused before inflating (`TOO_LARGE`); inflation counts bytes and stops as soon as output passes the declared size (`TOO_LARGE`). Measured in Node: 1 MB of deflated zeros that would expand to 1 GiB was stopped at 32 MiB after 106 ms with about 64 MB of extra memory. Short output, corrupt data, unknown algorithm or a nested container is `BAD_FORMAT`. No `DecompressionStream` → `NO_DECOMPRESSION`, and the receiver page warns at the first frame of a flagged stream. No `CompressionStream` on the sender → sent uncompressed.
+
+**Before → after** (`tests/bench/compression.mjs`, shipped defaults 400 B / EC M / 8 fps, simulated reception with 100 trials per cell from random start frames, no camera; input files frozen at commit 79094f4; before = code at 79094f4, after = this commit; results/compression_before.json and compression_after.json):
+
+| File (bytes) | Payload bytes | K | Mean frames, 0% loss | Mean frames, 30% loss | Time at 8 fps, 0% / 30% loss |
+|---|---|---|---|---|---|
+| sensor-log.csv, generated (76,350) | 76,379 → 13,206 | 191 → 34 | 192.4 → 35.5 | 276.5 → 50.7 | 24.1 s → 4.4 s / 34.6 s → 6.3 s |
+| trials_102400_zxing.json (68,378) | 68,425 → 3,857 | 172 → 10 | 173.6 → 11.7 | 247.2 → 17.7 | 21.7 s → 1.5 s / 30.9 s → 2.2 s |
+| sender.html, HTML + inlined JS (102,485) | 102,512 → 30,826 | 257 → 78 | 258.7 → 79.2 | 367.9 → 114.9 | 32.3 s → 9.9 s / 46.0 s → 14.4 s |
+| receiver.app.js, JS source (20,693) | 20,730 → 7,019 | 52 → 18 | 53.9 → 19.6 | 76.1 → 28.0 | 6.7 s → 2.5 s / 9.5 s → 3.5 s |
+| video-001.jpeg, real photo (21,459) | 21,490 → 21,490 (skipped) | 54 → 54 | 55.4 → 55.5 | 78.8 → 79.2 | 6.9 s → 6.9 s / 9.8 s → 9.9 s |
+| random.bin (102,400) | 102,441 → 102,441 (skipped) | 257 → 257 | 258.7 → 258.8 | 371.4 → 369.2 | 32.3 s → 32.4 s / 46.4 s → 46.1 s |
+
+Encrypted payloads shrink the same way (+52 bytes each: CSV 76,431 → 13,258). The JSON file is very repetitive test output, so 14.8× is the high end; source and HTML gave 2.7–3.3×, the CSV 5.4×. JPEG and random data are unchanged within simulation noise (the skip path sends identical bytes). Sender preparation time rose by at most about 9 ms for these files.
+
+**Tests.** Unit 24 → 35 (11 new in tests/unit/compression.test.mjs, written first and failing 0/11 before the implementation; one existing test now passes `compress: false` because 300 kB of zeros legitimately fits once compressed). Recorded v1/v2, plain/encrypted streams from commit 79094f4 (tests/fixtures/legacy_streams.json) still decode. New headless Chrome suite tests/browser/compression.mjs 4/4 with the browser's real CompressionStream, 0 network requests. Existing suites rerun: lint 0 problems, browser 17/17, ux 17/17, axe 0 serious/critical violations, soak 2/2, drop trials 1,800/1,800 (results/trials_*.json byte-identical to before), H.264 end-to-end 27/27.
+
+**Not tested:** real phone or laptop cameras; Safari and Firefox CompressionStream (Chrome 156 headless and Node 24 only).

@@ -5,8 +5,8 @@ ZBAR_LIB ?=
 export PY
 export LD_LIBRARY_PATH := $(ZBAR_LIB):$(LD_LIBRARY_PATH)
 
-.PHONY: all build lint test sweep trials video browser ux a11y soak bench report
-all: build lint test trials video browser ux a11y soak bench report
+.PHONY: all build lint test sweep trials video browser ux a11y soak compress bench compress-bench report
+all: build lint test trials video browser ux a11y soak compress bench compress-bench report
 build:   ; node tools/build.mjs
 lint:    ; node tools/lint.mjs
 test:    ; node --test tests/unit/*.test.mjs
@@ -17,5 +17,7 @@ browser: build ; node tests/browser/run.mjs
 ux:      build ; node tests/browser/ux.mjs
 a11y:    build ; node tests/browser/a11y.mjs
 soak:    build ; node tests/browser/soak.mjs
+compress: build ; node tests/browser/compression.mjs
 bench:   build ; for E in L M Q; do BENCH_ECL=$$E BENCH_OUT=bench_$$E.json node tests/bench/bench.mjs || exit 1; done
+compress-bench: ; BENCH_OUT=compression_after.json node tests/bench/compression.mjs
 report:  ; node tools/report.mjs

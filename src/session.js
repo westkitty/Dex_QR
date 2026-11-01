@@ -4,11 +4,11 @@
   const DQ = root.DexQR;
 
   class SenderSession {
-    /* opts: {name, mime, data:Uint8Array, blockSize, passphrase?, iterations?, startSeed?} */
+    /* opts: {name, mime, data:Uint8Array, blockSize, passphrase?, iterations?, startSeed?, compress? (default true)} */
     static async create(opts) {
       const s = new SenderSession();
       const built = await DQ.container.buildPayload(opts);
-      s.payload = built.payload; s.encrypted = built.encrypted; s.fileId = built.fileId;
+      s.payload = built.payload; s.encrypted = built.encrypted; s.fileId = built.fileId; s.compression = built.compression;
       s.blockSize = opts.blockSize;
       s.version = opts.version ?? DQ.packet.VERSION;
       const K = Math.max(1, Math.ceil(s.payload.length / s.blockSize));
@@ -16,7 +16,7 @@
       if (K > DQ.packet.MAX_K || s.payload.length > DQ.packet.MAX_LENGTH) throw new Error(`Too large for one transfer: ${K} blocks, ${s.payload.length} bytes (limits ${DQ.packet.MAX_K} blocks, ${DQ.packet.MAX_LENGTH} bytes). Use a larger QR density or a smaller file.`);
       s.encoder = new DQ.lt.LTEncoder(s.payload, s.blockSize, DQ.packet.fileKey32(s.fileId), { extra: DQ.lt.extraDegreeFor(s.version, K) });
       s.K = s.encoder.K;
-      s.meta = { version: s.version, encrypted: s.encrypted, fileId: s.fileId, K: s.K, blockSize: s.blockSize, length: s.payload.length };
+      s.meta = { version: s.version, encrypted: s.encrypted, compressed: !s.encrypted && DQ.container.isCompressedPayload(s.payload), fileId: s.fileId, K: s.K, blockSize: s.blockSize, length: s.payload.length };
       s.nextSeed = (opts.startSeed ?? 0) >>> 0;
       return s;
     }

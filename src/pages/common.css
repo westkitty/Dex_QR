@@ -58,3 +58,5 @@ video { display:block; width: 100%; max-height: 70vh; background: #000; border-r
 a.dl { display:inline-block; margin-top:10px; padding: 11px 16px; background: var(--ok); color:#00210f; border-radius: 7px; font-weight:700; text-decoration:none; }
 code { font-size: 12px; }
 @media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } button:active:not(:disabled) { transform: none; } }
+label.check { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 8px; cursor: pointer; color: var(--fg); }
+label.check input { width: 22px; height: 22px; margin: 0; accent-color: #4aa3ff; }

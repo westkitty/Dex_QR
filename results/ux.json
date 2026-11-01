@@ -1,11 +1,11 @@
 {
- "when": "2026-11-01T10:05:04.068Z",
+ "when": "2026-11-01T10:19:56.579Z",
  "results": [
   {
    "name": "sender frame clock matches the set rate (8 and 25 fps, within 3%)",
    "ok": true,
    "measured": {
-    "8": 7.99,
+    "8": 8,
     "25": 24.99
    },
    "before": "8 fps measured 7.50 with the old scheduler"
@@ -20,7 +20,7 @@
    "name": "sender flags stale settings, applies EC level live, Prepare clears the flag",
    "ok": true,
    "stale": {
-    "msg": "Settings changed. The stream on screen still uses the previous file, passphrase and density; press Prepare to apply.",
+    "msg": "Settings changed. The stream on screen still uses the previous file, passphrase, compression and density; press Prepare to apply.",
     "btn": "Prepare (apply changes)"
    },
    "qrInfo": "version 19 (93×93 modules), EC Q, 7 px/module",
@@ -91,7 +91,7 @@
     "limits": 1
    },
    "msg": "Those files contain QR codes, but none from a Dex_QR stream.",
-   "seconds": 0.129,
+   "seconds": 0.128,
    "framesThenAgain": [
     3,
     5

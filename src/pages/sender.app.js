@@ -118,14 +118,22 @@
     } catch (e) { /* best effort: the screen may still dim on browsers without the Wake Lock API */ }
   }
 
-  function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value].join("\u0000"); }
+  function settingsKey() { const f = $("file").files[0]; return [f ? f.name + ":" + f.size + ":" + f.lastModified : "", $("pass").value, $("bs").value, $("zip").checked].join("\u0000"); }
   function checkStale() {
     if (!state.session || state.preparing) return;
     const stale = settingsKey() !== state.prepared;
     $("prepare").classList.toggle("attn", stale);
     $("prepare").textContent = stale ? "Prepare (apply changes)" : "Prepare";
-    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase and density; press Prepare to apply.", "warn");
+    if (stale) msg("Settings changed. The stream on screen still uses the previous file, passphrase, compression and density; press Prepare to apply.", "warn");
     else if ($("msg").classList.contains("warn") && /Settings changed/.test($("msg").textContent)) msg("", "");
+  }
+
+  function describeCompression(c) {
+    if (!c) return "–";
+    if (c.used) return `${c.algorithm}: ${c.innerLength.toLocaleString()} → ${c.compressedLength.toLocaleString()} bytes (−${(100 * (1 - c.compressedLength / c.innerLength)).toFixed(0)}%)`;
+    if (c.reason === "off") return "off";
+    if (c.reason === "unavailable") return "not available in this browser (no CompressionStream); sent uncompressed";
+    return "skipped: the file does not shrink (already compressed?)";
   }
 
   async function prepare() {
@@ -141,13 +149,14 @@
       const sha = await DQ.container.sha256(data);
       state.ecl = $("ecl").value;
       const startSeed = crypto.getRandomValues(new Uint32Array(1))[0];
-      state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, startSeed });
+      state.session = await DQ.SenderSession.create({ name: f.name, mime: f.type, data, blockSize: Number($("bs").value), passphrase: $("pass").value || undefined, startSeed, compress: $("zip").checked });
       state.prepared = key;
       state.sent = 0; state.fileSha = hex(sha);
       const s = state.session;
       $("s-file").textContent = `${f.name} (${f.size.toLocaleString()} bytes)`;
       $("s-sha").textContent = state.fileSha;
       $("s-enc").textContent = s.encrypted ? "yes (AES-256-GCM, PBKDF2-SHA-256 × 600,000)" : "no — anyone who sees the stream can read the file";
+      $("s-zip").textContent = describeCompression(s.compression);
       $("s-id").textContent = DQ.packet.hex(s.fileId);
       $("s-k").textContent = `${s.K} × ${s.blockSize} bytes`;
       drawText(s.textForSeed(s.nextSeed));
@@ -187,7 +196,7 @@
   $("stage-play").addEventListener("click", () => setPlaying(!state.playing));
   $("fs").addEventListener("click", enterFull);
   $("stage-exit").addEventListener("click", exitFull);
-  ["file", "bs"].forEach((id) => $(id).addEventListener("change", checkStale));
+  ["file", "bs", "zip"].forEach((id) => $(id).addEventListener("change", checkStale));
   $("pass").addEventListener("input", checkStale);
   // Rendering-only settings apply live: they change how a packet is drawn, not the stream.
   $("ecl").addEventListener("change", () => { state.ecl = $("ecl").value; redraw(); });

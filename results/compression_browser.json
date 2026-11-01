@@ -1,0 +1,42 @@
+{
+ "when": "2026-11-01T10:20:45.474Z",
+ "browser": "headless Chrome via playwright-core, file:// pages",
+ "results": [
+  {
+   "name": "sender page compresses a CSV with the browser's CompressionStream; receiver page unpacks it byte for byte",
+   "ok": true,
+   "K": 23,
+   "KUncompressed": 115,
+   "zipText": "deflate-raw: 45,689 → 8,849 bytes (−81%)",
+   "plainZipText": "off",
+   "phase": "done",
+   "zip": "yes (unpacked after the last block)",
+   "note": "SHA-256 of file: 4346ed468aa129a3ddcb3f759df198a4b378b1b06e36ddba5aae8498cce7a75b. Compare it with the sender page. Transfer checksum verified (6451a4ae06527e76…); unpacked from 8,849 compressed bytes (deflate-raw).",
+   "errors": []
+  },
+  {
+   "name": "receiver without DecompressionStream explains clearly instead of failing silently",
+   "ok": true,
+   "phase": "cannot unpack",
+   "msg": "✗ This transfer is compressed, but this browser has no DecompressionStream, so it cannot be unpacked here. Open the receiver in a current Chrome, Edge, Firefox or Safari (16.4+), or ask the sender to untick \"Compress\" and send again.",
+   "errors": []
+  },
+  {
+   "name": "sender without CompressionStream falls back to an uncompressed stream that still decodes",
+   "ok": true,
+   "K": 115,
+   "zipText": "not available in this browser (no CompressionStream); sent uncompressed",
+   "phase": "done",
+   "errors": []
+  },
+  {
+   "name": "JPEG does not shrink: compression is skipped and said so",
+   "ok": true,
+   "K": 54,
+   "zipText": "skipped: the file does not shrink (already compressed?)",
+   "phase": "done",
+   "errors": []
+  }
+ ],
+ "networkRequestsOutsideFileDataBlob": []
+}

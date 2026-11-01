@@ -94,6 +94,12 @@
     }
     $("r-id").textContent = s.meta.fileIdHex;
     $("r-enc").textContent = s.meta.encrypted ? "yes" : "no";
+    $("r-zip").textContent = s.meta.encrypted ? "hidden inside the encryption" : s.meta.compressed ? "yes (unpacked after the last block)" : "no";
+    // Warn at the first frame, not after the whole scan, if this browser cannot unpack a compressed stream.
+    if (s.meta.compressed && typeof DecompressionStream !== "function" && !state.warnedNoInflate) {
+      state.warnedNoInflate = true;
+      msg("This stream is compressed, but this browser has no DecompressionStream and will not be able to unpack it. Use a current Chrome, Edge, Firefox or Safari (16.4+), or ask the sender to untick “Compress” and press Prepare again.", "err");
+    }
     const have = s.decoder.progressCount, pct = (100 * have) / p.K;
     $("r-prog").textContent = `${have} / ${p.K} (${pct.toFixed(1)}%), ${s.meta.length.toLocaleString()} bytes in transfer`;
     const ign = st.foreign ? `, ${st.foreign} other QR codes` : "";
@@ -131,10 +137,10 @@
       const name = safeName(out.name);
       $("result").textContent = "";
       const a = document.createElement("a"); a.className = "dl"; a.href = url; a.download = name; a.id = "download"; a.textContent = `Save “${name}” (${out.data.length.toLocaleString()} bytes)`;
-      const p = document.createElement("div"); p.className = "note mono-wrap"; p.textContent = `SHA-256 of file: ${fileSha}. Compare it with the sender page. Transfer checksum verified (${hexs.slice(0, 16)}…)${out.encrypted ? "; AES-GCM authentication passed" : ""}.`;
+      const p = document.createElement("div"); p.className = "note mono-wrap"; p.textContent = `SHA-256 of file: ${fileSha}. Compare it with the sender page. Transfer checksum verified (${hexs.slice(0, 16)}…)${out.encrypted ? "; AES-GCM authentication passed" : ""}${out.compressed ? `; unpacked from ${out.compressedLength.toLocaleString()} compressed bytes (${out.compression})` : ""}.`;
       $("result").append(a, p);
       $("passbox").hidden = true; $("pass").value = "";
-      state.result = { name, size: out.data.length, sha256: fileSha, encrypted: out.encrypted };
+      state.result = { name, size: out.data.length, sha256: fileSha, encrypted: out.encrypted, compressed: out.compressed };
       state.error = null; state.opened = true;
       setPhase("done");
       msg("✓ Transfer complete. The file is verified and ready to save.", "ok");
@@ -144,6 +150,8 @@
       state.error = e.code || e.message;
       if (e.code === "NEED_PASSPHRASE") { $("passbox").hidden = false; setPhase("needs passphrase"); msg("All data received. This transfer is encrypted: enter the passphrase.", "warn"); $("pass").focus(); }
       else if (e.code === "WRONG_PASSPHRASE") { $("passbox").hidden = false; setPhase("wrong passphrase"); msg("✗ Wrong passphrase (AES-GCM authentication failed). Try again; no need to rescan.", "err"); $("pass").select(); $("pass").focus(); }
+      else if (e.code === "TOO_LARGE") { setPhase("refused"); msg("✗ " + e.message + " Press Reset to scan something else.", "err"); }
+      else if (e.code === "NO_DECOMPRESSION") { setPhase("cannot unpack"); msg("✗ " + e.message, "err"); }
       else if (e.code === "CHECKSUM_MISMATCH") { setPhase("checksum mismatch"); msg("✗ Checksum mismatch: the reconstructed data does not match the sender's SHA-256. Nothing was saved. Press Reset and scan again; if it repeats, the stream on screen is corrupted or forged.", "err"); }
       else { setPhase("error"); msg("✗ Could not open the transfer: " + e.message, "err"); }
     } finally {

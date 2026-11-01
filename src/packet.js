@@ -4,7 +4,8 @@
  *   off size field
  *    0   1   version (=2 when sending; 1 and 2 are accepted. v2 changes only the LT degree
  *                rule, see lt.extraDegreeFor; the byte layout is identical)
- *    1   1   flags   (bit0 = payload is encrypted)
+ *    1   1   flags   (bit0 = payload is encrypted; bit1 = plaintext payload is a compressed DQZ1 container,
+ *                informational only and never set for encrypted payloads; receivers ignore other bits)
  *    2   8   fileId  = first 8 bytes of SHA-256(payload)  (also the whole-file checksum)
  *   10   3   K       = number of source blocks (uint24)
  *   13   2   T       = block size in bytes (uint16)
@@ -22,6 +23,7 @@
   const TRAILER_LEN = 4;
   const PREFIX = "DQ";
   const FLAG_ENCRYPTED = 1;
+  const FLAG_COMPRESSED = 2;
   // Receiver-side resource guards (not a wire-format change). A CRC-valid packet can still claim any
   // K up to 2^24 and any F up to 2^32; without a cap one such frame (garbage or hostile) makes the
   // decoder allocate per-block state for millions of blocks and freezes the tab. The sender UI accepts
@@ -36,7 +38,7 @@
     const buf = new Uint8Array(HEADER_LEN + T + TRAILER_LEN);
     const dv = new DataView(buf.buffer);
     buf[0] = meta.version ?? VERSION;
-    buf[1] = meta.encrypted ? FLAG_ENCRYPTED : 0;
+    buf[1] = (meta.encrypted ? FLAG_ENCRYPTED : 0) | (meta.compressed && !meta.encrypted ? FLAG_COMPRESSED : 0);
     buf.set(meta.fileId, 2);
     buf[10] = (meta.K >>> 16) & 0xff; buf[11] = (meta.K >>> 8) & 0xff; buf[12] = meta.K & 0xff;
     dv.setUint16(13, T);
@@ -73,7 +75,7 @@
     const fileId = bytes.slice(2, 10);
     return {
       ok: true,
-      meta: { version, encrypted: (bytes[1] & FLAG_ENCRYPTED) !== 0, fileId, fileIdHex: hex(fileId), K, blockSize: T, length },
+      meta: { version, encrypted: (bytes[1] & FLAG_ENCRYPTED) !== 0, compressed: (bytes[1] & (FLAG_ENCRYPTED | FLAG_COMPRESSED)) === FLAG_COMPRESSED, fileId, fileIdHex: hex(fileId), K, blockSize: T, length },
       seed: dv.getUint32(19),
       block: bytes.subarray(HEADER_LEN, HEADER_LEN + T),
     };
@@ -88,5 +90,5 @@
     return PREFIX.length + Math.floor(n / 2) * 3 + (n % 2 ? 2 : 0);
   }
 
-  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, MAX_LENGTH, MAX_K, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
+  DQ.packet = { VERSION, SUPPORTED, HEADER_LEN, TRAILER_LEN, PREFIX, FLAG_ENCRYPTED, FLAG_COMPRESSED, MAX_LENGTH, MAX_K, buildPacket, packetToText, parseText, parseBytes, fileKey32, textLength, hex };
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -13,7 +13,7 @@
   "frames": 6722,
   "textLength": 643,
   "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
-  "renderMs": 34399
+  "renderMs": 36564
  },
  "crf": "23",
  "fps": "10",
@@ -33,7 +33,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.664
+   "seconds": 5.613
   },
   {
    "size": 512000,
@@ -50,7 +50,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.531
+   "seconds": 5.664
   },
   {
    "size": 512000,
@@ -67,7 +67,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.563
+   "seconds": 5.354
   },
   {
    "size": 512000,
@@ -84,7 +84,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.886
+   "seconds": 5.689
   },
   {
    "size": 512000,
@@ -101,7 +101,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.697
+   "seconds": 5.38
   },
   {
    "size": 512000,
@@ -118,7 +118,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.577
+   "seconds": 5.074
   },
   {
    "size": 512000,
@@ -135,7 +135,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.728
+   "seconds": 5.404
   },
   {
    "size": 512000,
@@ -152,7 +152,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.626
+   "seconds": 5.566
   },
   {
    "size": 512000,
@@ -169,7 +169,7 @@
    "ok": true,
    "sha256": "f23e96cf4531f1a5a53c2089b6014b9242588de6569c72ebddddd2f2322c9146",
    "err": null,
-   "seconds": 5.439
+   "seconds": 5.393
   }
  ]
 }
