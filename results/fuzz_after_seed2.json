@@ -1,0 +1,37 @@
+{
+ "root": ".",
+ "seed": 2,
+ "cases": 100000,
+ "counts": {
+  "parse": 41909,
+  "key": 24948,
+  "session": 30132,
+  "container": 3011,
+  "longLived": 300
+ },
+ "sessionFrames": 20764010,
+ "sessionOutcomes": {
+  "poisoned": 2535,
+  "done": 25422,
+  "locked-elsewhere": 1874,
+  "not-done": 301
+ },
+ "sessionsDecoded": 25422,
+ "sessionsOpened": 3771,
+ "seconds": 430.3,
+ "secondsPer10k": {
+  "parseText": 0.14,
+  "parseKeyFrame": 0.12,
+  "sessionScenario": 130.86,
+  "containerOpen": 48.05
+ },
+ "maxCallMs": 110.6,
+ "maxCallWhat": "ReceiverSession.addText",
+ "retainedMB": {
+  "longLived": 11.8,
+  "wholeRun": 17.1,
+  "gc": true
+ },
+ "findings": [],
+ "byKind": {}
+}

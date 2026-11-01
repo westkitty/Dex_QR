@@ -55,6 +55,7 @@ The receiver decodes by incremental Gaussian elimination over GF(2) when K ≤ 3
 - **Truly end-to-end** (H.264 video → ffmpeg → zbar → decoder): 27 of 27 runs succeeded.
 - **Headless Chrome 156:** 17 of 17 tests passed with 0 network requests, all from `file://`. They cover the sender page into zbar into the decoder (including encryption), the receiver page fed frames at 10/30/50% drop with zxing-wasm, jsQR and auto (500 KiB at 50% drop included), the camera path through Chrome's fake camera (`getUserMedia` with a Y4M of sender frames), wrong then right passphrases, and forged frames causing a checksum mismatch. See RESULTS.md.
 - **Interaction, error-path and lifecycle tests** (added 2026-11-01): 17 of 17 pass in headless Chrome (`npm run ux`): frame clock accuracy, stale settings, keyboard control, the full-screen fallback, camera denied or missing, unsupported decoder, foreign and forged codes, switching transfers, Reset confirmation, repeated Decrypt presses, video-file cleanup, phone layout, and a camera that stops mid-scan. A 60-second soak of each page (`npm run soak`) showed no heap growth and exactly one camera stream after repeated Start/Stop. axe-core found 0 violations in 12 page states (`npm run a11y`); no person has tried it with a screen reader.
+- **Fuzzing** (cycle 5, `npm run fuzz`, tests/fuzz/fuzz.mjs): 100,000 seeded cases of random and mutated frames (bit flips, truncation, out-of-range K/T/F/seed, bad Base45, wrong versions, interleaved transfers, duplicates, forged CRC-valid packets, mutated containers) against parseText, parseKeyFrame, ReceiverSession and open. It found three bugs, now fixed with regression tests: truncated containers accepted or throwing a RangeError, and an unbounded per-K cache (a 300-transfer receiver retained 295 MB; now 14 MB). After the fixes: 0 findings.
 - **Throughput** on synthetic camera-like frames (BENCHMARK.md): the default 400 B / EC M decoded 100% of moderate and harsh frames with the page's zxing-wasm, at about 7 ms per frame, for ≈ 3.1 KB/s at 8 fps. Dense settings (1000–1400 B) reach 10–20 KB/s on moderate frames but fail on harsh ones. Module size matters more than the EC level, so prefer L/M over Q/H.
 
 ## Honest limits
@@ -78,6 +79,7 @@ Requirements:
 ```
 npm install            # playwright-core (dev only)
 make build lint test   # build pages, repository checks, unit tests
+make fuzz-quick        # seeded fuzzing of the parsers and the receiver session (5,000 cases; `make fuzz` = 100,000)
 make trials video      # drop-rate trials and end-to-end video runs  (PY=..., ZBAR_LIB=...)
 make browser ux a11y   # headless browser tests: flows, interaction states, accessibility
 make soak bench        # 60 s lifecycle soak, throughput benchmark

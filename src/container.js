@@ -52,9 +52,14 @@
 
   function parseInner(buf) {
     for (let i = 0; i < 4; i++) if (buf[i] !== MAGIC_PLAIN[i]) throw new DexQRError("BAD_FORMAT", "Not a Dex_QR file container");
+    // Bounds first (cycle 5, found by fuzzing): a name or MIME length past the end used to yield a "file" that
+    // began with the container header (NaN / out-of-range offsets in subarray and slice).
+    if (buf.length < 7) throw new DexQRError("BAD_FORMAT", "Truncated file container");
     const nl = (buf[4] << 8) | buf[5];
+    if (7 + nl > buf.length) throw new DexQRError("BAD_FORMAT", "Truncated file container (file name)");
     const name = td.decode(buf.subarray(6, 6 + nl));
     const ml = buf[6 + nl];
+    if (7 + nl + ml > buf.length) throw new DexQRError("BAD_FORMAT", "Truncated file container (file type)");
     const mime = td.decode(buf.subarray(7 + nl, 7 + nl + ml));
     return { name, mime, data: buf.slice(7 + nl + ml) };
   }
@@ -200,8 +205,11 @@
   /* Verify and open a reconstructed payload. Throws DexQRError with code
    * CHECKSUM_MISMATCH | NEED_PASSPHRASE | WRONG_PASSPHRASE | BAD_FORMAT | TOO_LARGE | NO_DECOMPRESSION. */
   /* KDF parameters of a DQE1 payload: {iterations, salt}. */
+  // DQE1 header (36 bytes) + AES-GCM tag (16 bytes): anything shorter cannot be a real encrypted payload.
+  const ENC_HEADER = 36, GCM_TAG = 16;
   function encryptedParams(payload) {
-    return { iterations: new DataView(payload.buffer, payload.byteOffset).getUint32(4), salt: payload.slice(8, 24) };
+    if (payload.length < ENC_HEADER) throw new DexQRError("BAD_FORMAT", "Truncated encrypted container");
+    return { iterations: new DataView(payload.buffer, payload.byteOffset, payload.byteLength).getUint32(4), salt: payload.slice(8, 24) };
   }
 
   /* opts.derived = {passphrase, iterations, salt, key} from an earlier early check: reused only when the
@@ -211,7 +219,9 @@
     for (let i = 0; i < 8; i++) if (digest[i] !== expectedFileId[i]) throw new DexQRError("CHECKSUM_MISMATCH", "Checksum mismatch: the reconstructed data does not match the sender's SHA-256");
     if (!isEncryptedPayload(payload)) return { ...(await openInner(payload)), sha256: digest, encrypted: false };
     if (!passphrase) throw new DexQRError("NEED_PASSPHRASE", "This transfer is encrypted. Enter the passphrase.");
-    const iterations = new DataView(payload.buffer, payload.byteOffset).getUint32(4);
+    // Cycle 5 (fuzzing): a payload shorter than header + tag threw a RangeError or was called a wrong passphrase.
+    if (payload.length < ENC_HEADER + GCM_TAG) throw new DexQRError("BAD_FORMAT", "Truncated encrypted container");
+    const iterations = new DataView(payload.buffer, payload.byteOffset, payload.byteLength).getUint32(4);
     if (iterations < MIN_ITERATIONS || iterations > MAX_ITERATIONS) throw new DexQRError("BAD_FORMAT", "Unsupported PBKDF2 iteration count " + iterations);
     const salt = payload.slice(8, 24), iv = payload.slice(24, 36);
     const d = opts.derived;

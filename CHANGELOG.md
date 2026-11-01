@@ -130,3 +130,33 @@ The estimate takes about 0.2 ms for a seven-word passphrase and runs on each key
 **Tests.** Unit 65/65 (21 new in kdf.test.mjs), kdf browser 5/5 (new), browser 17/17, ux 17/17, axe 0 serious/critical, compression browser 4/4, key-check browser 5/5, lint 0. All with 0 network requests.
 
 **Caveats.** A phone receiver deriving a count tuned on a fast laptop may take several seconds (not measured on phones). Calibration was measured on this box only. Real cameras, Safari and Firefox are untested.
+
+## Cycle 5 (2026-11-01, about 7:45 AM EST): seeded fuzzing of the parsers and the receiver session; three bugs found and fixed
+
+**What changed.**
+- New `tests/fuzz/fuzz.mjs` (original code, no dependencies, deterministic for a given `--seed`): random and mutated frames for `packet.parseText`, `packet.parseKeyFrame` and `ReceiverSession`, plus `session.open` on finished transfers and on mutated containers delivered through a real LT stream. Mutations: header bit flips, truncation and extension, out-of-range and boundary K / T / F / seed / iterations / version / KDF id / flags, CRC fixed or not, self-consistent hostile headers up to K = 2^18, invalid Base45 (bad characters, lowercase, Unicode, wrong length, `:::` overflow), prefix games, interleaved second transfers, duplicates, forged CRC-valid packets, Reset and switch-transfer in the middle, non-string scanner results. Checks: no exception, no call over 1 s, memory retained after GC under 48 MB for 300 transfers in one receiver, only known rejection reasons, accepted packets within limits and re-encoding byte-identically, session counters and meta consistent, buffers bounded, noise never changes how many valid packets the decoder needs, finished transfers give the exact file, open fails only with a Dex_QR error code. `npm run fuzz` (100,000 cases), `npm run fuzz-quick` (5,000 cases, 30 s, also in `make all`).
+- **Fix 1 (state corruption):** a plain `DQF1` container whose name or MIME length points past its end was accepted, and the saved "file" then started with the container's own header bytes. Now `BAD_FORMAT` (also inside `DQZ1`).
+- **Fix 2 (crash / wrong message):** a `DQE1` payload of 4–7 bytes threw a `RangeError` with no Dex_QR error code (the iteration count was read past the end of the payload), and one shorter than its 36-byte header + 16-byte tag was reported as a wrong passphrase. Both are now `BAD_FORMAT` before any PBKDF2.
+- **Fix 3 (unbounded allocation):** the robust-soliton table cache in `src/lt.js` kept one table per distinct K forever (up to 2 MB each at K = 2^18). It is now least-recently-used with 16 entries; tables are recomputed identically when needed.
+- All three need a payload whose SHA-256 matches the header, i.e. a malformed or hostile sender, not camera noise (the CRC and SHA checks already stop random corruption). No change to the wire format, packets, LT degrees or anything a valid transfer does.
+
+**Before → after** (`node --expose-gc tests/fuzz/fuzz.mjs --cases 100000 --seed 1`; before = src at commit 2f907a9 loaded with `--root`, after = this commit; results/fuzz_before.json, results/fuzz_after.json, results/fuzz_after_seed2.json):
+
+| | Before (2f907a9) | After, seed 1 | After, seed 2 |
+|---|---|---|---|
+| Cases (parseText / parseKeyFrame / session scenarios / container opens) | 100,000 (41,799 / 24,905 / 30,220 / 3,076) | 100,000 (41,991 / 25,012 / 30,017 / 2,980) | 100,000 (41,909 / 24,948 / 30,132 / 3,011) |
+| Frames fed to ReceiverSession | 20.8 M | 21.2 M | 20.8 M |
+| Uncaught exceptions | 3 (RangeError, 4-byte `DQE1`) | 0 | 0 |
+| Hangs (any call > 1 s) | 0 (slowest call 122 ms) | 0 (118 ms) | 0 (111 ms) |
+| State corruption / wrong result | 706 truncated `DQF1` accepted with header bytes as data; 57 truncated `DQE1` called a wrong passphrase | 0 | 0 |
+| Unbounded allocation | 300 transfers in one receiver retained 295 MB after GC; whole run 1,380 MB | 14 MB; 17 MB | 12 MB; 17 MB |
+| Wall time | 443 s | 431 s | 430 s |
+| Time per 10,000 cases | parseText 0.15 s, parseKeyFrame 0.12 s, session scenario 134 s, container open 55 s | 0.14 s, 0.11 s, 131 s, 52 s | 0.14 s, 0.12 s, 131 s, 48 s |
+
+parseText and parseKeyFrame themselves had **no** findings before the fixes: every random or mutated frame was rejected with a known reason or accepted within limits. The case mix differs slightly between runs with the same seed because the encrypted corpus stream gets a fresh random salt and IV each run. A session scenario averages about 700 frames.
+
+**Valid transfers unchanged.** Drop-rate replay trials (10 / 100 / 500 KiB, zbar and zxing-cpp, 10 / 30 / 50% drop, 1,800 trials) rerun from the cached decoder output: 1,800 / 1,800, results/trials_*.json byte-identical to before (same overheads, e.g. mean 1.067 / 1.006 / 1.001 at 50% drop).
+
+**Tests.** Unit 70/70 (5 new in tests/unit/fuzz-regressions.test.mjs, written first and failing 5/5 against 2f907a9), browser 17/17, ux 17/17, axe 0 serious/critical, compression 4/4, key-check 5/5, kdf 5/5, lint 0 (43 files), 0 network requests. Fuzz 0 findings in 200,000 cases (seeds 1 and 2) plus the 5,000-case quick run (seed 7).
+
+**Not found / not changed.** A CRC-valid forged packet with the real header but wrong data still makes the file fail its SHA-256 check (rescan needed); the receiver buffers only the most recent other transfer, so stray frames of a third transfer replace that buffer. Both are documented behaviour, not crashes. Real cameras, Safari and Firefox untested.

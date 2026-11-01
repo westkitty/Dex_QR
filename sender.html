@@ -1107,13 +1107,22 @@ var qrcodegen;
 
   /* Robust soliton distribution mu(d), d = 1..K (Luby 2002, Def. 11; MacKay ITILA ch. 50).
    * Returns the cumulative distribution as Float64Array cdf[0..K] with cdf[K] = 1. */
+  // Least-recently-used cache, bounded (cycle 5, found by fuzzing): unbounded, every distinct K a page ever saw
+  // kept its table (up to 2 MB at K = 2^18) for the life of the page. A Map iterates in insertion order, so
+  // re-inserting on a hit and evicting the first key gives LRU. Hits are what matter: one K per transfer.
+  const CDF_CACHE_MAX = 16;
   const cdfCache = new Map();
+  let cdfLastKey = null;                // most recent key: skip the LRU re-insert on the per-packet hot path
+  function cdfCachePut(key, cdf) {
+    cdfCache.set(key, cdf); cdfLastKey = key;
+    while (cdfCache.size > CDF_CACHE_MAX) cdfCache.delete(cdfCache.keys().next().value);
+  }
   function robustSolitonCdf(K, c = DEFAULT_C, delta = DEFAULT_DELTA) {
     const key = K + ":" + c + ":" + delta;
     const hit = cdfCache.get(key);
-    if (hit) return hit;
+    if (hit) { if (key !== cdfLastKey) { cdfCache.delete(key); cdfCache.set(key, hit); cdfLastKey = key; } return hit; }
     const cdf = new Float64Array(K + 1);
-    if (K === 1) { cdf[1] = 1; cdfCache.set(key, cdf); return cdf; }
+    if (K === 1) { cdf[1] = 1; cdfCachePut(key, cdf); return cdf; }
     const R = c * Math.log(K / delta) * Math.sqrt(K);
     let pivot = Math.floor(K / R);
     if (pivot < 1) pivot = 1;
@@ -1131,7 +1140,7 @@ var qrcodegen;
     let acc = 0;
     for (let d = 1; d <= K; d++) { acc += mu[d] / beta; cdf[d] = acc; }
     cdf[K] = 1;
-    cdfCache.set(key, cdf);
+    cdfCachePut(key, cdf);
     return cdf;
   }
 
@@ -1380,7 +1389,7 @@ var qrcodegen;
 
   root.DexQR = root.DexQR || {};
   root.DexQR.lt = {
-    DEFAULT_C, DEFAULT_DELTA, ML_MAX_K, paramsForK, extraDegreeFor, packetRng, mix32, makeRng, robustSolitonCdf, sampleDegree,
+    DEFAULT_C, DEFAULT_DELTA, ML_MAX_K, CDF_CACHE_MAX, cdfCacheSize: () => cdfCache.size, paramsForK, extraDegreeFor, packetRng, mix32, makeRng, robustSolitonCdf, sampleDegree,
     neighbours, xorInto, LTEncoder, LTDecoder,
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);
@@ -1832,9 +1841,14 @@ var qrcodegen;
 
   function parseInner(buf) {
     for (let i = 0; i < 4; i++) if (buf[i] !== MAGIC_PLAIN[i]) throw new DexQRError("BAD_FORMAT", "Not a Dex_QR file container");
+    // Bounds first (cycle 5, found by fuzzing): a name or MIME length past the end used to yield a "file" that
+    // began with the container header (NaN / out-of-range offsets in subarray and slice).
+    if (buf.length < 7) throw new DexQRError("BAD_FORMAT", "Truncated file container");
     const nl = (buf[4] << 8) | buf[5];
+    if (7 + nl > buf.length) throw new DexQRError("BAD_FORMAT", "Truncated file container (file name)");
     const name = td.decode(buf.subarray(6, 6 + nl));
     const ml = buf[6 + nl];
+    if (7 + nl + ml > buf.length) throw new DexQRError("BAD_FORMAT", "Truncated file container (file type)");
     const mime = td.decode(buf.subarray(7 + nl, 7 + nl + ml));
     return { name, mime, data: buf.slice(7 + nl + ml) };
   }
@@ -1980,8 +1994,11 @@ var qrcodegen;
   /* Verify and open a reconstructed payload. Throws DexQRError with code
    * CHECKSUM_MISMATCH | NEED_PASSPHRASE | WRONG_PASSPHRASE | BAD_FORMAT | TOO_LARGE | NO_DECOMPRESSION. */
   /* KDF parameters of a DQE1 payload: {iterations, salt}. */
+  // DQE1 header (36 bytes) + AES-GCM tag (16 bytes): anything shorter cannot be a real encrypted payload.
+  const ENC_HEADER = 36, GCM_TAG = 16;
   function encryptedParams(payload) {
-    return { iterations: new DataView(payload.buffer, payload.byteOffset).getUint32(4), salt: payload.slice(8, 24) };
+    if (payload.length < ENC_HEADER) throw new DexQRError("BAD_FORMAT", "Truncated encrypted container");
+    return { iterations: new DataView(payload.buffer, payload.byteOffset, payload.byteLength).getUint32(4), salt: payload.slice(8, 24) };
   }
 
   /* opts.derived = {passphrase, iterations, salt, key} from an earlier early check: reused only when the
@@ -1991,7 +2008,9 @@ var qrcodegen;
     for (let i = 0; i < 8; i++) if (digest[i] !== expectedFileId[i]) throw new DexQRError("CHECKSUM_MISMATCH", "Checksum mismatch: the reconstructed data does not match the sender's SHA-256");
     if (!isEncryptedPayload(payload)) return { ...(await openInner(payload)), sha256: digest, encrypted: false };
     if (!passphrase) throw new DexQRError("NEED_PASSPHRASE", "This transfer is encrypted. Enter the passphrase.");
-    const iterations = new DataView(payload.buffer, payload.byteOffset).getUint32(4);
+    // Cycle 5 (fuzzing): a payload shorter than header + tag threw a RangeError or was called a wrong passphrase.
+    if (payload.length < ENC_HEADER + GCM_TAG) throw new DexQRError("BAD_FORMAT", "Truncated encrypted container");
+    const iterations = new DataView(payload.buffer, payload.byteOffset, payload.byteLength).getUint32(4);
     if (iterations < MIN_ITERATIONS || iterations > MAX_ITERATIONS) throw new DexQRError("BAD_FORMAT", "Unsupported PBKDF2 iteration count " + iterations);
     const salt = payload.slice(8, 24), iv = payload.slice(24, 36);
     const d = opts.derived;

@@ -70,13 +70,22 @@
 
   /* Robust soliton distribution mu(d), d = 1..K (Luby 2002, Def. 11; MacKay ITILA ch. 50).
    * Returns the cumulative distribution as Float64Array cdf[0..K] with cdf[K] = 1. */
+  // Least-recently-used cache, bounded (cycle 5, found by fuzzing): unbounded, every distinct K a page ever saw
+  // kept its table (up to 2 MB at K = 2^18) for the life of the page. A Map iterates in insertion order, so
+  // re-inserting on a hit and evicting the first key gives LRU. Hits are what matter: one K per transfer.
+  const CDF_CACHE_MAX = 16;
   const cdfCache = new Map();
+  let cdfLastKey = null;                // most recent key: skip the LRU re-insert on the per-packet hot path
+  function cdfCachePut(key, cdf) {
+    cdfCache.set(key, cdf); cdfLastKey = key;
+    while (cdfCache.size > CDF_CACHE_MAX) cdfCache.delete(cdfCache.keys().next().value);
+  }
   function robustSolitonCdf(K, c = DEFAULT_C, delta = DEFAULT_DELTA) {
     const key = K + ":" + c + ":" + delta;
     const hit = cdfCache.get(key);
-    if (hit) return hit;
+    if (hit) { if (key !== cdfLastKey) { cdfCache.delete(key); cdfCache.set(key, hit); cdfLastKey = key; } return hit; }
     const cdf = new Float64Array(K + 1);
-    if (K === 1) { cdf[1] = 1; cdfCache.set(key, cdf); return cdf; }
+    if (K === 1) { cdf[1] = 1; cdfCachePut(key, cdf); return cdf; }
     const R = c * Math.log(K / delta) * Math.sqrt(K);
     let pivot = Math.floor(K / R);
     if (pivot < 1) pivot = 1;
@@ -94,7 +103,7 @@
     let acc = 0;
     for (let d = 1; d <= K; d++) { acc += mu[d] / beta; cdf[d] = acc; }
     cdf[K] = 1;
-    cdfCache.set(key, cdf);
+    cdfCachePut(key, cdf);
     return cdf;
   }
 
@@ -343,7 +352,7 @@
 
   root.DexQR = root.DexQR || {};
   root.DexQR.lt = {
-    DEFAULT_C, DEFAULT_DELTA, ML_MAX_K, paramsForK, extraDegreeFor, packetRng, mix32, makeRng, robustSolitonCdf, sampleDegree,
+    DEFAULT_C, DEFAULT_DELTA, ML_MAX_K, CDF_CACHE_MAX, cdfCacheSize: () => cdfCache.size, paramsForK, extraDegreeFor, packetRng, mix32, makeRng, robustSolitonCdf, sampleDegree,
     neighbours, xorInto, LTEncoder, LTDecoder,
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);

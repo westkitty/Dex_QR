@@ -193,3 +193,18 @@ Find and rank the most important remaining improvements across mechanics, assets
 - **Next:** cycle 5, fuzzing parseText / parseKeyFrame / ReceiverSession.
 
 - **Commit:** `0d984d7869c55d6c74f91d2f2b86a27cb86f4a35` on `main` (pushed 8949cb7..0d984d7; this line added in a docs follow-up commit).
+
+---
+
+## 2026-11-01 — Cycle 5 of 12 (hourly routine): seeded fuzzing, three bugs fixed
+
+- **Lock:** `.dev-state/cycle.lock` held by "routine cycle 5" from 07:11 EST, starting at 2f907a9 (clean, in sync with origin/main).
+- **What:** tests/fuzz/fuzz.mjs, deterministic seeded fuzzer (no dependencies) for parseText, parseKeyFrame, ReceiverSession, session.open and mutated containers through real LT streams; oracles for exceptions, hangs (> 1 s), retained memory after GC, rejection reasons, round-trip of accepted frames, session counters and meta, bounded buffers, decoder efficiency under noise, exact file output, Dex_QR error codes. `npm run fuzz` / `fuzz-quick`, `make fuzz` / `fuzz-quick` (in `make all`).
+- **Fixed:** (1) container.parseInner bounds: truncated DQF1 (also inside DQZ1) is BAD_FORMAT instead of a file that begins with header bytes; (2) DQE1 shorter than 36 + 16 bytes is BAD_FORMAT before PBKDF2 (was RangeError at 4–7 bytes, WRONG_PASSPHRASE otherwise); DataViews bounded to the payload; (3) lt.robustSolitonCdf cache is LRU, 16 entries (`CDF_CACHE_MAX`, `cdfCacheSize()`), was unbounded.
+- **Numbers (100,000 cases, seed 1):** before 3 exceptions, 763 wrong results, 295 MB retained by 300 transfers (1,380 MB whole run); after 0 / 0 / 14 MB (17 MB). Seed 2 after: 0 findings, 12 MB. parseText/parseKeyFrame had no findings before. Time per 10k cases: parse 0.15 → 0.14 s, session scenario 134 → 131 s. Data: results/fuzz_before.json, fuzz_after.json, fuzz_after_seed2.json.
+- **Compatibility:** no wire-format change; valid containers are always longer than the new minimums; drop trials 1,800/1,800 with byte-identical results files; legacy and cycle-3 fixtures still decode (unit tests).
+- **Tests:** unit 70/70 (5 new, failing first), browser 17/17, ux 17/17, axe 0, compression 4/4, keycheck 5/5, kdf 5/5, lint 0, fuzz 0 findings.
+- **Files touched:** src/container.js, src/lt.js, sender.html, receiver.html, tests/fuzz/fuzz.mjs (new), tests/unit/fuzz-regressions.test.mjs (new), package.json, Makefile, README.md, CHANGELOG.md, docs/{ROADMAP,DEVELOPMENT_LOG}.md, results/*.json.
+- **Fragile:** keep `CDF_CACHE_MAX` ≥ the number of K values in use at once (sender + receiver + a pending switch); the fuzzer's `--root` loads only src/*.js listed in its SCRIPTS array.
+- **Untested:** real cameras, Safari, Firefox, phones.
+- **Next:** cycle 6, receiver-side PBKDF2 time estimate and slow-device warning.

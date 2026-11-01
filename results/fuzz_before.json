@@ -1,0 +1,77 @@
+{
+ "root": "work/base-2f907a9",
+ "seed": 1,
+ "cases": 100000,
+ "counts": {
+  "parse": 41799,
+  "key": 24905,
+  "session": 30220,
+  "container": 3076,
+  "longLived": 300
+ },
+ "sessionFrames": 20769305,
+ "sessionOutcomes": {
+  "done": 25545,
+  "locked-elsewhere": 1874,
+  "poisoned": 2469,
+  "not-done": 332
+ },
+ "sessionsDecoded": 25545,
+ "sessionsOpened": 3893,
+ "seconds": 443.3,
+ "secondsPer10k": {
+  "parseText": 0.15,
+  "parseKeyFrame": 0.12,
+  "sessionScenario": 133.59,
+  "containerOpen": 54.53
+ },
+ "maxCallMs": 121.5,
+ "maxCallWhat": "ReceiverSession.addText",
+ "retainedMB": {
+  "longLived": 294.6,
+  "wholeRun": 1380.1,
+  "gc": true
+ },
+ "findings": [
+  {
+   "kind": "invariant",
+   "msg": "open accepted a truncated DQF1 container (data includes header bytes)",
+   "count": 706,
+   "firstCase": 313,
+   "input": "4451463132b46f64642e62696e186170706c69636174696f6e2f6f637465742d73747265616d8d05"
+  },
+  {
+   "kind": "invariant",
+   "msg": "truncated DQE1 container reported as WRONG_PASSPHRASE",
+   "count": 57,
+   "firstCase": 2149,
+   "input": "44514531000186a0d70409ec7a2b241090ae5f7c457d5405a06afdd8dd4a"
+  },
+  {
+   "kind": "exception",
+   "msg": "open threw RangeError without a Dex_QR code: Offset is outside the bounds of the DataView",
+   "count": 3,
+   "firstCase": 45471,
+   "input": "44514531"
+  },
+  {
+   "kind": "alloc",
+   "msg": "300 transfers with different K in one receiver retained 295 MB after GC (limit 48 MB)",
+   "count": 1,
+   "firstCase": 100000,
+   "input": "manyTransfers(300)"
+  },
+  {
+   "kind": "alloc",
+   "msg": "whole run retained 1380 MB after GC",
+   "count": 1,
+   "firstCase": 100000,
+   "input": ""
+  }
+ ],
+ "byKind": {
+  "invariant": 763,
+  "exception": 3,
+  "alloc": 2
+ }
+}

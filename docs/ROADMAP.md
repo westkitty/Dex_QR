@@ -21,3 +21,7 @@
 ## Update 2026-11-01 (cycle 4)
 - Done: PBKDF2 iteration calibration (about 1 s on the sender, 600,000–8,000,000, carried in the stream; receivers bound 100,000–10,000,000) and a pattern-aware passphrase strength meter (src/strength.js). Item 5's cycle-4 plan is complete.
 - Next planned (cycle 5): fuzzing parseText, parseKeyFrame and ReceiverSession with random and mutated frames (item 7). Then: estimate the receiver's derive time from the stream's count and warn on slow devices.
+
+## Update 2026-11-01 (cycle 5)
+- Done: deterministic seeded fuzzing of parseText, parseKeyFrame, ReceiverSession and open (tests/fuzz/fuzz.mjs, `npm run fuzz`, quick run in `make all`). Found and fixed three bugs: truncated DQF1 containers accepted with header bytes as data, truncated DQE1 payloads throwing a RangeError or reported as a wrong passphrase, and an unbounded soliton-table cache (295 MB → 14 MB retained over 300 transfers). 0 findings in 200,000 cases afterwards. The fuzzing part of item 7 is done.
+- Next planned (cycle 6): estimate the receiver's PBKDF2 time from the stream's iteration count (a short local probe when the first encrypted packet or key frame arrives) and warn before the user types a passphrase on a device where it will take several seconds. Chosen over the block-progress map because cycle 4's tuned counts (up to 8,000,000, measured on a laptop) can make a phone receiver wait with no explanation. Then: the receiver block-progress map (item 3).

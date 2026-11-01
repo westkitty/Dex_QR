@@ -51,3 +51,15 @@ Append-only record of each improvement cycle: what was tried, measured and decid
 - Measured on this box: Node calibration 111–130 ms → 7.2–8.0 M iterations (est. 974–997 ms); derive 600,000 = 73–74 ms, 7.2 M = 871–889 ms. Headless Chrome: 7.9 M, prepare 1,250 ms, receiver early check 1,039 ms, standard prepare 155 ms.
 - Verified: unit 65/65, kdf browser 5/5, browser 17/17, ux 17/17, a11y 0, compression 4/4, keycheck 5/5, lint 0.
 - Next: fuzz parseText / parseKeyFrame / ReceiverSession, or a receiver-side warning when a stream's count will be slow on the current device.
+
+## 2026-11-01, cycle 5 (hourly improvement routine)
+
+- Lock: `.dev-state/cycle.lock` written by the routine (owner "routine cycle 5"), 07:11 EST; start 2f907a9, clean, in sync with origin/main.
+- Harness first: tests/fuzz/fuzz.mjs with its own mulberry32 PRNG, `--root` to load another checkout's src (before = `git worktree` of 2f907a9 under work/), groups findings by kind and first message with a reproducer.
+- Harness bugs fixed during bring-up (not product bugs): a CRC fixer with a negative offset; a counter invariant that ignored `switchToPending` keeping `stats.keyFrames`; "poisoned" detection that missed forged packets replayed from the pending buffer; mutations that left an honest packet were not fed to the reference decoder; the harness switched transfers only on a file-ID mismatch while the page offers a switch on any transfer-key mismatch.
+- Before (100,000 cases, seed 1): 3 RangeErrors (4-byte DQE1 payload), 706 truncated DQF1 containers accepted, 57 truncated DQE1 called a wrong passphrase, 295 MB retained by a 300-transfer receiver (1,380 MB whole run). parseText / parseKeyFrame: nothing.
+- Regression tests written first (tests/unit/fuzz-regressions.test.mjs, 5 tests, 5/5 failing on 2f907a9), then fixes: bounds checks in container.parseInner; length checks before reading the DQE1 header (openPayload, encryptedParams), DataViews limited to the payload; LRU of 16 for the soliton CDF cache with a last-key fast path so the per-packet lookup costs no Map re-insert.
+- Considered and rejected: capping QR text length in parseText (Base45 decoding is already linear and real QR text is at most ~4.3 k characters; no finding); keeping all pending transfers (more memory for a rare case); making the encrypted corpus deterministic by injecting a salt (would need a test-only API in container.js).
+- After: 0 findings at seed 1 and seed 2 (100,000 each), 14 / 12 MB retained; time per 10k cases about the same (session scenario 134 → 131 s).
+- Verified: unit 70/70, browser 17/17, ux 17/17, a11y 0, compression 4/4, keycheck 5/5, kdf 5/5, lint 0, drop trials 1,800/1,800 byte-identical results. Soak and H.264 not rerun (no page-lifecycle or codec change).
+- Next: cycle 6, estimate the receiver's PBKDF2 time from the stream's iteration count and warn on slow devices.

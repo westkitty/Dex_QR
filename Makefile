@@ -5,11 +5,13 @@ ZBAR_LIB ?=
 export PY
 export LD_LIBRARY_PATH := $(ZBAR_LIB):$(LD_LIBRARY_PATH)
 
-.PHONY: all build lint test sweep trials video browser ux a11y soak compress keycheck bench compress-bench keycheck-bench report
-all: build lint test trials video browser ux a11y soak compress keycheck bench compress-bench keycheck-bench report
+.PHONY: all build lint test fuzz fuzz-quick sweep trials video browser ux a11y soak compress keycheck bench compress-bench keycheck-bench report
+all: build lint test fuzz-quick trials video browser ux a11y soak compress keycheck bench compress-bench keycheck-bench report
 build:   ; node tools/build.mjs
 lint:    ; node tools/lint.mjs
 test:    ; node --test tests/unit/*.test.mjs
+fuzz:    ; node --expose-gc tests/fuzz/fuzz.mjs --cases 100000 --seed 1 --out results/fuzz_after.json
+fuzz-quick: ; node --expose-gc tests/fuzz/fuzz.mjs --cases 5000 --seed 7 --long 60
 sweep:   ; node tests/unit/lt-sweep.mjs 200
 trials:  ; bash tests/e2e/run-drop-trials.sh
 video:   ; bash tests/e2e/run-video-e2e.sh
